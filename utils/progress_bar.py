@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from ffmpeg import FFmpeg, Progress
 
+from configs import TQDM_LOGGING_INTERVAL
 from utils.logging_tqdm import DEFAULT_TQDM_LOGGING_INTERVAL, LoggingTQDM
 
 if TYPE_CHECKING:
@@ -96,7 +97,7 @@ class ProgressBar:
 
 
 def setup_progress_for_ffmpeg(ffmpeg: FFmpeg, duration: float, title: str) -> ProgressBar:
-    progress_bar = ProgressBar(title, set_total_on_close=True)
+    progress_bar = ProgressBar(title, set_total_on_close=True, mininterval=TQDM_LOGGING_INTERVAL)
     progress_bar.set_total(duration)
 
     @ffmpeg.on("start")

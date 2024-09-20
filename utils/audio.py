@@ -17,7 +17,6 @@ from utils.pathtools import PathType
 from utils.progress_bar import setup_progress_for_ffmpeg
 from utils.video import get_video_duration
 
-TEMP_DIR = "tmp"
 logger = logging.getLogger(__name__)
 
 
@@ -36,7 +35,7 @@ def _read_audio_tensor(path: Path, sample_rate: int | None = None) -> tuple[torc
         return torchaudio.load(path, backend="soundfile")
 
     s = time.perf_counter()
-    with tempfile.TemporaryDirectory(dir=TEMP_DIR) as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         output_file = os.path.join(temp_dir, "audio.wav")  # noqa: PTH118
         opts = {"ac": 1}
         if sample_rate is not None:

@@ -4,7 +4,7 @@ from typing import Any, Literal, Self
 import pydantic
 from pydantic import ConfigDict, Field, model_validator
 
-from configs import UNSILENCE_DEFAULT_CPU_COUNT, VAD_MODEL
+from configs import TQDM_LOGGING_INTERVAL, UNSILENCE_DEFAULT_CPU_COUNT, VAD_MODEL
 from lib import unsilence
 from tools.audio_processing.actions.abstract import Action, ActionStatsType
 from tools.video_processing.vad.calculate_time_savings import calculate_time_savings
@@ -68,7 +68,7 @@ class UnsilenceAction(Action):
         init_additional_options = {}
         detect_additional_options = {}
 
-        silence_detect_progress = ProgressBar("Detecting silence")
+        silence_detect_progress = ProgressBar("Detecting silence", mininterval=TQDM_LOGGING_INTERVAL)
         detect_additional_options["on_silence_detect_progress_update"] = silence_detect_progress.update_unsilence
 
         # Так делать плохо, но можно
@@ -76,7 +76,7 @@ class UnsilenceAction(Action):
         if issubclass(self.unsilence_class, Vad):
             init_additional_options["model"] = VAD_MODEL
 
-            vad_progress = ProgressBar("Detecting voice activity")
+            vad_progress = ProgressBar("Detecting voice activity", mininterval=TQDM_LOGGING_INTERVAL)
             detect_additional_options["on_vad_progress_update"] = vad_progress.update_unsilence
 
         # ----------------- Detecting ----------------- #
@@ -90,8 +90,8 @@ class UnsilenceAction(Action):
         )
 
         # ----------------- Rendering ----------------- #
-        render_progress = ProgressBar("Rendering intervals")
-        concat_progress = ProgressBar("Concatenating intervals")
+        render_progress = ProgressBar("Rendering intervals", mininterval=TQDM_LOGGING_INTERVAL)
+        concat_progress = ProgressBar("Concatenating intervals", mininterval=TQDM_LOGGING_INTERVAL)
         render_additional_options = {
             "on_render_progress_update": render_progress.update_unsilence,
             "on_concat_progress_update": concat_progress.update_unsilence,
