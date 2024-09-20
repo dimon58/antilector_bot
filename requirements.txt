@@ -1,0 +1,28 @@
+-r lib/nisqa/requirements.txt
+-r lib/unsilence/requirements.txt
+
+
+# Обработка аудио
+ffmpeg-normalize==1.28.3
+python-ffmpeg==2.0.12
+pyaudiotoolslib==0.0.1
+soundfile==0.12.1
+deepfilternet==0.5.6
+silero-vad==5.1
+
+--find-links https://download.pytorch.org/whl/torch/
+--find-links https://download.pytorch.org/whl/torchaudio/
+torch==2.4.1+cu124
+torchaudio==2.4.1+cu124
+
+--extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
+onnxruntime-gpu
+
+# Прочее
+coloredlogs~=15.0.1
+python-json-logger==2.0.7
+pydantic==2.9.1
+orjson==3.10.7
+
+
+
