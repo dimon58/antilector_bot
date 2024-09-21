@@ -24,5 +24,4 @@ python-json-logger==2.0.7
 pydantic==2.9.1
 orjson==3.10.7
 
-
-
+yt-dlp==2024.8.1

@@ -22,6 +22,14 @@ DEBUG = False
 #: Корень проекта
 BASE_DIR = Path(__file__).resolve().parent
 
+# ---------- yt-dlp ---------- #
+
+YT_DLP_LOGGING_DEBOUNCE_TIME = 5
+YT_DLP_HTTP_CHUNK_SIZE = 10485760  # 10 MB
+
+# Лекции чётче 1080p не имеют смысла
+YT_DLP_VIDEO_MAX_HEIGHT = 1080
+YT_DLP_VIDEO_MAX_WIDTH = 1920 * 2  # формат 32x9 подходит
 
 # ---------- Логирование ---------- #
 
