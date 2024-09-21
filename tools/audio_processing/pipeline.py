@@ -104,7 +104,9 @@ class AudioPipeline(pydantic.BaseModel):
 
         if nisqa_model is not None:
             final_stats.nisqa = nisqa_model.measure_from_path(output_file)
-            logger.info("Final step %s %s done in %s", len(self.pipeline), final_stats.repr_for_logging, end - start)
+            logger.info(
+                "Final step %s %s done in %s sec", len(self.pipeline), final_stats.repr_for_logging, end - start
+            )
 
         return pipeline_stats
 

@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Any, Literal, Self
 
@@ -6,6 +7,7 @@ from pydantic import ConfigDict, Field, model_validator
 
 from configs import TQDM_LOGGING_INTERVAL, UNSILENCE_DEFAULT_CPU_COUNT, VAD_MODEL
 from lib import unsilence
+from lib.unsilence.pretty_time_estimate import pretty_time_estimate
 from tools.audio_processing.actions.abstract import Action, ActionStatsType
 from tools.video_processing.vad.calculate_time_savings import calculate_time_savings
 from tools.video_processing.vad.vad_unsilence import Vad
@@ -14,6 +16,8 @@ from utils.progress_bar import ProgressBar
 
 TIME_SAVINGS_ESTIMATION_KEY = "time_savings_estimation"
 TIME_SAVINGS_REAL_KEY = "time_savings_real"
+
+logger = logging.getLogger(__name__)
 
 
 class UnsilenceAction(Action):
@@ -82,14 +86,16 @@ class UnsilenceAction(Action):
         # ----------------- Detecting ----------------- #
         u = self.unsilence_class(input_file, **init_additional_options)
 
-        u.detect_silence(**self.detect_silence_options, **detect_additional_options)
+        intervals = u.detect_silence(**self.detect_silence_options, **detect_additional_options)
 
         time_savings_estimation = u.estimate_time(
             audible_speed=self.render_options.get("audible_speed", 1),
             silent_speed=self.render_options.get("silent_speed", 6),
         )
+        logger.info("Estimated time savings\n%s", pretty_time_estimate(time_savings_estimation))
 
         # ----------------- Rendering ----------------- #
+        logger.info("Rendering %s intervals", len(intervals.intervals))
         render_progress = ProgressBar("Rendering intervals", mininterval=TQDM_LOGGING_INTERVAL)
         concat_progress = ProgressBar("Concatenating intervals", mininterval=TQDM_LOGGING_INTERVAL)
         render_additional_options = {
@@ -106,6 +112,7 @@ class UnsilenceAction(Action):
         )
 
         time_savings_real = calculate_time_savings(input_file, output_file)
+        logger.info("Got time savings\n%s", pretty_time_estimate(time_savings_real))
 
         return {
             TIME_SAVINGS_ESTIMATION_KEY: time_savings_estimation,

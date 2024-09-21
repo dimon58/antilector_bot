@@ -37,9 +37,9 @@ class NisqaMetrics:
 
     def short_desc(self) -> str:
         return (
-            f"MOS {self.overall_quality}"
-            f" | NOI {self.noisiness}"
-            f" | COL {self.coloration}"
-            f" | DISC {self.discontinuity}"
-            f" | LOUD {self.loudness}"
+            f"MOS {self.overall_quality:.2f}"
+            f" | NOI {self.noisiness:.2f}"
+            f" | COL {self.coloration:.2f}"
+            f" | DISC {self.discontinuity:.2f}"
+            f" | LOUD {self.loudness:.2f}"
         )
