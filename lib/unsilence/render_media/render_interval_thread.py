@@ -6,6 +6,8 @@ from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
 
+from utils.video import can_copy_audio_stream, can_copy_video_stream
+
 from ..intervals.interval import Interval
 
 # FFMpeg не позволяет делать скорость аудио меньше 0.5 или больше 100
@@ -157,7 +159,7 @@ class RenderIntervalThread(threading.Thread):
 
         return ",".join(res)
 
-    def __generate_command(
+    def __generate_command(  # noqa: PLR0912
         self, interval_output_file: Path, interval: Interval, apply_filter: bool, minimum_interval_duration: float
     ) -> list[str]:
         """
@@ -191,6 +193,11 @@ class RenderIntervalThread(threading.Thread):
             "-y",
         ]
 
+        # Копируем видеопоток, если
+        # файлы должны иметь одинаковое расширение, не должно быть ускорения и видео должно быть
+        # Это частый случай, поэтому оптимизация даёт серьезный рост производительности
+        can_copy_video = can_copy_video_stream(self._input_file, interval_output_file)
+
         if apply_filter:
             complex_filter = []
 
@@ -205,7 +212,9 @@ class RenderIntervalThread(threading.Thread):
                 interval.duration, current_speed, minimum_interval_duration
             )
 
-            if not self._render_options.audio_only:
+            can_copy_video = can_copy_video and current_speed == 1.0 and not self._render_options.audio_only
+
+            if not self._render_options.audio_only and current_speed != 1.0:
                 complex_filter.extend(
                     [
                         f"[0:v]setpts={round(1 / current_speed, 4)}*PTS[v]",
@@ -224,14 +233,24 @@ class RenderIntervalThread(threading.Thread):
             command.extend(["-filter_complex", ";".join(complex_filter)])
 
             if not self._render_options.audio_only:
-                command.extend(["-map", "[v]"])
+                if current_speed == 1.0:
+                    command.extend(["-map", "0:v"])
+                else:
+                    command.extend(["-map", "[v]"])
 
             command.extend(["-map", "[a]"])
         else:
             if fade != "":
                 command.extend(["-af", fade])
+            elif can_copy_audio_stream(self._input_file, interval_output_file):
+                command.extend(["-c:a", "copy"])
+
             if self._render_options.audio_only:
                 command.append("-vn")
+
+        if can_copy_video:
+            logger.debug("Coping video stream for interval %s", interval)
+            command.extend(["-c:v", "copy"])
 
         command.append(str(interval_output_file))
 

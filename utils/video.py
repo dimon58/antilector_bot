@@ -6,7 +6,38 @@ import orjson
 from ffmpeg import FFmpegError
 
 from utils.fixed_ffmpeg import FixedFFmpeg
+from utils.pathtools import split_filename_ext
 from utils.progress_bar import setup_progress_for_ffmpeg
+
+
+def can_copy_video_stream(input_file: Path, output_file: Path):
+    """
+    Возвращает можно ли копировать видеопоток из input_file в output_file без перекодирования
+    """
+    _, ext_in = split_filename_ext(input_file)
+    _, ext_out = split_filename_ext(output_file)
+
+    if ext_in == ext_out:
+        return True
+
+    # TODO
+
+    return False
+
+
+def can_copy_audio_stream(input_file: Path, output_file: Path):
+    """
+    Возвращает можно ли копировать аудиопоток из input_file в output_file без перекодирования
+    """
+    _, ext_in = split_filename_ext(input_file)
+    _, ext_out = split_filename_ext(output_file)
+
+    if ext_in == ext_out:
+        return True
+
+    # TODO
+
+    return False
 
 
 def get_video_duration(filename: str | Path):
@@ -75,12 +106,19 @@ def get_video_resolution(filename: str | Path) -> tuple[int, int]:
 
 
 def replace_audio_in_video(video_file: Path, audio_file: Path, output_file: Path):
+    options = {"async": 1, "vsync": 1, "map": ["0:v", "1:a"]}
+    if can_copy_video_stream(video_file, output_file):
+        options["c:v"] = "copy"
+
+    if can_copy_audio_stream(audio_file, output_file):
+        options["a:v"] = "copy"
+
     ffmpeg = (
         FixedFFmpeg()
         .option("y")
         .input(video_file.as_posix())
         .input(audio_file.as_posix())
-        .output(output_file.as_posix(), {"async": 1, "vsync": 1, "c:v": "copy", "map": ["0:v", "1:a"]})
+        .output(output_file.as_posix(), options)
     )
 
     setup_progress_for_ffmpeg(ffmpeg, get_video_duration(video_file), "Replacing audio in video")
