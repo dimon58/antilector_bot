@@ -6,7 +6,10 @@ from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
 
-from utils.video import MediaStreamType, can_copy_media_stream
+from ffmpeg import FFmpegError
+
+from utils.fixed_ffmpeg import FixedFFmpeg
+from utils.progress_bar import setup_progress_for_ffmpeg
 
 from ..intervals.interval import Interval
 
@@ -64,8 +67,10 @@ class RenderIntervalThread(threading.Thread):
                 self.thread_lock.release()
 
                 completed = self.__render_interval(
-                    task.interval_output_file,
-                    task.interval,
+                    task_id=task.task_id,
+                    total_tasks=task.total_tasks,
+                    interval_output_file=task.interval_output_file,
+                    interval=task.interval,
                     drop_corrupted_intervals=self._render_options.drop_corrupted_intervals,
                     minimum_interval_duration=self._render_options.minimum_interval_duration,
                 )
@@ -93,6 +98,8 @@ class RenderIntervalThread(threading.Thread):
 
     def __render_interval(
         self,
+        task_id: int,
+        total_tasks: int,
         interval_output_file: Path,
         interval: Interval,
         apply_filter: bool = True,
@@ -108,31 +115,39 @@ class RenderIntervalThread(threading.Thread):
         :return: Whether it is corrupted or not
         """
 
-        command = self.__generate_command(interval_output_file, interval, apply_filter, minimum_interval_duration)
-
-        console_output = subprocess.run(  # noqa: S603
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            check=False,
+        ffmpeg = self.__generate_command(interval_output_file, interval, apply_filter, minimum_interval_duration)
+        setup_progress_for_ffmpeg(
+            ffmpeg,
+            interval.duration,
+            f"[task {self.thread_id}] Rendering interval"
+            f" {task_id + 1}/{total_tasks} {{{interval.start}, {interval.end}}}",
         )
 
-        if "Conversion failed!" in str(console_output.stdout).splitlines()[-1]:
-            if drop_corrupted_intervals:
-                return False
-            if apply_filter:
-                self.__render_interval(
-                    interval_output_file,
-                    interval,
-                    apply_filter=False,
-                    drop_corrupted_intervals=drop_corrupted_intervals,
-                    minimum_interval_duration=minimum_interval_duration,
-                )
-            else:
-                raise OSError(f"Input file is corrupted between {interval.start} and {interval.end} (in seconds)")
+        try:
+            ffmpeg.execute()
+        except FFmpegError as exc:
+            if "Conversion failed!" in exc.message.splitlines()[-1]:
+                if drop_corrupted_intervals:
+                    return False
+                if apply_filter:
+                    self.__render_interval(
+                        task_id=task_id,
+                        total_tasks=total_tasks,
+                        interval_output_file=interval_output_file,
+                        interval=interval,
+                        apply_filter=False,
+                        drop_corrupted_intervals=drop_corrupted_intervals,
+                        minimum_interval_duration=minimum_interval_duration,
+                    )
+                else:
+                    raise OSError(
+                        f"Input file is corrupted between {interval.start} and {interval.end} (in seconds)"
+                    ) from exc
 
-        if "Error initializing complex filter" in str(console_output.stdout):
-            raise ValueError("Invalid render options")
+            if "Error initializing complex filter" in exc.message:
+                raise ValueError("Invalid render options") from exc
+
+            raise ValueError(f"{exc.message}: {exc.arguments}") from exc
 
         return True
 
@@ -201,9 +216,9 @@ class RenderIntervalThread(threading.Thread):
 
         return audio_filter
 
-    def __generate_command(  # noqa: PLR0912
+    def __generate_command(
         self, interval_output_file: Path, interval: Interval, apply_filter: bool, minimum_interval_duration: float
-    ) -> list[str]:
+    ) -> FixedFFmpeg:
         """
         Generates the ffmpeg command to process the video
         :param interval_output_file: Where the media interval should be saved
@@ -211,29 +226,26 @@ class RenderIntervalThread(threading.Thread):
         :param apply_filter: Whether a filter should be applied or not
         :return: ffmpeg console command
         """
+
+        ffmpeg = (
+            FixedFFmpeg()
+            .input(self._input_file, {"ss": interval.start, "to": interval.end})
+            .option("ignore_unknown")
+            .option("y")
+        )
+
+        output_options = {
+            "vsync": 1,
+            "async": 1,
+            "safe": 0,
+        }
+
         fade = self._get_fade_filter(
             total_duration=interval.duration,
             interval_in_fade_duration=self._render_options.interval_in_fade_duration,
             interval_out_fade_duration=self._render_options.interval_out_fade_duration,
             fade_curve=self._render_options.fade_curve,
         )
-        command = [
-            "ffmpeg",
-            "-ss",
-            f"{interval.start}",
-            "-to",
-            f"{interval.end}",
-            "-i",
-            f"{self._input_file}",
-            "-vsync",
-            "1",
-            "-async",
-            "1",
-            "-safe",
-            "0",
-            "-ignore_unknown",
-            "-y",
-        ]
 
         if apply_filter:
 
@@ -255,29 +267,33 @@ class RenderIntervalThread(threading.Thread):
 
             if len(complex_filter_components) > 0:
                 complex_filter = ";".join(complex_filter_components)
-                command.extend(["-filter_complex", complex_filter])
+                output_options["filter_complex"] = complex_filter
                 logger.info("Using complex filter %s", complex_filter)
             else:
                 logger.info("Not using complex filter")
 
+            output_map = []
             if not self._render_options.audio_only:
                 if video_filter is not None:
-                    command.extend(["-map", "[v]"])
+                    output_map.append("[v]")
                 else:
-                    command.extend(["-map", "0:v"])
+                    output_map.append("0:v")
 
             if audio_filter is not None:
-                command.extend(["-map", "[a]"])
+                output_map.append("[a]")
             else:
-                command.extend(["-map", "0:a"])
+                output_map.append("0:a")
+
+            output_options["map"] = output_map
 
         elif fade != "":
-            command.extend(["-af", fade])
-        elif can_copy_media_stream(self._input_file, interval_output_file, MediaStreamType.AUDIO):
-            command.extend(["-c:a", "copy"])
+            output_options["af"] = fade
+
+            # if self._render_options.can_copy_audio_stream:
+            #     output_options["c:a"] = "copy"
 
         if self._render_options.audio_only:
-            command.append("-vn")
+            ffmpeg = ffmpeg.option("-v")
 
         # if self._render_options.can_copy_video:
         #     logger.debug("Coping video stream for interval %s", interval)
@@ -285,9 +301,7 @@ class RenderIntervalThread(threading.Thread):
         # else:
         #     logger.info("Transcoding video stream to FFmpeg choice for interval %s", interval)
 
-        command.append(str(interval_output_file))
-
-        return command
+        return ffmpeg.output(interval_output_file, output_options)
 
     @staticmethod
     def clamp_speed(duration: float, speed: float, minimum_interval_duration: float = 0.25) -> float:

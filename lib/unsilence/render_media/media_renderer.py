@@ -1,3 +1,4 @@
+import logging
 import queue
 import shutil
 import subprocess
@@ -10,6 +11,8 @@ from types import SimpleNamespace
 from .._typing import UpdateCallbackType
 from ..intervals.intervals import Intervals
 from ..render_media.render_interval_thread import RenderIntervalThread
+
+logger = logging.getLogger(__name__)
 
 
 class MediaRenderer:
@@ -97,6 +100,7 @@ class MediaRenderer:
             interval_out_fade_duration=interval_out_fade_duration,
             fade_curve=fade_curve,
             # Нужно для оптимизации
+            # can_copy_audio_stream=can_copy_media_stream(input_file, output_file, MediaStreamType.AUDIO),
             # can_copy_video=can_copy_video,
             # original_codec=original_codec,
         )
@@ -138,6 +142,7 @@ class MediaRenderer:
 
             thread_lock.release()
 
+        logger.info("Spawning %s threads for rendering intervals", threads)
         for i in range(threads):
             thread = RenderIntervalThread(
                 i, input_file, render_options, task_queue, thread_lock, on_task_completed=handle_thread_completed_task
@@ -151,7 +156,12 @@ class MediaRenderer:
 
             file_list.append(current_path)
 
-            task = SimpleNamespace(task_id=i, interval_output_file=current_path, interval=interval)
+            task = SimpleNamespace(
+                task_id=i,
+                total_tasks=len(intervals.intervals),
+                interval_output_file=current_path,
+                interval=interval,
+            )
 
             thread_lock.acquire()
             task_queue.put(task)
