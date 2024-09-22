@@ -74,6 +74,16 @@ class MediaRenderer:
         if not input_file.exists():
             raise FileNotFoundError(f"Input file {input_file} does not exist!")
 
+        # # Копируем видеопоток, если
+        # # файлы должны иметь одинаковое расширение, не должно быть ускорения и видео должно быть
+        # # Это частый случай, поэтому оптимизация даёт серьезный рост производительности
+        # can_copy_video = can_copy_media_stream(input_file, output_file, MediaStreamType.VIDEO)
+        # if can_copy_video:
+        #     original_codec = get_media_codecs(input_file, MediaStreamType.VIDEO)[0]
+        # else:
+        #     original_codec = None
+        # original_codec: str | None
+
         render_options = SimpleNamespace(
             audio_only=audio_only,
             audible_speed=audible_speed,
@@ -86,6 +96,9 @@ class MediaRenderer:
             interval_in_fade_duration=interval_in_fade_duration,
             interval_out_fade_duration=interval_out_fade_duration,
             fade_curve=fade_curve,
+            # Нужно для оптимизации
+            # can_copy_video=can_copy_video,
+            # original_codec=original_codec,
         )
 
         intervals = intervals.remove_short_intervals_from_start(

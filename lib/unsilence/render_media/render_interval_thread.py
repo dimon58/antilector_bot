@@ -6,7 +6,7 @@ from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
 
-from utils.video import can_copy_audio_stream, can_copy_video_stream
+from utils.video import MediaStreamType, can_copy_media_stream
 
 from ..intervals.interval import Interval
 
@@ -159,6 +159,48 @@ class RenderIntervalThread(threading.Thread):
 
         return ",".join(res)
 
+    def __get_speed_and_volume(self, interval: Interval, minimum_interval_duration: float) -> tuple[float, float]:
+        if interval.is_silent:
+            current_speed = self._render_options.silent_speed
+            current_volume = self._render_options.silent_volume
+        else:
+            current_speed = self._render_options.audible_speed
+            current_volume = self._render_options.audible_volume
+        current_speed = RenderIntervalThread.clamp_speed(interval.duration, current_speed, minimum_interval_duration)
+        return current_speed, current_volume
+
+    def __get_video_filter(self, current_speed: float) -> str | None:
+        if not self._render_options.audio_only and current_speed != 1.0:
+            video_filter = f"[0:v]setpts={round(1 / current_speed, 4)}*PTS[v]"
+        else:
+            video_filter = None
+
+        logger.debug("Video filter: %s", video_filter)
+
+        return video_filter
+
+    @staticmethod
+    def __get_audio_filter(fade: str, current_speed: float, current_volume: float) -> str | None:
+        audio_filter_components: list[str] = []
+        if fade != "":
+            audio_filter_components.append(fade)
+
+        if current_volume != 1.0:
+            audio_filter_components.append(f"atempo={round(current_speed, 4)}")
+
+        if current_volume != 1.0:
+            audio_filter_components.append(f"volume={current_volume}")
+
+        audio_filter: str | None
+        if len(audio_filter_components) > 0:  # noqa: SIM108
+            audio_filter = f"[0:a]{",".join(audio_filter_components)}[a]"
+        else:
+            audio_filter = None
+
+        logger.debug("Audio filter: %s", audio_filter)
+
+        return audio_filter
+
     def __generate_command(  # noqa: PLR0912
         self, interval_output_file: Path, interval: Interval, apply_filter: bool, minimum_interval_duration: float
     ) -> list[str]:
@@ -193,64 +235,55 @@ class RenderIntervalThread(threading.Thread):
             "-y",
         ]
 
-        # Копируем видеопоток, если
-        # файлы должны иметь одинаковое расширение, не должно быть ускорения и видео должно быть
-        # Это частый случай, поэтому оптимизация даёт серьезный рост производительности
-        can_copy_video = can_copy_video_stream(self._input_file, interval_output_file)
-
         if apply_filter:
-            complex_filter = []
 
-            if interval.is_silent:
-                current_speed = self._render_options.silent_speed
-                current_volume = self._render_options.silent_volume
+            current_speed, current_volume = self.__get_speed_and_volume(interval, minimum_interval_duration)
+
+            complex_filter_components: list[str] = []
+
+            # ----------------- video filter ----------------- #
+            video_filter = self.__get_video_filter(current_speed)
+            if video_filter is not None:
+                complex_filter_components.append(video_filter)
+
+            # ----------------- audio filter ----------------- #
+            audio_filter = self.__get_audio_filter(fade, current_speed, current_volume)
+            if audio_filter is not None:
+                complex_filter_components.append(audio_filter)
+
+            # ----------------- complex filter ----------------- #
+
+            if len(complex_filter_components) > 0:
+                complex_filter = ";".join(complex_filter_components)
+                command.extend(["-filter_complex", complex_filter])
+                logger.info("Using complex filter %s", complex_filter)
             else:
-                current_speed = self._render_options.audible_speed
-                current_volume = self._render_options.audible_volume
-
-            current_speed = RenderIntervalThread.clamp_speed(
-                interval.duration, current_speed, minimum_interval_duration
-            )
-
-            can_copy_video = can_copy_video and current_speed == 1.0 and not self._render_options.audio_only
-
-            if not self._render_options.audio_only and current_speed != 1.0:
-                complex_filter.extend(
-                    [
-                        f"[0:v]setpts={round(1 / current_speed, 4)}*PTS[v]",
-                    ]
-                )
-
-            if fade != "":
-                fade = f"{fade},"
-
-            complex_filter.extend(
-                [
-                    f"[0:a]{fade}atempo={round(current_speed, 4)},volume={current_volume}[a]",
-                ]
-            )
-
-            command.extend(["-filter_complex", ";".join(complex_filter)])
+                logger.info("Not using complex filter")
 
             if not self._render_options.audio_only:
-                if current_speed == 1.0:
-                    command.extend(["-map", "0:v"])
-                else:
+                if video_filter is not None:
                     command.extend(["-map", "[v]"])
+                else:
+                    command.extend(["-map", "0:v"])
 
-            command.extend(["-map", "[a]"])
-        else:
-            if fade != "":
-                command.extend(["-af", fade])
-            elif can_copy_audio_stream(self._input_file, interval_output_file):
-                command.extend(["-c:a", "copy"])
+            if audio_filter is not None:
+                command.extend(["-map", "[a]"])
+            else:
+                command.extend(["-map", "0:a"])
 
-            if self._render_options.audio_only:
-                command.append("-vn")
+        elif fade != "":
+            command.extend(["-af", fade])
+        elif can_copy_media_stream(self._input_file, interval_output_file, MediaStreamType.AUDIO):
+            command.extend(["-c:a", "copy"])
 
-        if can_copy_video:
-            logger.debug("Coping video stream for interval %s", interval)
-            command.extend(["-c:v", "copy"])
+        if self._render_options.audio_only:
+            command.append("-vn")
+
+        # if self._render_options.can_copy_video:
+        #     logger.debug("Coping video stream for interval %s", interval)
+        #     command.extend(["-c:v", "copy"])
+        # else:
+        #     logger.info("Transcoding video stream to FFmpeg choice for interval %s", interval)
 
         command.append(str(interval_output_file))
 
