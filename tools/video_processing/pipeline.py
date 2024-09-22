@@ -30,6 +30,12 @@ class VideoPipeline(pydantic.BaseModel):
     audio_pipeline: AudioPipeline
     unsilence_action: UnsilenceAction
 
+    use_cuda: bool = False
+    force_video_codec: str | None = None
+    force_audio_codec: str | None = None
+    force_transcode_video: bool = False
+    force_transcode_audio: bool = False
+
     def run(
         self,
         input_file: Path,
@@ -66,6 +72,11 @@ class VideoPipeline(pydantic.BaseModel):
                 video_file=input_file,
                 audio_file=processed_audio_file,
                 output_file=processed_video_file,
+                use_nvenc=self.use_cuda,
+                video_codec=self.force_video_codec,
+                audio_codec=self.force_audio_codec,
+                force_transcode_video=self.force_transcode_video,
+                force_transcode_audio=self.force_transcode_audio,
             )
             replacing_audio_end = time.perf_counter()
 

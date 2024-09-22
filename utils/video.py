@@ -1,6 +1,7 @@
 import enum
 import logging
 import os
+import shlex
 import subprocess  # nosec: B404
 from pathlib import Path
 
@@ -188,31 +189,102 @@ def get_video_resolution(filename: str | Path) -> tuple[int, int]:
     return stream["width"], stream["height"]
 
 
-def replace_audio_in_video(video_file: Path, audio_file: Path, output_file: Path) -> None:
+def ensure_nvenc_correct(use_nvenc: bool, force_video_codec: str | None):
+    if not use_nvenc:
+        return
+
+    if force_video_codec is None:
+        raise ValueError("You must specify video codec to use nvenc acceleration in ffmpeg")
+
+    allowed_codecs = ("hevc_nvenc", "h264_nvenc", "av1_nvenc")  # todo: calculate based on gpu
+    if force_video_codec not in allowed_codecs:
+        raise ValueError(f"Video codec must be in {allowed_codecs}, got {force_video_codec}")
+
+
+def resolve_media_codec(
+    input_file: Path,
+    output_file: Path,
+    codec: str | None,
+    force_transcode: bool,
+    media_stream_type: MediaStreamType,
+) -> str | None:
+    original_codec = get_media_codecs(input_file, media_stream_type)[0]
+
+    if codec is not None:
+        # Handle nvenc
+        new_codec_repr = codec[:-6] if codec.endswith("_nvenc") else codec
+
+        if not force_transcode and original_codec == new_codec_repr:
+            logger.info("Coping %s stream", media_stream_type.name.lower())
+            return "copy"
+
+        logger.info("Transcoding %s stream from %s to %s", media_stream_type.name.lower(), original_codec, codec)
+        return codec
+
+    if not force_transcode and can_copy_media_stream(input_file, output_file, media_stream_type):
+        logger.info("Coping %s stream", media_stream_type.name.lower())
+        return "copy"
+
+    logger.info("Transcoding %s stream from %s to ffmpeg choice", media_stream_type.name.lower(), original_codec)
+    return None
+
+
+def replace_audio_in_video(
+    video_file: Path,
+    audio_file: Path,
+    output_file: Path,
+    use_nvenc: bool = False,
+    video_codec: str | None = None,
+    audio_codec: str | None = None,
+    force_transcode_video: bool = False,
+    force_transcode_audio: bool = False,
+) -> None:
     """
     Заменяет аудиопоток в video_file на аудиопоток из audio_file и сохраняет в output_file
     """
+
+    ensure_nvenc_correct(use_nvenc, video_codec)
+
+    if use_nvenc:
+        logger.info("Using nvenc")
+        video_input_options = {
+            "hwaccel": "cuda",
+            "hwaccel_output_format": "cuda",
+        }
+    else:
+        video_input_options = {}
+
     output_options = {"async": 1, "vsync": 1, "map": ["0:v", "1:a"]}
 
-    if can_copy_media_stream(video_file, output_file, MediaStreamType.VIDEO):
-        output_options["c:v"] = "copy"
-        logger.info("Coping video stream")
-    else:
-        logger.info("Transcoding video stream")
+    audio_codec = resolve_media_codec(
+        input_file=audio_file,
+        output_file=output_file,
+        codec=audio_codec,
+        force_transcode=force_transcode_audio,
+        media_stream_type=MediaStreamType.AUDIO,
+    )
+    if audio_codec is not None:
+        output_options["c:a"] = audio_codec
 
-    if can_copy_media_stream(video_file, output_file, MediaStreamType.AUDIO):
-        output_options["a:v"] = "copy"
-        logger.info("Coping audio stream")
-    else:
-        logger.info("Transcoding audio stream")
+    video_codec = resolve_media_codec(
+        input_file=video_file,
+        output_file=output_file,
+        codec=video_codec,
+        force_transcode=force_transcode_video,
+        media_stream_type=MediaStreamType.VIDEO,
+    )
+    if video_codec is not None:
+        output_options["c:v"] = video_codec
 
     ffmpeg = (
         FixedFFmpeg()
         .option("y")
-        .input(video_file.as_posix())
+        .input(video_file.as_posix(), video_input_options)
         .input(audio_file.as_posix())
         .output(output_file.as_posix(), output_options)
     )
+
+    logger.debug("Call: %s", shlex.join(ffmpeg.arguments))
 
     setup_progress_for_ffmpeg(ffmpeg, get_video_duration(video_file), "Replacing audio in video")
 

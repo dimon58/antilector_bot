@@ -4,11 +4,15 @@ from pathlib import Path
 import silero_vad
 import torch
 
-TORCH_USE_CUDA = torch.cuda.is_available()
-TORCH_DEVICE = torch.device("cuda" if TORCH_USE_CUDA else "cpu")
+USE_CUDA = torch.cuda.is_available()
+TORCH_DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
 
 # Setup device for deepfilternet
 os.environ["DEVICE"] = str(TORCH_DEVICE)
+
+USE_NVENC = USE_CUDA
+FORCE_VIDEO_CODEC = "hevc_nvenc" if USE_NVENC else "hevc"
+FORCE_AUDIO_CODEC = "aac"
 
 VAD_MODEL = silero_vad.load_silero_vad(onnx=True)
 SILERO_VAD_SAMPLE_RATE = 16000
