@@ -240,9 +240,9 @@ class RenderIntervalThread(threading.Thread):
         if len(complex_filter_components) > 0:
             complex_filter = ";".join(complex_filter_components)
             additional_output_options["filter_complex"] = complex_filter
-            logger.info("Using complex filter %s", complex_filter)
+            logger.debug("Using complex filter %s", complex_filter)
         else:
-            logger.info("Not using complex filter")
+            logger.debug("Not using complex filter")
 
         output_map = []
         if not self._render_options.audio_only:
