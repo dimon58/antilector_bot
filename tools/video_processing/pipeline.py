@@ -112,6 +112,7 @@ class VideoPipeline(pydantic.BaseModel):
             logger.info("Unsilencing")
             unsilence_start = time.perf_counter()
             self.unsilence_action.temp_dir = tempdir / "unsilence"
+            self.unsilence_action.separated_audio = processed_audio_file
             unsilence_stats = self.unsilence_action.run(
                 input_file=processed_video_file,
                 output_file=output_file,

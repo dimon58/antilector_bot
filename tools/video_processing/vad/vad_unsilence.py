@@ -121,12 +121,13 @@ class Vad(Unsilence):
         visualize_probs: bool = False,
         window_size_samples: int = 512,
         on_silence_detect_progress_update: UpdateCallbackType | None = None,
+        separated_audio: Path | None = None,
     ) -> Intervals:
         """
         Все аргументы, кроме silent_detect_progress_update игнорируются
         """
         self._intervals = detect_speech(
-            self._input_file,
+            separated_audio or self._input_file,
             model=self._model,
             threshold=threshold,
             sampling_rate=sampling_rate,
@@ -229,16 +230,17 @@ class UnsilenceAndVad(Vad):
         visualize_probs: bool = False,
         window_size_samples: int = 512,
         on_vad_progress_update: UpdateCallbackType | None = None,
+        separated_audio: Path | None = None,
     ) -> Intervals:
         silence = detect_silence(
-            self._input_file,
+            separated_audio or self._input_file,
             silence_level=silence_level,
             silence_time_threshold=silence_time_threshold,
             on_silence_detect_progress_update=on_silence_detect_progress_update,
         )
 
         no_speech = detect_speech(
-            self._input_file,
+            separated_audio or self._input_file,
             model=self._model,
             threshold=threshold,
             sampling_rate=sampling_rate,

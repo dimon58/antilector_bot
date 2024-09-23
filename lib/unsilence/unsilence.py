@@ -41,12 +41,15 @@ class Unsilence:
         short_interval_threshold: float = 0.3,
         stretch_time: float = 0.25,
         on_silence_detect_progress_update: UpdateCallbackType | None = None,
+        separated_audio: Path | None = None,
     ) -> Intervals:
         """
         Detects silence of the file (Options can be specified in kwargs)
 
         short_interval_threshold : The shortest allowed interval length (default: 0.3) (in seconds)
         stretch_time: Time the interval should be enlarged/shrunken (default 0.25) (in seconds)
+        separated_audio: Audio stream from input in separated file (wav is the best).
+            Providing can increase performance by 2 times.
 
         Remaining keyword arguments are passed to :func:`~unsilence.lib.detect_silence.DetectSilence.detect_silence`
 
@@ -54,7 +57,7 @@ class Unsilence:
         :rtype: ~unsilence.lib.intervals.Intervals.Intervals
         """
         self._intervals = detect_silence(
-            self._input_file,
+            separated_audio or self._input_file,
             silence_level=silence_level,
             silence_time_threshold=silence_time_threshold,
             on_silence_detect_progress_update=on_silence_detect_progress_update,

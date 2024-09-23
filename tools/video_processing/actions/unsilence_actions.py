@@ -34,6 +34,7 @@ class UnsilenceAction(Action):
     render_options: RenderOptions
 
     temp_dir: Path = Field(Path(".tmp"), exclude=True)
+    separated_audio: Path | None = Field(None, exclude=True)
 
     @pydantic.field_serializer("unsilence_class")
     def serialize_unsilence_class(
@@ -89,7 +90,11 @@ class UnsilenceAction(Action):
         u = self.unsilence_class(input_file, **init_additional_options)
 
         detection_start = time.perf_counter()
-        intervals = u.detect_silence(**self.detect_silence_options, **detect_additional_options)
+        intervals = u.detect_silence(
+            **self.detect_silence_options,
+            **detect_additional_options,
+            separated_audio=self.separated_audio,
+        )
         detection_end = time.perf_counter()
 
         time_savings_estimation = u.estimate_time(
