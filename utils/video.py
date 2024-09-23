@@ -12,7 +12,7 @@ from typing import cast
 import orjson
 from ffmpeg import FFmpegError
 
-from configs import TQDM_LOGGING_INTERVAL
+from configs import NVENC_MAX_CONCURRENT_SESSIONS, TQDM_LOGGING_INTERVAL
 from utils.fixed_ffmpeg import FixedFFmpeg
 from utils.pathtools import split_filename_ext
 from utils.progress_bar import ProgressBar, setup_progress_for_ffmpeg
@@ -194,7 +194,7 @@ def get_video_resolution(filename: str | Path) -> tuple[int, int]:
     return stream["width"], stream["height"]
 
 
-def ensure_nvenc_correct(use_nvenc: bool, force_video_codec: str | None):
+def ensure_nvenc_correct(use_nvenc: bool, force_video_codec: str | None, threads: int):
     if not use_nvenc:
         return
 
@@ -204,6 +204,9 @@ def ensure_nvenc_correct(use_nvenc: bool, force_video_codec: str | None):
     allowed_codecs = ("hevc_nvenc", "h264_nvenc", "av1_nvenc")  # todo: calculate based on gpu
     if force_video_codec not in allowed_codecs:
         raise ValueError(f"Video codec must be in {allowed_codecs} if you use nvenc, got {force_video_codec}")
+
+    if threads > NVENC_MAX_CONCURRENT_SESSIONS:
+        raise ValueError(f"nvenc supports maximum {NVENC_MAX_CONCURRENT_SESSIONS} cuncurrent sessions")
 
 
 def resolve_media_codec(
@@ -324,7 +327,7 @@ def replace_audio_in_video(
     if threads > 1 and temp_dir is None:
         raise ValueError("You need to set temp_dir if you want to use multithreading")
 
-    ensure_nvenc_correct(use_nvenc, video_codec)
+    ensure_nvenc_correct(use_nvenc, video_codec, threads)
 
     if use_nvenc:
         logger.info("Using nvenc")

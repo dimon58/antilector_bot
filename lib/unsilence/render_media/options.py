@@ -48,5 +48,5 @@ class RenderOptions(BaseModel):
 
     @model_validator(mode="after")
     def check_nvenc_settings(self):
-        ensure_nvenc_correct(self.use_nvenc, self.force_video_codec)
+        ensure_nvenc_correct(self.use_nvenc, self.force_video_codec, self.threads)
         return self

@@ -16,10 +16,12 @@ FORCE_AUDIO_CODEC = "aac"
 
 VAD_MODEL = silero_vad.load_silero_vad(onnx=True)
 SILERO_VAD_SAMPLE_RATE = 16000
+# https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new
+NVENC_MAX_CONCURRENT_SESSIONS = 8
 REPLACE_AUDIO_IN_VIDEO_THREADS = 2
 # Больше 8 потоков будут проблемы с nvenc
 # Кодеки на cpu сами по себе поточны, так что это имеет смысл только с nvenc
-UNSILENCE_DEFAULT_CPU_COUNT = min(max(1, os.cpu_count() - 1), 8)
+UNSILENCE_DEFAULT_CPU_COUNT = min(max(1, os.cpu_count() - 1), NVENC_MAX_CONCURRENT_SESSIONS)
 # Если менять в разумных пределах, то время работы почти не зависит от этого параметра
 MAX_DEEPFILTERNET_CHUNK_SIZE_BYTES = 1 * 2**30
 
