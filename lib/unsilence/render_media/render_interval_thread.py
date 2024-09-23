@@ -217,7 +217,54 @@ class RenderIntervalThread(threading.Thread):
 
         return audio_filter
 
-    def __generate_command(  # noqa: PLR0912
+    def _resolve_filter(self, fade: str, interval: Interval, minimum_interval_duration: float) -> dict[str, str]:
+
+        additional_output_options = {}
+
+        current_speed, current_volume = self.__get_speed_and_volume(interval, minimum_interval_duration)
+
+        complex_filter_components: list[str] = []
+
+        # ----------------- video filter ----------------- #
+        video_filter = self.__get_video_filter(current_speed)
+        if video_filter is not None:
+            complex_filter_components.append(video_filter)
+
+        # ----------------- audio filter ----------------- #
+        audio_filter = self.__get_audio_filter(fade, current_speed, current_volume)
+        if audio_filter is not None:
+            complex_filter_components.append(audio_filter)
+
+        # ----------------- complex filter ----------------- #
+
+        if len(complex_filter_components) > 0:
+            complex_filter = ";".join(complex_filter_components)
+            additional_output_options["filter_complex"] = complex_filter
+            logger.info("Using complex filter %s", complex_filter)
+        else:
+            logger.info("Not using complex filter")
+
+        output_map = []
+        if not self._render_options.audio_only:
+            if video_filter is not None:
+                output_map.append("[v]")
+            else:
+                output_map.append("0:v")
+                if self._render_options.allow_copy_video_stream:
+                    additional_output_options["c:v"] = "copy"
+
+        if audio_filter is not None:
+            output_map.append("[a]")
+        else:
+            output_map.append("0:a")
+            if self._render_options.allow_copy_audio_stream:
+                additional_output_options["c:a"] = "copy"
+
+        additional_output_options["map"] = output_map
+
+        return additional_output_options
+
+    def __generate_command(
         self, interval_output_file: Path, interval: Interval, apply_filter: bool, minimum_interval_duration: float
     ) -> FixedFFmpeg:
         """
@@ -255,47 +302,11 @@ class RenderIntervalThread(threading.Thread):
         )
 
         if apply_filter:
-
-            current_speed, current_volume = self.__get_speed_and_volume(interval, minimum_interval_duration)
-
-            complex_filter_components: list[str] = []
-
-            # ----------------- video filter ----------------- #
-            video_filter = self.__get_video_filter(current_speed)
-            if video_filter is not None:
-                complex_filter_components.append(video_filter)
-
-            # ----------------- audio filter ----------------- #
-            audio_filter = self.__get_audio_filter(fade, current_speed, current_volume)
-            if audio_filter is not None:
-                complex_filter_components.append(audio_filter)
-
-            # ----------------- complex filter ----------------- #
-
-            if len(complex_filter_components) > 0:
-                complex_filter = ";".join(complex_filter_components)
-                output_options["filter_complex"] = complex_filter
-                logger.debug("Using complex filter %s", complex_filter)
-            else:
-                logger.debug("Not using complex filter")
-
-            output_map = []
-            if not self._render_options.audio_only:
-                if video_filter is not None:
-                    output_map.append("[v]")
-                else:
-                    output_map.append("0:v")
-                    if self._render_options.allow_copy_video_stream:
-                        output_options["c:v"] = "copy"
-
-            if audio_filter is not None:
-                output_map.append("[a]")
-            else:
-                output_map.append("0:a")
-                if self._render_options.allow_copy_audio_stream:
-                    output_options["c:a"] = "copy"
-
-            output_options["map"] = output_map
+            output_options |= self._resolve_filter(
+                fade=fade,
+                interval=interval,
+                minimum_interval_duration=minimum_interval_duration,
+            )
 
         else:
             if fade != "":
@@ -308,7 +319,7 @@ class RenderIntervalThread(threading.Thread):
                 output_options["c:v"] = "copy"
 
         if self._render_options.audio_only:
-            ffmpeg = ffmpeg.option("-v")
+            ffmpeg = ffmpeg.option("-vn")
 
         if self._render_options.force_video_codec is not None and output_options.get("c:v") != "copy":
             output_options["c:v"] = self._render_options.force_video_codec
