@@ -25,7 +25,8 @@ UNSILENCE_DEFAULT_CPU_COUNT = min(max(1, os.cpu_count() - 1), NVENC_MAX_CONCURRE
 # Если менять в разумных пределах, то время работы почти не зависит от этого параметра
 MAX_DEEPFILTERNET_CHUNK_SIZE_BYTES = 1 * 2**30
 
-TQDM_LOGGING_INTERVAL = 3
+UNSILENCE_MIN_INTERVAL_LENGTH_FOR_LOGGING = 0
+TQDM_LOGGING_INTERVAL = 5
 
 DEBUG = False
 #: Корень проекта

@@ -8,6 +8,7 @@ from types import SimpleNamespace
 
 from ffmpeg import FFmpegError
 
+from configs import UNSILENCE_MIN_INTERVAL_LENGTH_FOR_LOGGING
 from utils.fixed_ffmpeg import FixedFFmpeg
 from utils.progress_bar import setup_progress_for_ffmpeg
 
@@ -117,12 +118,17 @@ class RenderIntervalThread(threading.Thread):
         """
 
         ffmpeg = self.__generate_command(interval_output_file, interval, apply_filter, minimum_interval_duration)
-        setup_progress_for_ffmpeg(
-            ffmpeg,
-            interval.duration,
-            f"[task {self.thread_id}] Rendering interval"
-            f" {task_id + 1}/{total_tasks} {{{interval.start}, {interval.end}}}",
-        )
+
+        # Очень часто длина интервалов меньше нескольких секунд
+        # Их логирование только засоряет поток
+        # Поэтому логируем только достаточно длинные
+        if interval.duration >= UNSILENCE_MIN_INTERVAL_LENGTH_FOR_LOGGING:
+            setup_progress_for_ffmpeg(
+                ffmpeg,
+                interval.duration,
+                f"[task {self.thread_id}] Rendering interval"
+                f" {task_id + 1}/{total_tasks} {{{interval.start}, {interval.end}}}",
+            )
 
         try:
             ffmpeg.execute()
@@ -327,12 +333,6 @@ class RenderIntervalThread(threading.Thread):
         logger.debug(
             "Rendering interval {%s, %s} using codec %s", interval.start, interval.end, output_options.get("c:v")
         )
-
-        # if self._render_options.can_copy_video:
-        #     logger.debug("Coping video stream for interval %s", interval)
-        #     command.extend(["-c:v", "copy"])
-        # else:
-        #     logger.info("Transcoding video stream to FFmpeg choice for interval %s", interval)
 
         return ffmpeg.output(interval_output_file, output_options)
 
