@@ -166,6 +166,9 @@ class RenderIntervalThread(threading.Thread):
         fade_curve: str,
     ) -> str:
 
+        interval_in_fade_duration = min(interval_in_fade_duration, total_duration / 2)
+        interval_out_fade_duration = min(interval_out_fade_duration, total_duration / 2)
+
         res = []
 
         if interval_in_fade_duration != 0.0:
