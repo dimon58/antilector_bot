@@ -33,6 +33,7 @@ class ProgressBar:
         self._set_total_on_close = set_total_on_close
 
     def _setup_tqdm(self, total: float) -> None:
+        logger.info("Started %s", self._desc)
         self._tqdm = LoggingTQDM(
             total=total,
             desc=self._desc,
@@ -63,7 +64,6 @@ class ProgressBar:
 
     def update_unsilence(self, current: float, total: float) -> None:
         if self._tqdm is None:
-            logger.info("Started %s", self._desc)
             self._setup_tqdm(total)
 
         self.update(current)
