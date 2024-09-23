@@ -1,4 +1,5 @@
 import logging
+import time
 from pathlib import Path
 from typing import Any, Literal, Self
 
@@ -15,6 +16,8 @@ from tools.video_processing.vad.vad_unsilence import Vad
 from utils.misc import find_subclass
 from utils.progress_bar import ProgressBar
 
+DETECTION_TIME_KEY = "detection_time"
+RENDERING_TIME_KEY = "rendering_time"
 TIME_SAVINGS_ESTIMATION_KEY = "time_savings_estimation"
 TIME_SAVINGS_REAL_KEY = "time_savings_real"
 
@@ -85,7 +88,9 @@ class UnsilenceAction(Action):
         # ----------------- Detecting ----------------- #
         u = self.unsilence_class(input_file, **init_additional_options)
 
+        detection_start = time.perf_counter()
         intervals = u.detect_silence(**self.detect_silence_options, **detect_additional_options)
+        detection_end = time.perf_counter()
 
         time_savings_estimation = u.estimate_time(
             audible_speed=self.render_options.audible_speed,
@@ -98,6 +103,7 @@ class UnsilenceAction(Action):
         render_progress = ProgressBar("Rendering intervals", mininterval=TQDM_LOGGING_INTERVAL)
         concat_progress = ProgressBar("Concatenating intervals", mininterval=TQDM_LOGGING_INTERVAL)
 
+        rendering_start = time.perf_counter()
         u.render_media(
             output_file,
             temp_dir=self.temp_dir,
@@ -105,11 +111,14 @@ class UnsilenceAction(Action):
             on_render_progress_update=render_progress.update_unsilence,
             on_concat_progress_update=concat_progress.update_unsilence,
         )
+        rendering_end = time.perf_counter()
 
         time_savings_real = calculate_time_savings(input_file, output_file)
         logger.info("Got time savings\n%s", pretty_time_estimate(time_savings_real))
 
         return {
+            DETECTION_TIME_KEY: detection_end - detection_start,
+            RENDERING_TIME_KEY: rendering_end - rendering_start,
             TIME_SAVINGS_ESTIMATION_KEY: time_savings_estimation,
             TIME_SAVINGS_REAL_KEY: time_savings_real,
         }

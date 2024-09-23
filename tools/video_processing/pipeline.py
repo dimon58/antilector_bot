@@ -131,6 +131,7 @@ class VideoPipeline(pydantic.BaseModel):
             total_time=pipeline_end - pipeline_start,
             extract_audio_stats=StepStatistics(
                 step=0,
+                step_name="extract audio",
                 time=extract_audio_end - extract_audio_start,
                 action_stats=extract_audio_stats,
                 nisqa=None,
@@ -140,6 +141,7 @@ class VideoPipeline(pydantic.BaseModel):
             replacing_audio_time=replacing_audio_end - replacing_audio_start,
             unsilence_stats=StepStatistics(
                 step=self.audio_pipeline.get_steps_count(),
+                step_name="unsilence",
                 time=unsilence_end - unsilence_start,
                 action_stats=unsilence_stats,
                 nisqa=unsilence_nisqa,

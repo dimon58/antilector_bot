@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class StepStatistics(pydantic.BaseModel):
     step: int
+    step_name: str
     time: float
     action_stats: ActionStatsType | None = None
     nisqa: NisqaMetrics | None = None
@@ -61,7 +62,7 @@ class AudioPipeline(pydantic.BaseModel):
         if len(self.pipeline) == 0:
             raise ValueError("No actions defined")
 
-        input_stats = StepStatistics(step=0, time=0, rms_db=measure_rms_db_from_file(input_file))
+        input_stats = StepStatistics(step=0, step_name="input", time=0, rms_db=measure_rms_db_from_file(input_file))
         pipeline_stats = [input_stats]
 
         if nisqa_model is not None:
@@ -79,6 +80,7 @@ class AudioPipeline(pydantic.BaseModel):
 
             step_stats = StepStatistics(
                 step=step,
+                step_name=action.__class__.__name__,
                 time=end - start,
                 action_stats=action_stats,
                 rms_db=measure_rms_db_from_file(input_file),
@@ -96,6 +98,7 @@ class AudioPipeline(pydantic.BaseModel):
 
         final_stats = StepStatistics(
             step=len(self.pipeline),
+            step_name=self.pipeline[-1].__class__.__name__,
             time=end - start,
             action_stats=action_stats,
             rms_db=measure_rms_db_from_file(output_file),

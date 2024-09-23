@@ -324,6 +324,10 @@ class RenderIntervalThread(threading.Thread):
         if self._render_options.force_video_codec is not None and output_options.get("c:v") != "copy":
             output_options["c:v"] = self._render_options.force_video_codec
 
+        logger.debug(
+            "Rendering interval {%s, %s} using codec %s", interval.start, interval.end, output_options.get("c:v")
+        )
+
         # if self._render_options.can_copy_video:
         #     logger.debug("Coping video stream for interval %s", interval)
         #     command.extend(["-c:v", "copy"])
