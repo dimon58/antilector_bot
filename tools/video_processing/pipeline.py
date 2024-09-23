@@ -44,19 +44,19 @@ class VideoPipeline(pydantic.BaseModel):
 
         if self.use_nvenc is not None:
             logger.info("Using nvenc for unsilence")
-            self.unsilence_action.use_nvenc = self.use_nvenc
+            self.unsilence_action.render_options.use_nvenc = self.use_nvenc
 
         if self.force_video_codec is not None:
             logger.info("Encoding video using %s for unsilence", self.force_video_codec)
-            self.unsilence_action.force_video_codec = self.force_video_codec
+            self.unsilence_action.render_options.force_video_codec = self.force_video_codec
 
             if self.force_transcode_video:
                 logger.info("Allowing copy video stream for unsilence")
-                self.unsilence_action.allow_copy_video_stream = True
+                self.unsilence_action.render_options.allow_copy_video_stream = True
 
         if self.force_audio_codec is not None and self.force_transcode_audio:
             logger.info("Allowing copy audio stream for unsilence")
-            self.unsilence_action.allow_copy_audio_stream = True
+            self.unsilence_action.render_options.allow_copy_audio_stream = True
 
         return self
 

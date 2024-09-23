@@ -12,6 +12,7 @@ from utils.fixed_ffmpeg import FixedFFmpeg
 from utils.progress_bar import setup_progress_for_ffmpeg
 
 from ..intervals.interval import Interval
+from .options import RenderOptions
 
 # FFMpeg не позволяет делать скорость аудио меньше 0.5 или больше 100
 # https://ffmpeg.org/ffmpeg-filters.html#atempo
@@ -30,7 +31,7 @@ class RenderIntervalThread(threading.Thread):
         self,
         thread_id: int,
         input_file: Path,
-        render_options: SimpleNamespace,
+        render_options: RenderOptions,
         task_queue: queue.Queue,
         thread_lock: threading.Lock,
         on_task_completed: Callable[[SimpleNamespace, bool], None],
@@ -230,11 +231,13 @@ class RenderIntervalThread(threading.Thread):
         input_options = {"ss": interval.start, "to": interval.end}
 
         if self._render_options.use_nvenc:
-            logger.info("Using nvenc")
+            logger.debug("Using nvenc")
             input_options |= {
                 "hwaccel": "cuda",
                 "hwaccel_output_format": "cuda",
             }
+        else:
+            logger.debug("Encoding on cpu")
 
         ffmpeg = FixedFFmpeg().input(self._input_file, input_options).option("ignore_unknown").option("y")
 
@@ -272,9 +275,9 @@ class RenderIntervalThread(threading.Thread):
             if len(complex_filter_components) > 0:
                 complex_filter = ";".join(complex_filter_components)
                 output_options["filter_complex"] = complex_filter
-                logger.info("Using complex filter %s", complex_filter)
+                logger.debug("Using complex filter %s", complex_filter)
             else:
-                logger.info("Not using complex filter")
+                logger.debug("Not using complex filter")
 
             output_map = []
             if not self._render_options.audio_only:

@@ -7,11 +7,12 @@ import uuid
 from pathlib import Path
 from types import SimpleNamespace
 
-from utils.video import concat_media_files, ensure_nvenc_correct
+from utils.video import concat_media_files
 
 from .._typing import UpdateCallbackType
 from ..intervals.intervals import Intervals
 from ..render_media.render_interval_thread import RenderIntervalThread
+from .options import RenderOptions
 
 logger = logging.getLogger(__name__)
 
@@ -34,22 +35,7 @@ class MediaRenderer:
         input_file: Path,
         output_file: Path,
         intervals: Intervals,
-        audio_only: bool = False,
-        audible_speed: float = 1,
-        silent_speed: float = 6,
-        audible_volume: float = 1,
-        silent_volume: float = 0.5,
-        drop_corrupted_intervals: bool = False,
-        check_intervals: bool = False,
-        minimum_interval_duration: float = 0.25,
-        interval_in_fade_duration: float = 0.01,
-        interval_out_fade_duration: float = 0.01,
-        fade_curve: str = "tri",
-        threads: int = 2,
-        use_nvenc: bool = False,
-        force_video_codec: str | None = None,
-        allow_copy_video_stream: bool = False,
-        allow_copy_audio_stream: bool = False,
+        render_options: RenderOptions,
         on_render_progress_update: UpdateCallbackType | None = None,
         on_concat_progress_update: UpdateCallbackType | None = None,
     ) -> None:
@@ -59,30 +45,12 @@ class MediaRenderer:
         :param input_file: The file that should be processed
         :param output_file: Where the processed file should be saved
         :param intervals: The Intervals that should be processed
-        :param audio_only: Whether the output should be audio only
-        :param audible_speed: The speed at which the audible intervals get played back at
-        :param silent_speed: The speed at which the silent intervals get played back at
-        :param audible_volume: The volume at which the audible intervals get played back at
-        :param silent_volume: The volume at which the silent intervals get played back at
-        :param drop_corrupted_intervals: Whether corrupted video intervals should be discarded or tried to recover
-        :param check_intervals: Need to check corrupted intervals
-        :param minimum_interval_duration: Minimum duration of result interval
-        :param interval_in_fade_duration: Fade duration at interval start
-        :param interval_out_fade_duration: Fade duration at interval end
-        :param fade_curve: Set curve for fade transition. (https://ffmpeg.org/ffmpeg-filters.html#afade-1)
-        :param threads: Number of threads to render simultaneously (int > 0)
-        :param use_nvenc: Use nvenc for transcoding
-        :param force_video_codec: Video codec to use for rendering
-        :param allow_copy_video_stream: Allow copy video stream if not filter applied.
-            If input and output codec have different params output video may have problems.
-            It should be controlled in calling code.
-        :param allow_copy_audio_stream: Allow copy audio stream if not filter applied.
+        :param render_options: Render options
         :param on_render_progress_update: Function that should be called on render progress update
             (called like: func(current, total))
         :param on_concat_progress_update: Function that should be called on concat progress update
             (called like: func(current, total))
         """
-        ensure_nvenc_correct(use_nvenc, force_video_codec)
 
         input_file = Path(input_file).absolute()
         output_file = Path(output_file).absolute()
@@ -99,28 +67,6 @@ class MediaRenderer:
         # else:
         #     original_codec = None
         # original_codec: str | None
-
-        render_options = SimpleNamespace(
-            audio_only=audio_only,
-            audible_speed=audible_speed,
-            silent_speed=silent_speed,
-            audible_volume=audible_volume,
-            silent_volume=silent_volume,
-            drop_corrupted_intervals=drop_corrupted_intervals,
-            check_intervals=check_intervals,
-            minimum_interval_duration=minimum_interval_duration,
-            interval_in_fade_duration=interval_in_fade_duration,
-            interval_out_fade_duration=interval_out_fade_duration,
-            fade_curve=fade_curve,
-            # Нужно для оптимизации
-            use_nvenc=use_nvenc,
-            force_video_codec=force_video_codec,
-            allow_copy_video_stream=allow_copy_video_stream,
-            allow_copy_audio_stream=allow_copy_audio_stream,
-            # can_copy_audio_stream=can_copy_media_stream(input_file, output_file, MediaStreamType.AUDIO),
-            # can_copy_video=can_copy_video,
-            # original_codec=original_codec,
-        )
 
         intervals = intervals.remove_short_intervals_from_start(
             render_options.audible_speed, render_options.silent_speed
@@ -159,14 +105,18 @@ class MediaRenderer:
 
             thread_lock.release()
 
-        logger.info("Spawning %s threads for rendering intervals", threads)
-        for i in range(threads):
+        logger.info("Spawning %s threads for rendering intervals", render_options.threads)
+        for i in range(render_options.threads):
             thread = RenderIntervalThread(
                 i, input_file, render_options, task_queue, thread_lock, on_task_completed=handle_thread_completed_task
             )
             thread.start()
             thread_list.append(thread)
 
+        if render_options.use_nvenc:
+            logger.info("Using nvenc")
+        else:
+            logger.info("Encoding on cpu")
         for i, interval in enumerate(intervals.intervals):
             current_file_name = f"out_{i}{output_file.suffix}"
             current_path = video_temp_path / current_file_name

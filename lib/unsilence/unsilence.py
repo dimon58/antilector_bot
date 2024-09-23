@@ -6,10 +6,12 @@ from ._typing import UpdateCallbackType
 from .detect_silence.detect_silence import detect_silence
 from .intervals.intervals import Intervals
 from .intervals.time_calculations import TimeData, calculate_time
-from .render_media.media_renderer import MediaRenderer
+from .render_media.media_renderer import MediaRenderer, RenderOptions
 from .tools.ffmpeg_version import FFMpegStatus, is_ffmpeg_usable
 
 logger = logging.getLogger(__name__)
+
+default_render_options = RenderOptions()
 
 
 class Unsilence:
@@ -105,22 +107,7 @@ class Unsilence:
         self,
         output_file: Path,
         temp_dir: Path = Path(".tmp"),
-        audio_only: bool = False,
-        audible_speed: float = 1,
-        silent_speed: float = 6,
-        audible_volume: float = 1,
-        silent_volume: float = 0.5,
-        drop_corrupted_intervals: bool = False,
-        check_intervals: bool = False,
-        minimum_interval_duration: float = 0.25,
-        interval_in_fade_duration: float = 0.01,
-        interval_out_fade_duration: float = 0.01,
-        fade_curve: str = "tri",
-        threads: int = 2,
-        use_nvenc: bool = False,
-        allow_copy_video_stream: bool = False,
-        allow_copy_audio_stream: bool = False,
-        force_video_codec: str | None = None,
+        render_options: RenderOptions = default_render_options,
         on_render_progress_update: UpdateCallbackType | None = None,
         on_concat_progress_update: UpdateCallbackType | None = None,
     ) -> None:
@@ -142,32 +129,10 @@ class Unsilence:
             input_file=self._input_file,
             output_file=output_file,
             intervals=self._intervals,
-            audio_only=audio_only,
-            audible_speed=audible_speed,
-            silent_speed=silent_speed,
-            audible_volume=audible_volume,
-            silent_volume=silent_volume,
-            drop_corrupted_intervals=drop_corrupted_intervals,
-            check_intervals=check_intervals,
-            minimum_interval_duration=minimum_interval_duration,
-            interval_in_fade_duration=interval_in_fade_duration,
-            interval_out_fade_duration=interval_out_fade_duration,
-            fade_curve=fade_curve,
-            threads=threads,
-            use_nvenc=use_nvenc,
-            force_video_codec=force_video_codec,
-            allow_copy_video_stream=allow_copy_video_stream,
-            allow_copy_audio_stream=allow_copy_audio_stream,
+            render_options=render_options,
             on_render_progress_update=on_render_progress_update,
             on_concat_progress_update=on_concat_progress_update,
         )
 
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
-
-    def cleanup(self) -> None:
-        """
-        Cleans up the temporary directories, called automatically when the program ends
-
-        :return: None
-        """

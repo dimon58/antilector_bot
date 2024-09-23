@@ -5,9 +5,10 @@ from typing import Any, Literal, Self
 import pydantic
 from pydantic import ConfigDict, Field, model_validator
 
-from configs import FORCE_VIDEO_CODEC, TQDM_LOGGING_INTERVAL, UNSILENCE_DEFAULT_CPU_COUNT, USE_NVENC, VAD_MODEL
+from configs import TQDM_LOGGING_INTERVAL, VAD_MODEL
 from lib import unsilence
 from lib.unsilence.pretty_time_estimate import pretty_time_estimate
+from lib.unsilence.render_media.options import RenderOptions
 from tools.audio_processing.actions.abstract import Action, ActionStatsType
 from tools.video_processing.vad.calculate_time_savings import calculate_time_savings
 from tools.video_processing.vad.vad_unsilence import Vad
@@ -27,17 +28,7 @@ class UnsilenceAction(Action):
 
     unsilence_class: type[unsilence.Unsilence]
     detect_silence_options: dict[str, Any]
-    render_options: dict[str, Any]
-
-    threads: int = UNSILENCE_DEFAULT_CPU_COUNT
-    use_nvenc: bool = USE_NVENC
-    force_video_codec: str | None = FORCE_VIDEO_CODEC
-
-    # Можно ли копировать видеопоток при рендеринге.
-    # Стоит давать разрешение, только если будут
-    # одинаковы все параметры кодирования входного и выходного файлов.
-    allow_copy_video_stream: bool = False
-    allow_copy_audio_stream: bool = False
+    render_options: RenderOptions
 
     temp_dir: Path = Field(Path(".tmp"), exclude=True)
 
@@ -97,8 +88,8 @@ class UnsilenceAction(Action):
         intervals = u.detect_silence(**self.detect_silence_options, **detect_additional_options)
 
         time_savings_estimation = u.estimate_time(
-            audible_speed=self.render_options.get("audible_speed", 1),
-            silent_speed=self.render_options.get("silent_speed", 6),
+            audible_speed=self.render_options.audible_speed,
+            silent_speed=self.render_options.silent_speed,
         )
         logger.info("Estimated time savings\n%s", pretty_time_estimate(time_savings_estimation))
 
@@ -106,21 +97,13 @@ class UnsilenceAction(Action):
         logger.info("Rendering %s intervals", len(intervals.intervals))
         render_progress = ProgressBar("Rendering intervals", mininterval=TQDM_LOGGING_INTERVAL)
         concat_progress = ProgressBar("Concatenating intervals", mininterval=TQDM_LOGGING_INTERVAL)
-        render_additional_options = {
-            "on_render_progress_update": render_progress.update_unsilence,
-            "on_concat_progress_update": concat_progress.update_unsilence,
-        }
 
         u.render_media(
             output_file,
             temp_dir=self.temp_dir,
-            threads=self.threads,
-            use_nvenc=self.use_nvenc,
-            force_video_codec=self.force_video_codec,
-            allow_copy_video_stream=self.allow_copy_video_stream,
-            allow_copy_audio_stream=self.allow_copy_audio_stream,
-            **self.render_options,
-            **render_additional_options,
+            render_options=self.render_options,
+            on_render_progress_update=render_progress.update_unsilence,
+            on_concat_progress_update=concat_progress.update_unsilence,
         )
 
         time_savings_real = calculate_time_savings(input_file, output_file)
