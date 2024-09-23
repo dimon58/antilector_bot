@@ -8,6 +8,8 @@ import uuid
 from pathlib import Path
 from types import SimpleNamespace
 
+from utils.video import ensure_nvenc_correct
+
 from .._typing import UpdateCallbackType
 from ..intervals.intervals import Intervals
 from ..render_media.render_interval_thread import RenderIntervalThread
@@ -45,6 +47,8 @@ class MediaRenderer:
         interval_out_fade_duration: float = 0.01,
         fade_curve: str = "tri",
         threads: int = 2,
+        use_nvenc: bool = False,
+        force_video_codec: str | None = None,
         on_render_progress_update: UpdateCallbackType | None = None,
         on_concat_progress_update: UpdateCallbackType | None = None,
     ) -> None:
@@ -66,11 +70,15 @@ class MediaRenderer:
         :param interval_out_fade_duration: Fade duration at interval end
         :param fade_curve: Set curve for fade transition. (https://ffmpeg.org/ffmpeg-filters.html#afade-1)
         :param threads: Number of threads to render simultaneously (int > 0)
+        :param use_nvenc: Use nvenc for transcoding
+        :param force_video_codec: Video codec to use for rendering
         :param on_render_progress_update: Function that should be called on render progress update
             (called like: func(current, total))
         :param on_concat_progress_update: Function that should be called on concat progress update
             (called like: func(current, total))
         """
+        ensure_nvenc_correct(use_nvenc, force_video_codec)
+
         input_file = Path(input_file).absolute()
         output_file = Path(output_file).absolute()
 
@@ -100,6 +108,8 @@ class MediaRenderer:
             interval_out_fade_duration=interval_out_fade_duration,
             fade_curve=fade_curve,
             # Нужно для оптимизации
+            use_nvenc=use_nvenc,
+            force_video_codec=force_video_codec,
             # can_copy_audio_stream=can_copy_media_stream(input_file, output_file, MediaStreamType.AUDIO),
             # can_copy_video=can_copy_video,
             # original_codec=original_codec,

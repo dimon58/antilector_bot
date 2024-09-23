@@ -30,7 +30,7 @@ class VideoPipeline(pydantic.BaseModel):
     audio_pipeline: AudioPipeline
     unsilence_action: UnsilenceAction
 
-    use_cuda: bool = False
+    use_nvenc: bool | None = None
     force_video_codec: str | None = None
     force_audio_codec: str | None = None
     force_transcode_video: bool = False
@@ -72,7 +72,7 @@ class VideoPipeline(pydantic.BaseModel):
                 video_file=input_file,
                 audio_file=processed_audio_file,
                 output_file=processed_video_file,
-                use_nvenc=self.use_cuda,
+                use_nvenc=self.use_nvenc,
                 video_codec=self.force_video_codec,
                 audio_codec=self.force_audio_codec,
                 force_transcode_video=self.force_transcode_video,
@@ -84,6 +84,10 @@ class VideoPipeline(pydantic.BaseModel):
             logger.info("Unsilencing")
             unsilence_start = time.perf_counter()
             self.unsilence_action.temp_dir = tempdir / "unsilence"
+            if self.use_nvenc is not None:
+                self.unsilence_action.use_nvenc = self.use_nvenc
+            if self.force_video_codec is not None:
+                self.unsilence_action.force_video_codec = self.force_video_codec
             unsilence_stats = self.unsilence_action.run(
                 input_file=processed_video_file,
                 output_file=output_file,

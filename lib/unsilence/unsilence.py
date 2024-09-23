@@ -117,6 +117,8 @@ class Unsilence:
         interval_out_fade_duration: float = 0.01,
         fade_curve: str = "tri",
         threads: int = 2,
+        use_nvenc: bool = False,
+        force_video_codec: str | None = None,
         on_render_progress_update: UpdateCallbackType | None = None,
         on_concat_progress_update: UpdateCallbackType | None = None,
     ) -> None:
@@ -150,6 +152,8 @@ class Unsilence:
             interval_out_fade_duration=interval_out_fade_duration,
             fade_curve=fade_curve,
             threads=threads,
+            use_nvenc=use_nvenc,
+            force_video_codec=force_video_codec,
             on_render_progress_update=on_render_progress_update,
             on_concat_progress_update=on_concat_progress_update,
         )

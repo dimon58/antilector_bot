@@ -5,7 +5,7 @@ from typing import Any, Literal, Self
 import pydantic
 from pydantic import ConfigDict, Field, model_validator
 
-from configs import TQDM_LOGGING_INTERVAL, UNSILENCE_DEFAULT_CPU_COUNT, VAD_MODEL
+from configs import FORCE_VIDEO_CODEC, TQDM_LOGGING_INTERVAL, UNSILENCE_DEFAULT_CPU_COUNT, USE_NVENC, VAD_MODEL
 from lib import unsilence
 from lib.unsilence.pretty_time_estimate import pretty_time_estimate
 from tools.audio_processing.actions.abstract import Action, ActionStatsType
@@ -29,7 +29,9 @@ class UnsilenceAction(Action):
     detect_silence_options: dict[str, Any]
     render_options: dict[str, Any]
 
-    threads: int = Field(UNSILENCE_DEFAULT_CPU_COUNT)
+    threads: int = UNSILENCE_DEFAULT_CPU_COUNT
+    use_nvenc: bool = USE_NVENC
+    force_video_codec: str | None = FORCE_VIDEO_CODEC
 
     temp_dir: Path = Field(Path(".tmp"), exclude=True)
 
@@ -107,6 +109,8 @@ class UnsilenceAction(Action):
             output_file,
             temp_dir=self.temp_dir,
             threads=self.threads,
+            use_nvenc=self.use_nvenc,
+            force_video_codec=self.force_video_codec,
             **self.render_options,
             **render_additional_options,
         )

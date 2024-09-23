@@ -216,7 +216,7 @@ class RenderIntervalThread(threading.Thread):
 
         return audio_filter
 
-    def __generate_command(
+    def __generate_command(  # noqa: PLR0912
         self, interval_output_file: Path, interval: Interval, apply_filter: bool, minimum_interval_duration: float
     ) -> FixedFFmpeg:
         """
@@ -227,12 +227,16 @@ class RenderIntervalThread(threading.Thread):
         :return: ffmpeg console command
         """
 
-        ffmpeg = (
-            FixedFFmpeg()
-            .input(self._input_file, {"ss": interval.start, "to": interval.end})
-            .option("ignore_unknown")
-            .option("y")
-        )
+        input_options = {"ss": interval.start, "to": interval.end}
+
+        if self._render_options.use_nvenc:
+            logger.info("Using nvenc")
+            input_options |= {
+                "hwaccel": "cuda",
+                "hwaccel_output_format": "cuda",
+            }
+
+        ffmpeg = FixedFFmpeg().input(self._input_file, input_options).option("ignore_unknown").option("y")
 
         output_options = {
             "vsync": 1,
@@ -294,6 +298,9 @@ class RenderIntervalThread(threading.Thread):
 
         if self._render_options.audio_only:
             ffmpeg = ffmpeg.option("-v")
+
+        if self._render_options.force_video_codec is not None:
+            output_options["c:v"] = self._render_options.force_video_codec
 
         # if self._render_options.can_copy_video:
         #     logger.debug("Coping video stream for interval %s", interval)
