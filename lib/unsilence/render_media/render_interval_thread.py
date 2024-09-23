@@ -282,24 +282,32 @@ class RenderIntervalThread(threading.Thread):
                     output_map.append("[v]")
                 else:
                     output_map.append("0:v")
+                    if self._render_options.allow_copy_video_stream:
+                        output_options["c:v"] = "copy"
 
             if audio_filter is not None:
                 output_map.append("[a]")
             else:
                 output_map.append("0:a")
+                if self._render_options.allow_copy_audio_stream:
+                    output_options["c:a"] = "copy"
 
             output_options["map"] = output_map
 
-        elif fade != "":
-            output_options["af"] = fade
+        else:
+            if fade != "":
+                output_options["af"] = fade
 
-            # if self._render_options.can_copy_audio_stream:
-            #     output_options["c:a"] = "copy"
+            elif self._render_options.allow_copy_audio_stream:
+                output_options["c:a"] = "copy"
+
+            if self._render_options.allow_copy_video_stream:
+                output_options["c:v"] = "copy"
 
         if self._render_options.audio_only:
             ffmpeg = ffmpeg.option("-v")
 
-        if self._render_options.force_video_codec is not None:
+        if self._render_options.force_video_codec is not None and output_options.get("c:v") != "copy":
             output_options["c:v"] = self._render_options.force_video_codec
 
         # if self._render_options.can_copy_video:

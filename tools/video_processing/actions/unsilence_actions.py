@@ -33,6 +33,12 @@ class UnsilenceAction(Action):
     use_nvenc: bool = USE_NVENC
     force_video_codec: str | None = FORCE_VIDEO_CODEC
 
+    # Можно ли копировать видеопоток при рендеринге.
+    # Стоит давать разрешение, только если будут
+    # одинаковы все параметры кодирования входного и выходного файлов.
+    allow_copy_video_stream: bool = False
+    allow_copy_audio_stream: bool = False
+
     temp_dir: Path = Field(Path(".tmp"), exclude=True)
 
     @pydantic.field_serializer("unsilence_class")
@@ -111,6 +117,8 @@ class UnsilenceAction(Action):
             threads=self.threads,
             use_nvenc=self.use_nvenc,
             force_video_codec=self.force_video_codec,
+            allow_copy_video_stream=self.allow_copy_video_stream,
+            allow_copy_audio_stream=self.allow_copy_audio_stream,
             **self.render_options,
             **render_additional_options,
         )

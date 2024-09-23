@@ -118,6 +118,8 @@ class Unsilence:
         fade_curve: str = "tri",
         threads: int = 2,
         use_nvenc: bool = False,
+        allow_copy_video_stream: bool = False,
+        allow_copy_audio_stream: bool = False,
         force_video_codec: str | None = None,
         on_render_progress_update: UpdateCallbackType | None = None,
         on_concat_progress_update: UpdateCallbackType | None = None,
@@ -154,6 +156,8 @@ class Unsilence:
             threads=threads,
             use_nvenc=use_nvenc,
             force_video_codec=force_video_codec,
+            allow_copy_video_stream=allow_copy_video_stream,
+            allow_copy_audio_stream=allow_copy_audio_stream,
             on_render_progress_update=on_render_progress_update,
             on_concat_progress_update=on_concat_progress_update,
         )

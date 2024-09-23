@@ -2,6 +2,7 @@ import logging
 import time
 from contextlib import AbstractContextManager
 from pathlib import Path
+from typing import Self
 
 import pydantic
 
@@ -35,6 +36,27 @@ class VideoPipeline(pydantic.BaseModel):
     force_audio_codec: str | None = None
     force_transcode_video: bool = False
     force_transcode_audio: bool = False
+
+    @pydantic.model_validator(mode="after")
+    def resolve_settings(self) -> Self:
+
+        if self.use_nvenc is not None:
+            logger.info("Using nvenc for unsilence")
+            self.unsilence_action.use_nvenc = self.use_nvenc
+
+        if self.force_video_codec is not None:
+            logger.info("Encoding video using %s for unsilence", self.force_video_codec)
+            self.unsilence_action.force_video_codec = self.force_video_codec
+
+            if self.force_transcode_video:
+                logger.info("Allowing copy video stream for unsilence")
+                self.unsilence_action.allow_copy_video_stream = True
+
+        if self.force_audio_codec is not None and self.force_transcode_audio:
+            logger.info("Allowing copy audio stream for unsilence")
+            self.unsilence_action.allow_copy_audio_stream = True
+
+        return self
 
     def run(
         self,
@@ -84,10 +106,6 @@ class VideoPipeline(pydantic.BaseModel):
             logger.info("Unsilencing")
             unsilence_start = time.perf_counter()
             self.unsilence_action.temp_dir = tempdir / "unsilence"
-            if self.use_nvenc is not None:
-                self.unsilence_action.use_nvenc = self.use_nvenc
-            if self.force_video_codec is not None:
-                self.unsilence_action.force_video_codec = self.force_video_codec
             unsilence_stats = self.unsilence_action.run(
                 input_file=processed_video_file,
                 output_file=output_file,

@@ -49,6 +49,8 @@ class MediaRenderer:
         threads: int = 2,
         use_nvenc: bool = False,
         force_video_codec: str | None = None,
+        allow_copy_video_stream: bool = False,
+        allow_copy_audio_stream: bool = False,
         on_render_progress_update: UpdateCallbackType | None = None,
         on_concat_progress_update: UpdateCallbackType | None = None,
     ) -> None:
@@ -72,6 +74,10 @@ class MediaRenderer:
         :param threads: Number of threads to render simultaneously (int > 0)
         :param use_nvenc: Use nvenc for transcoding
         :param force_video_codec: Video codec to use for rendering
+        :param allow_copy_video_stream: Allow copy video stream if not filter applied.
+            If input and output codec have different params output video may have problems.
+            It should be controlled in calling code.
+        :param allow_copy_audio_stream: Allow copy audio stream if not filter applied.
         :param on_render_progress_update: Function that should be called on render progress update
             (called like: func(current, total))
         :param on_concat_progress_update: Function that should be called on concat progress update
@@ -110,6 +116,8 @@ class MediaRenderer:
             # Нужно для оптимизации
             use_nvenc=use_nvenc,
             force_video_codec=force_video_codec,
+            allow_copy_video_stream=allow_copy_video_stream,
+            allow_copy_audio_stream=allow_copy_audio_stream,
             # can_copy_audio_stream=can_copy_media_stream(input_file, output_file, MediaStreamType.AUDIO),
             # can_copy_video=can_copy_video,
             # original_codec=original_codec,
