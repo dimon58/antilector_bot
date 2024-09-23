@@ -12,6 +12,7 @@ import torch
 import torchaudio
 from ffmpeg import FFmpegError
 
+from configs import TORCH_DEVICE, USE_CUDA
 from utils.fixed_ffmpeg import FixedFFmpeg
 from utils.pathtools import PathType
 from utils.progress_bar import setup_progress_for_ffmpeg
@@ -63,10 +64,13 @@ def read_audio(path: PathType, sample_rate: int | None = None) -> tuple[torch.Te
         wav = wav.mean(dim=0, keepdim=True)
 
     if sample_rate is not None and sr != sample_rate:
-        logger.info("Resampling from %s to %s", sr, sample_rate)
+        logger.info("Resampling on %s from %s to %s", "cuda" if USE_CUDA else "cpu", sr, sample_rate)
         transform = torchaudio.transforms.Resample(orig_freq=sr, new_freq=sample_rate)
 
-        wav = transform(wav)
+        if USE_CUDA:  # noqa: SIM108
+            wav = transform.to(TORCH_DEVICE)(wav.to(TORCH_DEVICE)).cpu()
+        else:
+            wav = transform(wav)
         sr = sample_rate
 
     return wav.squeeze(0), sr
