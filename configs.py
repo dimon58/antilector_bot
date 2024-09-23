@@ -16,6 +16,7 @@ FORCE_AUDIO_CODEC = "aac"
 
 VAD_MODEL = silero_vad.load_silero_vad(onnx=True)
 SILERO_VAD_SAMPLE_RATE = 16000
+REPLACE_AUDIO_IN_VIDEO_THREADS = 2
 UNSILENCE_DEFAULT_CPU_COUNT = max(1, os.cpu_count() - 1)
 # Если менять в разумных пределах, то время работы почти не зависит от этого параметра
 MAX_DEEPFILTERNET_CHUNK_SIZE_BYTES = 1 * 2**30

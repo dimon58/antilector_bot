@@ -1,14 +1,13 @@
 import logging
 import queue
 import shutil
-import subprocess
 import threading
 import time
 import uuid
 from pathlib import Path
 from types import SimpleNamespace
 
-from utils.video import ensure_nvenc_correct
+from utils.video import concat_media_files, ensure_nvenc_correct
 
 from .._typing import UpdateCallbackType
 from ..intervals.intervals import Intervals
@@ -216,32 +215,14 @@ class MediaRenderer:
             (called like function(current, total))
         :return: None
         """
-        total_files = len(file_list)
 
-        with concat_file.open("w+") as file:
-            lines = [f"file {interval_file.name}\n" for interval_file in file_list]
-            file.writelines(lines)
-
-        command = [
-            "ffmpeg",
-            "-f",
-            "concat",
-            "-safe",
-            "0",
-            "-i",
-            f"{concat_file.as_posix()}",
-            "-c",
-            "copy",
-            "-y",
-            "-loglevel",
-            "verbose",
-            f"{output_file.as_posix()}",
-        ]
-
-        console_output = subprocess.Popen(  # noqa: S603
-            command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+        console_output = concat_media_files(
+            input_files=file_list,
+            output_file=output_file,
+            concat_file=concat_file,
         )
 
+        total_files = len(file_list)
         current_file = 0
         for line in console_output.stdout:
             if "Auto-inserting" in line and update_concat_progress is not None:

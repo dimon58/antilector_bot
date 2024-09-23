@@ -37,6 +37,8 @@ class VideoPipeline(pydantic.BaseModel):
     force_transcode_video: bool = False
     force_transcode_audio: bool = False
 
+    replace_audio_in_video_threads: int = 1
+
     @pydantic.model_validator(mode="after")
     def resolve_settings(self) -> Self:
 
@@ -90,6 +92,8 @@ class VideoPipeline(pydantic.BaseModel):
             replacing_audio_start = time.perf_counter()
             _, ext = split_filename_ext(output_file)
             processed_video_file = tempdir / f"processed_audio.{ext}"
+            replace_audio_in_video_temp_dir = tempdir / "replace_audio_in_video"
+            replace_audio_in_video_temp_dir.mkdir(exist_ok=True, parents=True)
             replace_audio_in_video(
                 video_file=input_file,
                 audio_file=processed_audio_file,
@@ -99,6 +103,8 @@ class VideoPipeline(pydantic.BaseModel):
                 audio_codec=self.force_audio_codec,
                 force_transcode_video=self.force_transcode_video,
                 force_transcode_audio=self.force_transcode_audio,
+                threads=self.replace_audio_in_video_threads,
+                temp_dir=replace_audio_in_video_temp_dir,
             )
             replacing_audio_end = time.perf_counter()
 
