@@ -1,3 +1,5 @@
+import warnings
+
 from pydantic import BaseModel, Field, PositiveInt, model_validator
 
 from utils.video import ensure_nvenc_correct
@@ -33,6 +35,11 @@ class RenderOptions(BaseModel):
     # Можно ли копировать видеопоток при рендеринге.
     # Стоит давать разрешение, только если будут
     # одинаковы все параметры кодирования входного и выходного файлов.
+    # ---------
+    # Может появиться соблазн добавить копирование видео- и аудио-потоков
+    # Я попробовал и выяснилось, что перекодирование обязательно, иначе появляются артефакты в видео
+    # Скорее всего образка видео и копирование вместе работать не могут
+    # Для видеофайла mp4 с кодеком hevc у меня были проблемы почти со всеми интервалами
     allow_copy_video_stream: bool = Field(
         False,
         description="Allow copy video stream if not filter applied. "
@@ -49,4 +56,13 @@ class RenderOptions(BaseModel):
     @model_validator(mode="after")
     def check_nvenc_settings(self):
         ensure_nvenc_correct(self.use_nvenc, self.force_video_codec, self.threads)
+        return self
+
+    @model_validator(mode="after")
+    def check_allow_copy_settings(self):
+        if self.allow_copy_audio_stream:
+            warnings.warn("Using allow_copy_audio_stream=True leads to artifacts in the audio", stacklevel=100)
+        if self.allow_copy_video_stream:
+            warnings.warn("Using allow_copy_video_stream=True leads to artifacts in the video", stacklevel=100)
+
         return self

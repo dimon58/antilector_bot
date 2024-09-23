@@ -50,13 +50,15 @@ class VideoPipeline(pydantic.BaseModel):
             logger.info("Encoding video using %s for unsilence", self.force_video_codec)
             self.unsilence_action.render_options.force_video_codec = self.force_video_codec
 
-            if self.force_transcode_video:
-                logger.info("Allowing copy video stream for unsilence")
-                self.unsilence_action.render_options.allow_copy_video_stream = True
+            # Копирование приводит к артефактам при обрезке и склейке
+            # if self.force_transcode_video:
+            #     logger.info("Allowing copy video stream for unsilence")
+            #     self.unsilence_action.render_options.allow_copy_video_stream = True
 
-        if self.force_audio_codec is not None and self.force_transcode_audio:
-            logger.info("Allowing copy audio stream for unsilence")
-            self.unsilence_action.render_options.allow_copy_audio_stream = True
+        # Копирование приводит к артефактам при обрезке и склейке
+        # if self.force_audio_codec is not None and self.force_transcode_audio:
+        #     logger.info("Allowing copy audio stream for unsilence")
+        #     self.unsilence_action.render_options.allow_copy_audio_stream = True
 
         return self
 
