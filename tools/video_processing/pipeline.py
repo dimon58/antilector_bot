@@ -11,7 +11,7 @@ from tools.audio_processing.actions.ffmpeg_actions import ExtractAudioFromVideo
 from tools.audio_processing.pipeline import AudioPipeline, AudioPipelineStatistics, StepStatistics
 from utils.audio import measure_volume, read_audio
 from utils.pathtools import split_filename_ext
-from utils.video import replace_audio_in_video
+from utils.video.modify import replace_audio_in_video
 
 from .actions.unsilence_actions import UnsilenceAction
 

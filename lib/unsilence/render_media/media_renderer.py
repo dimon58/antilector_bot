@@ -7,7 +7,7 @@ import uuid
 from pathlib import Path
 from types import SimpleNamespace
 
-from utils.video import concat_media_files
+from utils.video.modify import concat_media_files
 
 from .._typing import UpdateCallbackType
 from ..intervals.intervals import Intervals
@@ -150,7 +150,6 @@ class MediaRenderer:
         )
 
         shutil.move(final_output, output_file)
-        shutil.rmtree(video_temp_path)
 
     @staticmethod
     def __concat_intervals(

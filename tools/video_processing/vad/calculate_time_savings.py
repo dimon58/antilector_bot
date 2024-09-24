@@ -1,6 +1,6 @@
 from lib.unsilence.intervals.time_calculations import TimeData
 from utils.pathtools import PathType
-from utils.video import get_video_duration
+from utils.video.measure import get_video_duration
 
 
 def calculate_time_savings(original_file: PathType, processed_path: PathType) -> TimeData:

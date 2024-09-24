@@ -2,7 +2,7 @@ import warnings
 
 from pydantic import BaseModel, Field, PositiveInt, model_validator
 
-from utils.video import ensure_nvenc_correct
+from utils.video.misc import ensure_nvenc_correct
 
 
 class RenderOptions(BaseModel):

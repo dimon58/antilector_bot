@@ -8,7 +8,7 @@ from pydantic import model_validator
 
 from utils.fixed_ffmpeg import FixedFFmpeg
 from utils.progress_bar import setup_progress_for_ffmpeg
-from utils.video import get_video_duration
+from utils.video.measure import get_video_duration
 
 from .abstract import Action, ActionStatsType
 

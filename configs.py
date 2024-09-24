@@ -4,6 +4,8 @@ from pathlib import Path
 import silero_vad
 import torch
 
+from utils.video.misc import NVENC_MAX_CONCURRENT_SESSIONS
+
 USE_CUDA = torch.cuda.is_available()
 TORCH_DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
 
@@ -16,8 +18,6 @@ FORCE_AUDIO_CODEC = "aac"
 
 VAD_MODEL = silero_vad.load_silero_vad(onnx=True)
 SILERO_VAD_SAMPLE_RATE = 16000
-# https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new
-NVENC_MAX_CONCURRENT_SESSIONS = 8
 REPLACE_AUDIO_IN_VIDEO_THREADS = 2
 # Больше 8 потоков будут проблемы с nvenc
 # Кодеки на cpu сами по себе поточны, так что это имеет смысл только с nvenc

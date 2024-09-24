@@ -16,7 +16,7 @@ from configs import TORCH_DEVICE, USE_CUDA
 from utils.fixed_ffmpeg import FixedFFmpeg
 from utils.pathtools import PathType
 from utils.progress_bar import setup_progress_for_ffmpeg
-from utils.video import get_video_duration
+from utils.video.measure import get_video_duration
 
 logger = logging.getLogger(__name__)
 
