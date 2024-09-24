@@ -14,11 +14,7 @@ from utils.progress_bar import setup_progress_for_ffmpeg
 
 from ..intervals.interval import Interval
 from .options import RenderOptions
-
-# FFMpeg не позволяет делать скорость аудио меньше 0.5 или больше 100
-# https://ffmpeg.org/ffmpeg-filters.html#atempo
-FFMPEG_MIN_TEMPO = 0.5
-FFMPEG_MAX_TEMPO = 100
+from .render_filter import get_audio_filter, get_fade_filter, get_speed_and_volume, get_video_filter
 
 logger = logging.getLogger(__name__)
 
@@ -73,8 +69,6 @@ class RenderIntervalThread(threading.Thread):
                     total_tasks=task.total_tasks,
                     interval_output_file=task.interval_output_file,
                     interval=task.interval,
-                    drop_corrupted_intervals=self._render_options.drop_corrupted_intervals,
-                    minimum_interval_duration=self._render_options.minimum_interval_duration,
                 )
 
                 if completed and self._render_options.check_intervals:
@@ -105,19 +99,16 @@ class RenderIntervalThread(threading.Thread):
         interval_output_file: Path,
         interval: Interval,
         apply_filter: bool = True,
-        drop_corrupted_intervals: bool = False,
-        minimum_interval_duration: float = 0.25,
     ) -> bool:
         """
         Renders an interval with the given render options
         :param interval_output_file: Where the current output file should be saved
         :param interval: The current Interval that should be processed
         :param apply_filter: Whether the AV-Filter should be applied or if the media interval should be left untouched
-        :param drop_corrupted_intervals: Whether to remove corrupted frames from the video or keep them in unedited
         :return: Whether it is corrupted or not
         """
 
-        ffmpeg = self.__generate_command(interval_output_file, interval, apply_filter, minimum_interval_duration)
+        ffmpeg = self.__generate_command(interval_output_file, interval, apply_filter)
 
         # Очень часто длина интервалов меньше нескольких секунд
         # Их логирование только засоряет поток
@@ -134,7 +125,7 @@ class RenderIntervalThread(threading.Thread):
             ffmpeg.execute()
         except FFmpegError as exc:
             if "Conversion failed!" in exc.message.splitlines()[-1]:
-                if drop_corrupted_intervals:
+                if self._render_options.drop_corrupted_intervals:
                     return False
                 if apply_filter:
                     self.__render_interval(
@@ -143,8 +134,6 @@ class RenderIntervalThread(threading.Thread):
                         interval_output_file=interval_output_file,
                         interval=interval,
                         apply_filter=False,
-                        drop_corrupted_intervals=drop_corrupted_intervals,
-                        minimum_interval_duration=minimum_interval_duration,
                     )
                 else:
                     raise OSError(
@@ -158,91 +147,30 @@ class RenderIntervalThread(threading.Thread):
 
         return True
 
-    @staticmethod
-    def _get_fade_filter(
-        total_duration: float,
-        interval_in_fade_duration: float,
-        interval_out_fade_duration: float,
-        fade_curve: str,
-    ) -> str:
-
-        interval_in_fade_duration = min(interval_in_fade_duration, total_duration / 2)
-        interval_out_fade_duration = min(interval_out_fade_duration, total_duration / 2)
-
-        res = []
-
-        if interval_in_fade_duration != 0.0:
-            res.append(f"afade=t=in:st=0:d={interval_in_fade_duration:.4f}:curve={fade_curve}")
-
-        if interval_out_fade_duration != 0.0:
-            res.append(
-                f"afade=t=out"
-                f":st={total_duration - interval_out_fade_duration:.4f}"
-                f":d={interval_out_fade_duration:.4f}"
-                f":curve={fade_curve}"
-            )
-
-        return ",".join(res)
-
-    def __get_speed_and_volume(self, interval: Interval, minimum_interval_duration: float) -> tuple[float, float]:
-        if interval.is_silent:
-            current_speed = self._render_options.silent_speed
-            current_volume = self._render_options.silent_volume
-        else:
-            current_speed = self._render_options.audible_speed
-            current_volume = self._render_options.audible_volume
-        current_speed = RenderIntervalThread.clamp_speed(interval.duration, current_speed, minimum_interval_duration)
-        return current_speed, current_volume
-
-    def __get_video_filter(self, current_speed: float) -> str | None:
-        if not self._render_options.audio_only and current_speed != 1.0:
-            video_filter = f"[0:v]setpts={round(1 / current_speed, 4)}*PTS[v]"
-        else:
-            video_filter = None
-
-        logger.debug("Video filter: %s", video_filter)
-
-        return video_filter
-
-    @staticmethod
-    def __get_audio_filter(fade: str, current_speed: float, current_volume: float) -> str | None:
-        audio_filter_components: list[str] = []
-        if fade != "":
-            audio_filter_components.append(fade)
-
-        if current_volume != 1.0:
-            audio_filter_components.append(f"atempo={round(current_speed, 4)}")
-
-        if current_volume != 1.0:
-            audio_filter_components.append(f"volume={current_volume}")
-
-        audio_filter: str | None
-        if len(audio_filter_components) > 0:  # noqa: SIM108
-            audio_filter = f"[0:a]{",".join(audio_filter_components)}[a]"
-        else:
-            audio_filter = None
-
-        logger.debug("Audio filter: %s", audio_filter)
-
-        return audio_filter
-
-    def _resolve_filter(self, fade: str, interval: Interval, minimum_interval_duration: float) -> dict[str, str]:
+    def _resolve_filter(self, fade: str, interval: Interval) -> dict[str, str]:  # noqa: PLR0912
 
         additional_output_options = {}
 
-        current_speed, current_volume = self.__get_speed_and_volume(interval, minimum_interval_duration)
+        current_speed, current_volume = get_speed_and_volume(self._render_options, interval)
 
         complex_filter_components: list[str] = []
 
         # ----------------- video filter ----------------- #
-        video_filter = self.__get_video_filter(current_speed)
-        if video_filter is not None:
-            complex_filter_components.append(video_filter)
+        if not self._render_options.audio_only:
+            video_filter = get_video_filter(current_speed)
+            if video_filter is not None:
+                video_filter = f"[0:v]{video_filter}[v]"
+                complex_filter_components.append(video_filter)
+        else:
+            video_filter = None
+        logger.debug("Video filter: %s", video_filter)
 
         # ----------------- audio filter ----------------- #
-        audio_filter = self.__get_audio_filter(fade, current_speed, current_volume)
+        audio_filter = get_audio_filter(fade, current_speed, current_volume)
         if audio_filter is not None:
+            audio_filter = f"[0:a]{audio_filter}[a]"
             complex_filter_components.append(audio_filter)
+        logger.debug("Audio filter: %s", audio_filter)
 
         # ----------------- complex filter ----------------- #
 
@@ -273,9 +201,7 @@ class RenderIntervalThread(threading.Thread):
 
         return additional_output_options
 
-    def __generate_command(
-        self, interval_output_file: Path, interval: Interval, apply_filter: bool, minimum_interval_duration: float
-    ) -> FixedFFmpeg:
+    def __generate_command(self, interval_output_file: Path, interval: Interval, apply_filter: bool) -> FixedFFmpeg:
         """
         Generates the ffmpeg command to process the video
         :param interval_output_file: Where the media interval should be saved
@@ -303,7 +229,7 @@ class RenderIntervalThread(threading.Thread):
             "safe": 0,
         }
 
-        fade = self._get_fade_filter(
+        fade = get_fade_filter(
             total_duration=interval.duration,
             interval_in_fade_duration=self._render_options.interval_in_fade_duration,
             interval_out_fade_duration=self._render_options.interval_out_fade_duration,
@@ -314,7 +240,6 @@ class RenderIntervalThread(threading.Thread):
             output_options |= self._resolve_filter(
                 fade=fade,
                 interval=interval,
-                minimum_interval_duration=minimum_interval_duration,
             )
 
         else:
@@ -338,18 +263,3 @@ class RenderIntervalThread(threading.Thread):
         )
 
         return ffmpeg.output(interval_output_file, output_options)
-
-    @staticmethod
-    def clamp_speed(duration: float, speed: float, minimum_interval_duration: float = 0.25) -> float:
-        if duration / speed < minimum_interval_duration:
-            speed = duration / minimum_interval_duration
-
-        if speed < FFMPEG_MIN_TEMPO:
-            logger.warning("Too low speed %g, minimum possible %s", speed, FFMPEG_MIN_TEMPO)
-            return FFMPEG_MIN_TEMPO
-
-        if speed > FFMPEG_MAX_TEMPO:
-            logger.warning("Too high speed %g, maximum possible %s", speed, FFMPEG_MAX_TEMPO)
-            return FFMPEG_MAX_TEMPO
-
-        return speed
