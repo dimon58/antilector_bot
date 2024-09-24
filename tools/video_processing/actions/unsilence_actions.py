@@ -7,9 +7,9 @@ import pydantic
 from pydantic import ConfigDict, Field, model_validator
 
 from configs import TQDM_LOGGING_INTERVAL, VAD_MODEL
-from lib import unsilence
 from lib.unsilence.pretty_time_estimate import pretty_time_estimate
 from lib.unsilence.render_media.options import RenderOptions
+from lib.unsilence_fast import unsilence
 from tools.audio_processing.actions.abstract import Action, ActionStatsType
 from tools.video_processing.vad.calculate_time_savings import calculate_time_savings
 from tools.video_processing.vad.vad_unsilence import Vad

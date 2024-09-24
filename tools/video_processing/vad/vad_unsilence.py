@@ -3,9 +3,10 @@ from pathlib import Path
 import silero_vad
 from torch.jit import ScriptModule
 
-from lib.unsilence import Interval, Intervals, Unsilence
+from lib.unsilence import Interval, Intervals
 from lib.unsilence.detect_silence.detect_silence import detect_silence
 from lib.unsilence.unsilence import UpdateCallbackType
+from lib.unsilence_fast.unsilence import FastUnsilence
 from utils.audio import read_audio
 
 
@@ -97,7 +98,7 @@ def detect_speech(
     return intervals
 
 
-class Vad(Unsilence):
+class Vad(FastUnsilence):
 
     def __init__(self, input_file: Path, model: silero_vad.utils_vad.OnnxWrapper | ScriptModule):
         """

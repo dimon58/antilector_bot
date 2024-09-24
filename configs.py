@@ -4,10 +4,14 @@ from pathlib import Path
 import silero_vad
 import torch
 
+from utils.torch_utils import is_cuda
 from utils.video.misc import NVENC_MAX_CONCURRENT_SESSIONS
 
 USE_CUDA = torch.cuda.is_available()
-TORCH_DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
+TORCH_DEVICE = torch.device("cuda:0" if USE_CUDA else "cpu")
+TOTAL_VRAM = torch.cuda.mem_get_info(TORCH_DEVICE)[1] if is_cuda(TORCH_DEVICE) else 0
+MAX_VRAM_FOR_UNSILENCE_RENDERING = 0.8 * TOTAL_VRAM
+MAX_RAM_FOR_UNSILENCE_RENDERING = 8 * 2**30
 
 # Setup device for deepfilternet
 os.environ["DEVICE"] = str(TORCH_DEVICE)
@@ -25,7 +29,7 @@ UNSILENCE_DEFAULT_CPU_COUNT = min(max(1, os.cpu_count() - 1), NVENC_MAX_CONCURRE
 # Если менять в разумных пределах, то время работы почти не зависит от этого параметра
 MAX_DEEPFILTERNET_CHUNK_SIZE_BYTES = 1 * 2**30
 
-UNSILENCE_MIN_INTERVAL_LENGTH_FOR_LOGGING = 0
+UNSILENCE_MIN_INTERVAL_LENGTH_FOR_LOGGING = 300
 TQDM_LOGGING_INTERVAL = 5
 
 DEBUG = False

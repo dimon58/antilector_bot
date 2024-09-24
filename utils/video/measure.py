@@ -181,3 +181,55 @@ def get_video_resolution(filename: str | Path) -> tuple[int, int]:
     stream = data["streams"][0]
 
     return stream["width"], stream["height"]
+
+
+def get_video_framerate(filename: str | Path) -> float:
+    process = subprocess.Popen(  # noqa: S603 # nosec: B603, B607
+        [  # noqa: S607
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "stream=r_frame_rate",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
+            os.fspath(filename),
+        ],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    out, err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        raise FFmpegError.create(f"ffmpeg return code {retcode}: {err}", [])
+
+    fps = out.strip().split()[0]
+    # Example: fps = b'30/1'
+    x, y = fps.split(b"/")
+
+    return float(x) / float(y)
+
+
+def get_video_bits_per_raw_sample(filename: str | Path) -> float:
+    process = subprocess.Popen(  # noqa: S603 # nosec: B603, B607
+        [  # noqa: S607
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "stream=bits_per_raw_sample",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
+            os.fspath(filename),
+        ],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    out, err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        raise FFmpegError.create(f"ffmpeg return code {retcode}: {err}", [])
+
+    return int(out.strip().split()[0])

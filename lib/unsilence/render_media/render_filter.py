@@ -16,11 +16,9 @@ def clamp_speed(duration: float, speed: float, minimum_interval_duration: float 
         speed = duration / minimum_interval_duration
 
     if speed < FFMPEG_MIN_TEMPO:
-        logger.warning("Too low speed %g, minimum possible %s", speed, FFMPEG_MIN_TEMPO)
         return FFMPEG_MIN_TEMPO
 
     if speed > FFMPEG_MAX_TEMPO:
-        logger.warning("Too high speed %g, maximum possible %s", speed, FFMPEG_MAX_TEMPO)
         return FFMPEG_MAX_TEMPO
 
     return speed
