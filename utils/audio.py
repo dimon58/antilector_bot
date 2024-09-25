@@ -76,7 +76,7 @@ def read_audio(path: PathType, sample_rate: int | None = None) -> tuple[torch.Te
     return wav.squeeze(0), sr
 
 
-def measure_volume(filename: PathType):
+def measure_volume(filename: PathType) -> float:
     """
     Возвращает среднюю громкость видео в ДБ
     """

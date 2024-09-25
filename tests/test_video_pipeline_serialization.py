@@ -8,7 +8,7 @@ from tools.video_processing.vad.vad_unsilence import UnsilenceAndVad
 
 
 class TestVideoPipelineSerialization(unittest.TestCase):
-    def test_correct_serialization(self):
+    def test_correct_serialization(self) -> None:
         audio_pipeline = (
             AudioPipeline()
             .add(

@@ -31,7 +31,9 @@ class AudiotoolsSubAction(pydantic.BaseModel):
 
     @pydantic.field_validator("func", mode="wrap")
     @classmethod
-    def validate_func(cls, func: Any, _info: pydantic.SerializationInfo) -> Callable[[WavFile, ...], WavFile]:
+    def validate_func(
+        cls, func: Any, _info: pydantic.SerializationInfo  # noqa: ANN401
+    ) -> Callable[[WavFile, ...], WavFile]:
         if isinstance(func, Callable):
             return func
 

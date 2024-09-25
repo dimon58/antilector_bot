@@ -1,7 +1,7 @@
 import logging
 import shlex
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
 
 from ffmpeg_normalize import FFmpegNormalize
 from pydantic import model_validator
@@ -22,7 +22,7 @@ class ExtractAudioFromVideo(Action):
     output_config: dict[str, str | int] = {}
 
     @model_validator(mode="after")
-    def resolve_configs(self):
+    def resolve_configs(self) -> Self:
         if self.to_mono:
             self.output_config["ac"] = 1
 

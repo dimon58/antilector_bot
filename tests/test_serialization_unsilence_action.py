@@ -6,7 +6,7 @@ from tools.video_processing.vad.vad_unsilence import UnsilenceAndVad, Vad
 
 
 class TestSerializationUnsilenceAction(unittest.TestCase):
-    def test_serialization_deserialization_unsilence(self):
+    def test_serialization_deserialization_unsilence(self) -> None:
         action = UnsilenceAction(
             unsilence_class=Unsilence,
             detect_silence_options={
@@ -32,7 +32,7 @@ class TestSerializationUnsilenceAction(unittest.TestCase):
         dumped = action.model_dump_json()
         action.model_validate_json(dumped)
 
-    def test_serialization_deserialization_vad(self):
+    def test_serialization_deserialization_vad(self) -> None:
         action = UnsilenceAction(
             unsilence_class=Vad,
             detect_silence_options={
@@ -65,7 +65,7 @@ class TestSerializationUnsilenceAction(unittest.TestCase):
         dumped = action.model_dump_json()
         action.model_validate_json(dumped)
 
-    def test_serialization_deserialization_unsilence_and_vad(self):
+    def test_serialization_deserialization_unsilence_and_vad(self) -> None:
         action = UnsilenceAction(
             unsilence_class=UnsilenceAndVad,
             detect_silence_options={

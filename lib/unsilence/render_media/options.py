@@ -1,4 +1,5 @@
 import warnings
+from typing import Self
 
 from pydantic import BaseModel, Field, PositiveInt, model_validator
 
@@ -55,12 +56,12 @@ class RenderOptions(BaseModel):
     )
 
     @model_validator(mode="after")
-    def check_nvenc_settings(self):
+    def check_nvenc_settings(self) -> Self:
         ensure_nvenc_correct(self.use_nvenc, self.force_video_codec, self.threads)
         return self
 
     @model_validator(mode="after")
-    def check_allow_copy_settings(self):
+    def check_allow_copy_settings(self) -> Self:
         if self.allow_copy_audio_stream:
             warnings.warn("Using allow_copy_audio_stream=True leads to artifacts in the audio", stacklevel=100)
         if self.allow_copy_video_stream:

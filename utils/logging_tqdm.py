@@ -54,7 +54,7 @@ class LoggingTQDM(tqdm):
                 self._ema_dt = lambda: None
                 self.display(pos=0)
 
-    def clear(self, nolock: bool = False) -> None:
+    def clear(self, nolock: bool = False) -> None:  # noqa: ARG002
         """Clear current bar display."""
         return
 
@@ -109,7 +109,7 @@ __original_tqdm_init__ = tqdm.__init__
 
 # Создаем патч
 @wraps(__original_tqdm_init__)
-def new_init(self: tqdm, *args, **kwargs):
+def new_init(self: tqdm, *args, **kwargs) -> None:
     # Если mininterval не указан, устанавливаем его значение в 5.0
     if "mininterval" not in kwargs:
         kwargs["mininterval"] = DEFAULT_TQDM_LOGGING_INTERVAL
@@ -118,7 +118,7 @@ def new_init(self: tqdm, *args, **kwargs):
     __original_tqdm_init__(self, *args, **kwargs)
 
 
-def patch_tqdm():
+def patch_tqdm() -> None:
     if hasattr(tqdm, "_old_update"):
         # Already patched
         return

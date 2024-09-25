@@ -5,7 +5,7 @@ from tools.audio_processing.pipeline import AudioPipeline
 
 
 class TestAudioPipelineSerialization(unittest.TestCase):
-    def test_correct_serialization(self):
+    def test_correct_serialization(self) -> None:
         pipeline = (
             AudioPipeline()
             .add(

@@ -89,7 +89,7 @@ def concat_media_files_with_progress(
     input_files: Sequence[Path],
     output_file: Path,
     concat_file: Path,
-):
+) -> None:
     """
     Объединяет медиафайлы
 

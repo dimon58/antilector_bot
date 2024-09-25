@@ -57,21 +57,21 @@ class IntervalGroupRenderTask:
     _total_interval_duration: float = 0
 
     @property
-    def total_interval_duration(self):
+    def total_interval_duration(self) -> float:
         return self._total_interval_duration
 
     @property
-    def start_timestamp(self):
+    def start_timestamp(self) -> float:
         return self.interval_render_tasks[0].interval.start
 
     @property
-    def end_timestamp(self):
+    def end_timestamp(self) -> float:
         return self.interval_render_tasks[-1].interval.end
 
     def has_tasks(self) -> bool:
         return len(self.interval_render_tasks) > 0
 
-    def add(self, interval_render_task: IntervalRenderTask):
+    def add(self, interval_render_task: IntervalRenderTask) -> None:
         self.interval_render_tasks.append(interval_render_task)
         self._total_interval_duration += interval_render_task.interval.duration
 

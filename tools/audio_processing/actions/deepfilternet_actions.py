@@ -2,7 +2,7 @@ import logging
 import math
 import time
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
 import pydantic
 import torch
@@ -87,7 +87,7 @@ class CudaMemoryUsageStats(pydantic.BaseModel):
 
         return instance
 
-    def log_memory_usage(self, audio_chunk: torch.Tensor):
+    def log_memory_usage(self, audio_chunk: torch.Tensor) -> None:
         usage = CudaMemoryUsageAtStep.measure(self._device)
         self.trace.append(usage)
 
@@ -132,13 +132,13 @@ class DeepFilterNet3Denoise(Action):
     _CUDA_MEMORY_KEY = "cuda_memory"
 
     @pydantic.model_validator(mode="after")
-    def load_model(self):
+    def load_model(self) -> Self:
         self.model, self.df_state, self.df_model_name = init_df(default_model=self.df_model_name)
         self.device = get_device()
 
         return self
 
-    def get_chunk_size(self, audio: torch.Tensor, meta: AudioMetaData):
+    def get_chunk_size(self, audio: torch.Tensor, meta: AudioMetaData) -> int:
         # DeepFilterNet3 потребляет около 238.5 байт на 1 семпл
         # memory_per_sample = 238.5
         # Так как нет способа (или он очень сложен) предварительно узнать

@@ -66,7 +66,7 @@ def fallback_any_video(formats: list[dict[str, Any]]) -> dict | None:
         return f
 
 
-def merge_formats(*formats_: dict[str, Any]):
+def merge_formats(*formats_: dict[str, Any]) -> dict[str, Any]:
     # These are the minimum required fields for a merged format
     return {
         "format_id": "+".join(str(f["format_id"]) for f in formats_),
@@ -113,7 +113,7 @@ def select_best_audio(formats: list[dict[str, Any]]) -> dict[str, Any]:
     return audio_formats[0]
 
 
-def select_format(ctx: dict[str, Any]):
+def select_format(ctx: dict[str, Any]) -> dict[str, Any]:
     """
     Выбирает mp4 или mkv с разрешением не более 1080p
 

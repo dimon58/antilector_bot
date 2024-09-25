@@ -25,7 +25,7 @@ class StepStatistics(pydantic.BaseModel):
     rms_db: float
 
     @property
-    def repr_for_logging(self):
+    def repr_for_logging(self) -> str:
         return f"{self.nisqa.short_desc()} | RMS {self.rms_db:.2f} dB"
 
 
@@ -41,7 +41,7 @@ class AudioPipeline(pydantic.BaseModel):
 
     _in_working_ext: str = "wav"
 
-    def get_steps_count(self):
+    def get_steps_count(self) -> int:
         return len(self.pipeline)
 
     def add(self, action: Action) -> Self:
