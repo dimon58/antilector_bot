@@ -31,6 +31,7 @@ class RenderOptions(BaseModel):
     threads: PositiveInt = Field(2, description="Number of threads to render simultaneously")
     use_nvenc: bool = Field(False, description="Use nvenc for transcoding")
     force_video_codec: str | None = Field(None, description="Video codec to use for rendering")
+    force_audio_codec: str | None = Field(None, description="Audio codec to use for rendering")
 
     # Можно ли копировать видеопоток при рендеринге.
     # Стоит давать разрешение, только если будут

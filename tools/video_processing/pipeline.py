@@ -31,10 +31,6 @@ class VideoPipeline(pydantic.BaseModel):
     use_nvenc: bool | None = None
     force_video_codec: str | None = None
     force_audio_codec: str | None = None
-    force_transcode_video: bool = False
-    force_transcode_audio: bool = False
-
-    replace_audio_in_video_threads: int = 1
 
     @pydantic.model_validator(mode="after")
     def resolve_settings(self) -> Self:
@@ -42,6 +38,10 @@ class VideoPipeline(pydantic.BaseModel):
         if self.use_nvenc is not None:
             logger.info("Using nvenc for unsilence")
             self.unsilence_action.render_options.use_nvenc = self.use_nvenc
+
+        if self.force_audio_codec is not None:
+            logger.info("Encoding audio using %s for unsilence", self.force_audio_codec)
+            self.unsilence_action.render_options.force_audio_codec = self.force_audio_codec
 
         if self.force_video_codec is not None:
             logger.info("Encoding video using %s for unsilence", self.force_video_codec)
@@ -95,14 +95,12 @@ class VideoPipeline(pydantic.BaseModel):
                 input_file=input_file,
                 output_file=output_file,
             )
-            unsilence_end = time.perf_counter()
-
             if nisqa_model is not None:
                 unsilence_nisqa = nisqa_model.measure_from_tensor(*read_audio(output_file))
             else:
                 unsilence_nisqa = None
-
             unsilence_rms_db = measure_volume(output_file)
+            unsilence_end = time.perf_counter()
 
         pipeline_end = unsilence_end
         ###############################

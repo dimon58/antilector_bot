@@ -8,9 +8,9 @@ from ffmpeg.types import Option
 from lib.unsilence import Interval
 from lib.unsilence.render_media.options import RenderOptions
 from lib.unsilence.render_media.render_filter import (
-    get_speed_and_volume,
-    get_fade_filter,
     get_audio_filter,
+    get_fade_filter,
+    get_speed_and_volume,
     get_video_filter,
 )
 from utils.fixed_ffmpeg import FixedFFmpeg
@@ -132,6 +132,9 @@ class IntervalGroupRenderTask:
         if render_options.force_video_codec is not None and output_options.get("c:v") != "copy":
             output_options["c:v"] = render_options.force_video_codec
 
+        if render_options.force_audio_codec is not None and output_options.get("a:v") != "copy":
+            output_options["c:a"] = render_options.force_audio_codec
+
         return input_options, output_options
 
     def _generate_command_for_multiple_interval(
@@ -217,6 +220,9 @@ class IntervalGroupRenderTask:
         if render_options.force_video_codec is not None:
             output_options["c:v"] = render_options.force_video_codec
 
+        if render_options.force_audio_codec is not None:
+            output_options["a:v"] = render_options.force_audio_codec
+
         ffmpeg = ffmpeg.input(input_file, input_options)
 
         if separated_audio:
@@ -284,5 +290,8 @@ class IntervalGroupRenderTask:
 
         if render_options.force_video_codec is not None:
             output_options["c:v"] = render_options.force_video_codec
+
+        if render_options.force_audio_codec is not None:
+            output_options["a:v"] = render_options.force_audio_codec
 
         return ffmpeg.output(output_file, output_options)

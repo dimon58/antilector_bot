@@ -22,7 +22,6 @@ FORCE_AUDIO_CODEC = "aac"
 
 VAD_MODEL = silero_vad.load_silero_vad(onnx=True)
 SILERO_VAD_SAMPLE_RATE = 16000
-REPLACE_AUDIO_IN_VIDEO_THREADS = 2
 # Больше 8 потоков будут проблемы с nvenc
 # Кодеки на cpu сами по себе поточны, так что это имеет смысл только с nvenc
 UNSILENCE_DEFAULT_CPU_COUNT = min(max(1, os.cpu_count() - 1), NVENC_MAX_CONCURRENT_SESSIONS)
