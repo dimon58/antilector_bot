@@ -4,11 +4,11 @@ from pathlib import Path
 from typing import Self, Union
 
 import pydantic
-from pyaudiotoolslib.utils import measure_rms_db_from_file
 from pydantic import ConfigDict
 
 from lib.nisqa.metrics import NisqaMetrics
 from lib.nisqa.model import NisqaModel
+from utils.audio import measure_volume
 from utils.misc import get_all_subclasses
 
 from .actions.abstract import Action, ActionStatsType
@@ -62,7 +62,7 @@ class AudioPipeline(pydantic.BaseModel):
         if len(self.pipeline) == 0:
             raise ValueError("No actions defined")
 
-        input_stats = StepStatistics(step=0, step_name="input", time=0, rms_db=measure_rms_db_from_file(input_file))
+        input_stats = StepStatistics(step=0, step_name="input", time=0, rms_db=measure_volume(input_file))
         pipeline_stats = [input_stats]
 
         if nisqa_model is not None:
@@ -83,7 +83,7 @@ class AudioPipeline(pydantic.BaseModel):
                 step_name=action.__class__.__name__,
                 time=end - start,
                 action_stats=action_stats,
-                rms_db=measure_rms_db_from_file(input_file),
+                rms_db=measure_volume(input_file),
             )
             pipeline_stats.append(step_stats)
 
@@ -101,7 +101,7 @@ class AudioPipeline(pydantic.BaseModel):
             step_name=self.pipeline[-1].__class__.__name__,
             time=end - start,
             action_stats=action_stats,
-            rms_db=measure_rms_db_from_file(output_file),
+            rms_db=measure_volume(output_file),
         )
         pipeline_stats.append(final_stats)
 
