@@ -10,8 +10,6 @@ from lib.nisqa.model import NisqaModel
 from tools.audio_processing.actions.ffmpeg_actions import ExtractAudioFromVideo
 from tools.audio_processing.pipeline import AudioPipeline, AudioPipelineStatistics, StepStatistics
 from utils.audio import measure_volume, read_audio
-from utils.pathtools import split_filename_ext
-from utils.video.modify import replace_audio_in_video
 
 from .actions.unsilence_actions import UnsilenceAction
 
@@ -23,7 +21,6 @@ class VideoPipelineStatistics(pydantic.BaseModel):
 
     extract_audio_stats: StepStatistics
     audio_pipeline_stats: AudioPipelineStatistics
-    replacing_audio_time: float
     unsilence_stats: StepStatistics
 
 
@@ -90,33 +87,12 @@ class VideoPipeline(pydantic.BaseModel):
             )
 
             ###############################
-            logger.info("Replacing audio in video")
-            replacing_audio_start = time.perf_counter()
-            _, ext = split_filename_ext(output_file)
-            processed_video_file = tempdir / f"processed_audio.{ext}"
-            replace_audio_in_video_temp_dir = tempdir / "replace_audio_in_video"
-            replace_audio_in_video_temp_dir.mkdir(exist_ok=True, parents=True)
-            replace_audio_in_video(
-                video_file=input_file,
-                audio_file=processed_audio_file,
-                output_file=processed_video_file,
-                use_nvenc=self.use_nvenc,
-                video_codec=self.force_video_codec,
-                audio_codec=self.force_audio_codec,
-                force_transcode_video=self.force_transcode_video,
-                force_transcode_audio=self.force_transcode_audio,
-                threads=self.replace_audio_in_video_threads,
-                temp_dir=replace_audio_in_video_temp_dir,
-            )
-            replacing_audio_end = time.perf_counter()
-
-            ###############################
             logger.info("Unsilencing")
             unsilence_start = time.perf_counter()
             self.unsilence_action.temp_dir = tempdir / "unsilence"
             self.unsilence_action.separated_audio = processed_audio_file
             unsilence_stats = self.unsilence_action.run(
-                input_file=processed_video_file,
+                input_file=input_file,
                 output_file=output_file,
             )
             unsilence_end = time.perf_counter()
@@ -141,7 +117,6 @@ class VideoPipeline(pydantic.BaseModel):
                 rms_db=0,
             ),
             audio_pipeline_stats=audio_pipeline_stats,
-            replacing_audio_time=replacing_audio_end - replacing_audio_start,
             unsilence_stats=StepStatistics(
                 step=self.audio_pipeline.get_steps_count(),
                 step_name="unsilence",

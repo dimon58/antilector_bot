@@ -111,6 +111,7 @@ class UnsilenceAction(Action):
         rendering_start = time.perf_counter()
         u.render_media(
             output_file,
+            separated_audio=self.separated_audio,
             temp_dir=self.temp_dir,
             render_options=self.render_options,
             on_render_progress_update=render_progress.update_unsilence,

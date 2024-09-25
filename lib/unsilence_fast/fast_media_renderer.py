@@ -95,6 +95,7 @@ class IntervalGroupRenderTask:
     def _generate_command_for_single_interval(  # noqa: PLR0912
         self,
         render_options: RenderOptions,
+        separated_audio: Path | None,
     ) -> tuple[FFmpegOptionsType, FFmpegOptionsType]:
 
         # ----------------------- single task specific ----------------------- #
@@ -111,7 +112,8 @@ class IntervalGroupRenderTask:
 
         # ----------------- audio filter ----------------- #
         if task.audio_filter:
-            complex_filter_components.append(f"[0:a]{task.audio_filter}[a]")
+            audio_idx = 1 if separated_audio else 0
+            complex_filter_components.append(f"[{audio_idx}:a]{task.audio_filter}[a]")
 
         # ----------------- complex filter ----------------- #
 
@@ -134,7 +136,8 @@ class IntervalGroupRenderTask:
         if task.audio_filter is not None:
             output_map.append("[a]")
         else:
-            output_map.append("0:a")
+            audio_idx = 1 if separated_audio else 0
+            output_map.append(f"{audio_idx}:a")
             if render_options.allow_copy_audio_stream:
                 output_options["c:a"] = "copy"
 
@@ -149,7 +152,9 @@ class IntervalGroupRenderTask:
         return input_options, output_options
 
     def _generate_command_for_multiple_interval(
-        self, render_options: RenderOptions
+        self,
+        render_options: RenderOptions,
+        separated_audio: Path | None,
     ) -> tuple[FFmpegOptionsType, FFmpegOptionsType]:
 
         # todo: allow copy
@@ -157,6 +162,7 @@ class IntervalGroupRenderTask:
         trim_filters = []
 
         start_timestamp = self.start_timestamp
+        audio_idx = 1 if separated_audio else 0
         for idx, task in enumerate(self.interval_render_tasks):
             if not render_options.audio_only:
                 video_filter = f",{task.video_filter}" if task.video_filter is not None else ""
@@ -170,7 +176,7 @@ class IntervalGroupRenderTask:
 
             audio_filter = f",{task.audio_filter}" if task.audio_filter is not None else ""
             trim_filters.append(
-                f"[0:a]"
+                f"[{audio_idx}:a]"
                 f"atrim=start={task.interval.start - start_timestamp}:end={task.interval.end - start_timestamp}"
                 f",asetpts=PTS-STARTPTS{audio_filter}"
                 f"[af{idx}]"
@@ -194,7 +200,13 @@ class IntervalGroupRenderTask:
 
         return {"ss": self.start_timestamp, "to": self.end_timestamp}, output_options
 
-    def generate_command(self, input_file: Path, output_file: Path, render_options: RenderOptions) -> FixedFFmpeg:
+    def generate_command(
+        self,
+        input_file: Path,
+        output_file: Path,
+        render_options: RenderOptions,
+        separated_audio: Path | None,
+    ) -> FixedFFmpeg:
         if len(self.interval_render_tasks) == 0:
             raise ValueError("No tasks in group")
 
@@ -207,9 +219,11 @@ class IntervalGroupRenderTask:
         logger.debug("Rendering on cpu")
 
         if len(self.interval_render_tasks) == 1:
-            input_options, output_options = self._generate_command_for_single_interval(render_options)
+            input_options, output_options = self._generate_command_for_single_interval(render_options, separated_audio)
         else:
-            input_options, output_options = self._generate_command_for_multiple_interval(render_options)
+            input_options, output_options = self._generate_command_for_multiple_interval(
+                render_options, separated_audio
+            )
 
         output_options |= {
             "vsync": 1,
@@ -220,7 +234,12 @@ class IntervalGroupRenderTask:
         if render_options.force_video_codec is not None:
             output_options["c:v"] = render_options.force_video_codec
 
-        return ffmpeg.input(input_file, input_options).output(output_file, output_options)
+        ffmpeg = ffmpeg.input(input_file, input_options)
+
+        if separated_audio:
+            ffmpeg = ffmpeg.input(separated_audio, input_options)
+
+        return ffmpeg.output(output_file, output_options)
 
     def generate_command_notrim(
         self, input_file: Path, output_file: Path, render_options: RenderOptions
@@ -391,6 +410,7 @@ class FastMediaRenderer(MediaRenderer):
         input_file: Path,
         output_file: Path,
         render_options: RenderOptions,
+        separated_audio: Path | None,
         on_render_progress_update: UpdateCallbackType | None = None,
     ) -> list[Path]:
 
@@ -434,6 +454,7 @@ class FastMediaRenderer(MediaRenderer):
                 thread_lock=thread_lock,
                 on_task_completed=handle_thread_completed_task,
                 min_interval_length_for_logging=self.min_interval_length_for_logging,
+                separated_audio=separated_audio,
             )
             thread.start()
             thread_list.append(thread)
@@ -486,6 +507,7 @@ class FastMediaRenderer(MediaRenderer):
         output_file: Path,
         intervals: Intervals,
         render_options: RenderOptions,
+        separated_audio: Path | None = None,
         on_render_progress_update: UpdateCallbackType | None = None,
         on_concat_progress_update: UpdateCallbackType | None = None,
     ) -> None:
@@ -496,6 +518,8 @@ class FastMediaRenderer(MediaRenderer):
         :param output_file: Where the processed file should be saved
         :param intervals: The Intervals that should be processed
         :param render_options: Render options
+        :param separated_audio: Audio stream from input in separated file (wav is the best).
+            Providing can increase performance.
         :param on_render_progress_update: Function that should be called on render progress update
             (called like: func(current, total))
         :param on_concat_progress_update: Function that should be called on concat progress update
@@ -504,6 +528,8 @@ class FastMediaRenderer(MediaRenderer):
 
         input_file = Path(input_file).absolute()
         output_file = Path(output_file).absolute()
+        if separated_audio is not None:
+            separated_audio = Path(separated_audio).absolute()
 
         if not input_file.exists():
             raise FileNotFoundError(f"Input file {input_file} does not exist!")
@@ -516,6 +542,7 @@ class FastMediaRenderer(MediaRenderer):
             input_file=input_file,
             output_file=output_file,
             render_options=render_options,
+            separated_audio=separated_audio,
             on_render_progress_update=on_render_progress_update,
         )
 
@@ -538,6 +565,7 @@ class RenderIntervalThread(threading.Thread):
         thread_lock: threading.Lock,
         on_task_completed: Callable[[ThreadTask, bool], None],
         min_interval_length_for_logging: float,
+        separated_audio: Path | None = None,
     ):
         """
         Initializes a new Worker (is run in daemon mode)
@@ -546,6 +574,8 @@ class RenderIntervalThread(threading.Thread):
         :param render_options: The parameters on how the video should be processed, more details below
         :param task_queue: A queue object where the worker can get more tasks
         :param thread_lock: A thread lock object to acquire and release thread locks
+        :param separated_audio: Audio stream from input in separated file (wav is the best).
+            Providing can increase performance.
         """
         super().__init__(daemon=True)
         self.thread_id = thread_id
@@ -556,6 +586,7 @@ class RenderIntervalThread(threading.Thread):
         self._on_task_completed = on_task_completed
         self._render_options = render_options
         self._min_interval_length_for_logging = min_interval_length_for_logging
+        self._separated_audio = separated_audio
 
     def run(self) -> None:
         """
@@ -601,6 +632,7 @@ class RenderIntervalThread(threading.Thread):
             input_file=self._input_file,
             output_file=task.output_file,
             render_options=self._render_options,
+            separated_audio=self._separated_audio,
         )
 
         # Нет смысла логировать вообще все куски, поэтому оставляем только самые длинные

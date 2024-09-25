@@ -14,6 +14,7 @@ class FastUnsilence(Unsilence):
         output_file: Path,
         temp_dir: Path = Path(".tmp"),
         render_options: RenderOptions = default_render_options,
+        separated_audio: Path | None = None,
         on_render_progress_update: UpdateCallbackType | None = None,
         on_concat_progress_update: UpdateCallbackType | None = None,
     ) -> None:
@@ -21,6 +22,8 @@ class FastUnsilence(Unsilence):
         Renders the current intervals with options specified in the kwargs
 
         output_file: Where the final file should be saved at
+        separated_audio: Audio stream from input in separated file (wav is the best).
+            Providing can increase performance.
         temp_dir: The temp dir where temporary files can be saved
 
         Remaining keyword arguments are passed to :func:`~unsilence.lib.render_media.MediaRenderer.MediaRenderer.render`
@@ -36,6 +39,7 @@ class FastUnsilence(Unsilence):
             output_file=output_file,
             intervals=self._intervals,
             render_options=render_options,
+            separated_audio=separated_audio,
             on_render_progress_update=on_render_progress_update,
             on_concat_progress_update=on_concat_progress_update,
         )
