@@ -1,5 +1,6 @@
 import queue
 import subprocess
+import sys
 import threading
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -9,6 +10,7 @@ from ffmpeg import FFmpegError
 
 from lib.unsilence.render_media.options import RenderOptions
 from utils.progress_bar import setup_progress_for_ffmpeg
+
 from .fast_render_task import IntervalGroupRenderTask
 
 
@@ -28,6 +30,7 @@ class RenderIntervalThread(threading.Thread):
         input_file: Path,
         render_options: RenderOptions,
         task_queue: queue.Queue,
+        thread_exceptions: queue.Queue,
         thread_lock: threading.Lock,
         on_task_completed: Callable[[ThreadTask, bool], None],
         min_interval_length_for_logging: float,
@@ -46,6 +49,7 @@ class RenderIntervalThread(threading.Thread):
         super().__init__(daemon=True)
         self.thread_id = thread_id
         self.task_queue = task_queue
+        self.thread_exceptions = thread_exceptions
         self.thread_lock = thread_lock
         self._should_exit = False
         self._input_file = input_file
@@ -54,6 +58,30 @@ class RenderIntervalThread(threading.Thread):
         self._min_interval_length_for_logging = min_interval_length_for_logging
         self._separated_audio = separated_audio
 
+    def _run(self) -> None:
+        self.thread_lock.acquire()
+
+        if self.task_queue.empty():
+            self.thread_lock.release()
+            return
+
+        task: ThreadTask = self.task_queue.get()
+        self.thread_lock.release()
+
+        completed = self._render_interval(task)
+
+        if completed and self._render_options.check_intervals:
+            probe_output = subprocess.run(  # noqa: S603
+                ["ffprobe", "-loglevel", "quiet", f"{task.output_file}"],  # noqa: S607
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT,
+                check=False,
+            )
+            completed = probe_output.returncode == 0
+
+        if self._on_task_completed is not None:
+            self._on_task_completed(task, not completed)
+
     def run(self) -> None:
         """
         Start the worker. Worker runs until stop() is called. It runs in a loop, takes a new task if available, and
@@ -61,27 +89,12 @@ class RenderIntervalThread(threading.Thread):
         :return: None
         """
         while not self._should_exit:
-            self.thread_lock.acquire()
-
-            if not self.task_queue.empty():
-                task: ThreadTask = self.task_queue.get()
-                self.thread_lock.release()
-
-                completed = self._render_interval(task)
-
-                if completed and self._render_options.check_intervals:
-                    probe_output = subprocess.run(  # noqa: S603
-                        ["ffprobe", "-loglevel", "quiet", f"{task.output_file}"],  # noqa: S607
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.STDOUT,
-                        check=False,
-                    )
-                    completed = probe_output.returncode == 0
-
-                if self._on_task_completed is not None:
-                    self._on_task_completed(task, not completed)
-            else:
-                self.thread_lock.release()
+            # noinspection PyBroadException
+            try:
+                self._run()
+            except Exception:  # noqa: BLE001
+                self.thread_exceptions.put(sys.exc_info())
+                return
 
     def stop(self) -> None:
         """

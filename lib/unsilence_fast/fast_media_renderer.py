@@ -17,7 +17,8 @@ from lib.unsilence._typing import UpdateCallbackType
 from lib.unsilence.render_media.media_renderer import MediaRenderer
 from lib.unsilence.render_media.options import RenderOptions
 from utils.video.measure import get_video_bits_per_raw_sample, get_video_framerate, get_video_resolution
-from .fast_render_interval_thread import ThreadTask, RenderIntervalThread
+
+from .fast_render_interval_thread import RenderIntervalThread, ThreadTask
 from .fast_render_task import IntervalGroupRenderTask, IntervalRenderTask
 
 MAX_FILTERS_WITHOUT_DEGRADATION = 25
@@ -125,6 +126,7 @@ class FastMediaRenderer(MediaRenderer):
         on_render_progress_update: UpdateCallbackType | None = None,
     ) -> list[Path]:
 
+        thread_exceptions = queue.Queue()
         thread_lock = threading.Lock()
         task_queue = queue.Queue[ThreadTask]()
         thread_list: list[RenderIntervalThread] = []
@@ -162,6 +164,7 @@ class FastMediaRenderer(MediaRenderer):
                 input_file=input_file,
                 render_options=render_options,
                 task_queue=task_queue,
+                thread_exceptions=thread_exceptions,
                 thread_lock=thread_lock,
                 on_task_completed=handle_thread_completed_task,
                 min_interval_length_for_logging=self.min_interval_length_for_logging,
@@ -189,10 +192,17 @@ class FastMediaRenderer(MediaRenderer):
             thread_lock.release()
 
         while len(completed_tasks) < (len(tasks) - len(corrupted_intervals)):
-            time.sleep(0.5)
+            if thread_exceptions.empty():
+                time.sleep(0.5)
+            else:
+                exc_type, exc_obj, exc_trace = thread_exceptions.get(block=False)
+                raise exc_obj
 
         for thread in thread_list:
             thread.stop()
+
+        for thread in thread_list:
+            thread.join()
 
         return [task.output_file for task in sorted(completed_tasks, key=lambda x: x.task_id)]
 
