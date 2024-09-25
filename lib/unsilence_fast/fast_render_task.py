@@ -132,7 +132,7 @@ class IntervalGroupRenderTask:
         if render_options.force_video_codec is not None and output_options.get("c:v") != "copy":
             output_options["c:v"] = render_options.force_video_codec
 
-        if render_options.force_audio_codec is not None and output_options.get("a:v") != "copy":
+        if render_options.force_audio_codec is not None and output_options.get("c:a") != "copy":
             output_options["c:a"] = render_options.force_audio_codec
 
         return input_options, output_options
@@ -221,7 +221,7 @@ class IntervalGroupRenderTask:
             output_options["c:v"] = render_options.force_video_codec
 
         if render_options.force_audio_codec is not None:
-            output_options["a:v"] = render_options.force_audio_codec
+            output_options["c:a"] = render_options.force_audio_codec
 
         ffmpeg = ffmpeg.input(input_file, input_options)
 
@@ -292,6 +292,6 @@ class IntervalGroupRenderTask:
             output_options["c:v"] = render_options.force_video_codec
 
         if render_options.force_audio_codec is not None:
-            output_options["a:v"] = render_options.force_audio_codec
+            output_options["c:a"] = render_options.force_audio_codec
 
         return ffmpeg.output(output_file, output_options)

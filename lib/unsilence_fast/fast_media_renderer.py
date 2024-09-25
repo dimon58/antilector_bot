@@ -105,7 +105,7 @@ class FastMediaRenderer(MediaRenderer):
             if (
                 current_render_group.total_interval_duration + interval.duration > max_seconds_buffer
                 or len(current_render_group.interval_render_tasks) >= self.max_group_size
-            ):
+            ) and current_render_group.has_tasks():
                 tasks.append(current_render_group)
                 current_render_group = IntervalGroupRenderTask()
 
