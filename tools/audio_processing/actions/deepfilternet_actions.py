@@ -125,6 +125,7 @@ class DeepFilterNet3Denoise(Action):
     df_state: DF | None = Field(None, exclude=True)
     df_model_name: str = DEFAULT_MODEL
     device: torch.device | None = Field(None, exclude=True)
+    cleanup: bool = Field(True, exclude=True)
 
     # 4 GiB
     chunk_max_size_bytes: float = Field(MAX_DEEPFILTERNET_CHUNK_SIZE_BYTES, exclude=True)
@@ -196,5 +197,8 @@ class DeepFilterNet3Denoise(Action):
             stats[self._CUDA_MEMORY_KEY] = cuda_memory_usage_stats.model_dump()
 
         save_audio(output_file.as_posix(), torch.concat(enhanced_audio, dim=1), self.df_state.sr())
+
+        if self.cleanup and is_cuda(self.device):
+            torch.cuda.empty_cache()
 
         return stats
