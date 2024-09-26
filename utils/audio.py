@@ -51,7 +51,11 @@ def _read_audio_tensor(path: Path, sample_rate: int | None = None) -> tuple[torc
         return torchaudio.load(output_file)
 
 
-def read_audio(path: PathType, sample_rate: int | None = None) -> tuple[torch.Tensor, int]:
+def read_audio(
+    path: PathType,
+    sample_rate: int | None = None,
+    resample_on_cuda: bool = USE_CUDA,
+) -> tuple[torch.Tensor, int]:
     """
     Читает аудио из файла и преобразует к требуемой частоте дискретизации
     """
@@ -64,11 +68,13 @@ def read_audio(path: PathType, sample_rate: int | None = None) -> tuple[torch.Te
         wav = wav.mean(dim=0, keepdim=True)
 
     if sample_rate is not None and sr != sample_rate:
-        logger.info("Resampling on %s from %s to %s", "cuda" if USE_CUDA else "cpu", sr, sample_rate)
+        logger.info("Resampling on %s from %s to %s", "cuda" if resample_on_cuda else "cpu", sr, sample_rate)
         transform = torchaudio.transforms.Resample(orig_freq=sr, new_freq=sample_rate)
 
-        if USE_CUDA:  # noqa: SIM108
+        if resample_on_cuda:
             wav = transform.to(TORCH_DEVICE)(wav.to(TORCH_DEVICE)).cpu()
+            # Освобождаем память
+            torch.cuda.empty_cache()
         else:
             wav = transform(wav)
         sr = sample_rate
