@@ -100,6 +100,7 @@ class UnsilenceAction(Action):
         time_savings_estimation = u.estimate_time(
             audible_speed=self.render_options.audible_speed,
             silent_speed=self.render_options.silent_speed,
+            minimum_interval_duration=self.render_options.minimum_interval_duration,
         )
         logger.info("Estimated time savings\n%s", pretty_time_estimate(time_savings_estimation))
 

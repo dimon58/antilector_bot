@@ -89,7 +89,12 @@ class Unsilence:
         """
         return self._intervals
 
-    def estimate_time(self, audible_speed: float = 1, silent_speed: float = 6) -> TimeData:
+    def estimate_time(
+        self,
+        audible_speed: float = 1,
+        silent_speed: float = 6,
+        minimum_interval_duration: float = 0.25,
+    ) -> TimeData:
         """
         Estimates the time (savings) when the current options are applied to the intervals
 
@@ -106,7 +111,7 @@ class Unsilence:
         if self._intervals is None:
             raise ValueError("Silence detection was not yet run and no intervals where given manually!")
 
-        return calculate_time(self._intervals, audible_speed, silent_speed)
+        return calculate_time(self._intervals, audible_speed, silent_speed, minimum_interval_duration)
 
     def render_media(
         self,
