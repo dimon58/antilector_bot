@@ -1,5 +1,6 @@
 import logging
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional
 
@@ -43,6 +44,8 @@ class NisqaModel:
         self.ckp_path = ckp_path
         self.frame = frame
         self.updates = updates
+        if device is not None:
+            device = torch.device(device)
         self.device = device
 
         with open(self.config_path) as ymlfile:
@@ -53,10 +56,13 @@ class NisqaModel:
         self.model, self.h0, self.c0 = model_init(self.args, self.device)
 
         if warmup:
-            _sr = 48000
-            _, _, _ = process(
-                torch.zeros(self.frame * _sr, device=self.device), _sr, self.model, self.h0, self.c0, self.args
-            )
+            self.warmup()
+
+    def warmup(self):
+        _sr = 48000
+        _, _, _ = process(
+            torch.zeros(self.frame * _sr, device=self.device), _sr, self.model, self.h0, self.c0, self.args
+        )
 
     def measure_from_tensor(self, audio: torch.Tensor, sample_rate: int) -> NisqaMetrics:
 
@@ -102,3 +108,15 @@ class NisqaModel:
         audio = torch.as_tensor(audio, device=self.device)
 
         return self.measure_from_tensor(audio, sample_rate)
+
+    def _need_cleanup_cuda(self):
+        return self.device is not None and self.device.type == "cuda"
+
+    @contextmanager
+    def cleanup_cuda(self, warmup: bool = True, empty_cache: bool = True):
+        need_cleanup_cuda = self._need_cleanup_cuda()
+        if warmup and need_cleanup_cuda:
+            self.warmup()
+        yield
+        if empty_cache and need_cleanup_cuda:
+            torch.cuda.empty_cache()

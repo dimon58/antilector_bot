@@ -26,7 +26,10 @@ class StepStatistics(pydantic.BaseModel):
 
     @property
     def repr_for_logging(self) -> str:
-        return f"{self.nisqa.short_desc()} | RMS {self.rms_db:.2f} dB"
+        if self.nisqa is not None:
+            return f"{self.nisqa.short_desc()} | RMS {self.rms_db:.2f} dB"
+
+        return f"RMS {self.rms_db:.2f} dB"
 
 
 class AudioPipelineStatistics(pydantic.BaseModel):
@@ -66,8 +69,9 @@ class AudioPipeline(pydantic.BaseModel):
         pipeline_stats = [input_stats]
 
         if nisqa_model is not None:
-            input_stats.nisqa = nisqa_model.measure_from_path(input_file)
-            logger.info("Input %s", input_stats.repr_for_logging)
+            with nisqa_model.cleanup_cuda():
+                input_stats.nisqa = nisqa_model.measure_from_path(input_file)
+        logger.info("Input: %s", input_stats.repr_for_logging)
 
         for step, action in enumerate(self.pipeline[:-1], start=1):
             logger.info("Running step %s - %s", step, action.__class__.__name__)
@@ -88,8 +92,9 @@ class AudioPipeline(pydantic.BaseModel):
             pipeline_stats.append(step_stats)
 
             if nisqa_model is not None:
-                step_stats.nisqa = nisqa_model.measure_from_path(input_file)
-                logger.info("Step %s %s done in %s", step, step_stats.repr_for_logging, end - start)
+                with nisqa_model.cleanup_cuda():
+                    step_stats.nisqa = nisqa_model.measure_from_path(input_file)
+            logger.info("Step %s: %s done in %s", step, step_stats.repr_for_logging, end - start)
 
         logger.info("Running step %s - %s", len(self.pipeline), self.pipeline[-1].__class__.__name__)
         start = time.perf_counter()
@@ -106,10 +111,9 @@ class AudioPipeline(pydantic.BaseModel):
         pipeline_stats.append(final_stats)
 
         if nisqa_model is not None:
-            final_stats.nisqa = nisqa_model.measure_from_path(output_file)
-            logger.info(
-                "Final step %s %s done in %s sec", len(self.pipeline), final_stats.repr_for_logging, end - start
-            )
+            with nisqa_model.cleanup_cuda():
+                final_stats.nisqa = nisqa_model.measure_from_path(output_file)
+        logger.info("Final step %s: %s done in %s sec", len(self.pipeline), final_stats.repr_for_logging, end - start)
 
         return pipeline_stats
 

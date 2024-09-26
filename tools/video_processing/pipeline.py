@@ -1,6 +1,5 @@
 import logging
 import time
-from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import Self
 
@@ -63,44 +62,49 @@ class VideoPipeline(pydantic.BaseModel):
         self,
         input_file: Path,
         output_file: Path,
-        tempdir_factory: AbstractContextManager[str],
+        tempdir: Path,
         nisqa_model: NisqaModel | None = None,
     ) -> VideoPipelineStatistics:
 
         pipeline_start = time.perf_counter()
 
-        with tempdir_factory as _tempdir:
-            tempdir = Path(_tempdir)
+        ###############################
+        logger.info("Extracting audio")
+        extract_audio_start = time.perf_counter()
+        extracted_audio_file = tempdir / "step_0_extract_audio.wav"
+        extract_audio_stats = ExtractAudioFromVideo().run(input_file, extracted_audio_file)
+        extract_audio_end = time.perf_counter()
 
-            ###############################
-            logger.info("Extracting audio")
-            extract_audio_start = time.perf_counter()
-            extracted_audio_file = tempdir / "step_0_extract_audio.wav"
-            extract_audio_stats = ExtractAudioFromVideo().run(input_file, extracted_audio_file)
-            extract_audio_end = time.perf_counter()
+        ###############################
+        logger.info("Running audio pipeline")
+        processed_audio_file = tempdir / "processed_audio.wav"
+        audio_pipeline_stats = self.audio_pipeline.run(extracted_audio_file, processed_audio_file, tempdir, nisqa_model)
 
-            ###############################
-            logger.info("Running audio pipeline")
-            processed_audio_file = tempdir / "processed_audio.wav"
-            audio_pipeline_stats = self.audio_pipeline.run(
-                extracted_audio_file, processed_audio_file, tempdir, nisqa_model
-            )
-
-            ###############################
-            logger.info("Unsilencing")
-            unsilence_start = time.perf_counter()
-            self.unsilence_action.temp_dir = tempdir / "unsilence"
-            self.unsilence_action.separated_audio = processed_audio_file
-            unsilence_stats = self.unsilence_action.run(
-                input_file=input_file,
-                output_file=output_file,
-            )
-            if nisqa_model is not None:
+        ###############################
+        logger.info("Unsilencing")
+        unsilence_start = time.perf_counter()
+        self.unsilence_action.temp_dir = tempdir / "unsilence"
+        self.unsilence_action.separated_audio = processed_audio_file
+        unsilence_stats = self.unsilence_action.run(
+            input_file=input_file,
+            output_file=output_file,
+        )
+        if nisqa_model is not None:
+            with nisqa_model.cleanup_cuda():
                 unsilence_nisqa = nisqa_model.measure_from_tensor(*read_audio(output_file))
-            else:
-                unsilence_nisqa = None
-            unsilence_rms_db = measure_volume(output_file)
-            unsilence_end = time.perf_counter()
+        else:
+            unsilence_nisqa = None
+        unsilence_rms_db = measure_volume(output_file)
+        unsilence_end = time.perf_counter()
+        unsilence_stats = StepStatistics(
+            step=self.audio_pipeline.get_steps_count(),
+            step_name="unsilence",
+            time=unsilence_end - unsilence_start,
+            action_stats=unsilence_stats,
+            nisqa=unsilence_nisqa,
+            rms_db=unsilence_rms_db,
+        )
+        logger.info("Unsilence: %s done in %s", unsilence_stats.repr_for_logging, unsilence_stats.time)
 
         pipeline_end = unsilence_end
         ###############################
@@ -115,12 +119,5 @@ class VideoPipeline(pydantic.BaseModel):
                 rms_db=0,
             ),
             audio_pipeline_stats=audio_pipeline_stats,
-            unsilence_stats=StepStatistics(
-                step=self.audio_pipeline.get_steps_count(),
-                step_name="unsilence",
-                time=unsilence_end - unsilence_start,
-                action_stats=unsilence_stats,
-                nisqa=unsilence_nisqa,
-                rms_db=unsilence_rms_db,
-            ),
+            unsilence_stats=unsilence_stats,
         )
