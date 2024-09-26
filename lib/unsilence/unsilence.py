@@ -38,6 +38,7 @@ class Unsilence:
         self,
         silence_level: float = -35.0,
         silence_time_threshold: float = 0.5,
+        silence_upper_threshold: float = float("inf"),
         short_interval_threshold: float = 0.3,
         stretch_time: float = 0.25,
         on_silence_detect_progress_update: UpdateCallbackType | None = None,
@@ -46,6 +47,7 @@ class Unsilence:
         """
         Detects silence of the file (Options can be specified in kwargs)
 
+        silence_upper_threshold: Time intervals longer than which are considered a break, so they are cut out completely
         short_interval_threshold : The shortest allowed interval length (default: 0.3) (in seconds)
         stretch_time: Time the interval should be enlarged/shrunken (default 0.25) (in seconds)
         separated_audio: Audio stream from input in separated file (wav is the best).
@@ -63,7 +65,7 @@ class Unsilence:
             on_silence_detect_progress_update=on_silence_detect_progress_update,
         )
 
-        self._intervals.optimize(short_interval_threshold, stretch_time)
+        self._intervals.optimize(short_interval_threshold, stretch_time, silence_upper_threshold)
 
         return self._intervals
 

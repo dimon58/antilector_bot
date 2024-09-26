@@ -1,3 +1,8 @@
+from typing import TypeAlias
+
+SerializedInterval: TypeAlias = dict[str, float | bool]
+
+
 class Interval:
     """
     Represents a section in time where the media file is either silent or audible
@@ -88,7 +93,7 @@ class Interval:
         """
         return Interval(self.start, self.end, self.is_silent)
 
-    def serialize(self) -> dict[str, float | bool]:
+    def serialize(self) -> SerializedInterval:
         """
         Serializes the current interval into a dict format
         :return: serialized dict
@@ -96,7 +101,7 @@ class Interval:
         return {"start": self.start, "end": self.end, "is_silent": self.is_silent}
 
     @staticmethod
-    def deserialize(serialized_obj: dict[str, float | bool]) -> "Interval":
+    def deserialize(serialized_obj: SerializedInterval) -> "Interval":
         """
         Deserializes a previously serializes Interval and generates a new Interval with this data
         :param serialized_obj: previously serializes Interval (type dict)

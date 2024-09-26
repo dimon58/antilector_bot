@@ -1,8 +1,21 @@
 from typing import TypeAlias
 
+from .. import Interval
 from .intervals import Intervals
 
 TimeData: TypeAlias = dict[str, dict[str, tuple[float, float]]]
+
+
+def get_silent_and_audible(intervals: list[Interval]) -> tuple[float, float]:
+    audible = 0
+    silent = 0
+    for interval in intervals:
+        if interval.is_silent:
+            silent += interval.duration
+        else:
+            audible += interval.duration
+
+    return audible, silent
 
 
 def calculate_time(intervals: Intervals, audible_speed: float, silent_speed: float) -> TimeData:
@@ -14,21 +27,18 @@ def calculate_time(intervals: Intervals, audible_speed: float, silent_speed: flo
     :param silent_speed: The speed at which silent intervals should be played back at
     :return: Time calculation dict
     """
+
+    audible_before, silent_before = get_silent_and_audible(intervals.intervals)
+
     time_data = {"before": {}, "after": {}, "delta": {}}
-    audible = 0
-    silent = 0
-    for interval in intervals.intervals:
-        if interval.is_silent:
-            silent += interval.duration
-        else:
-            audible += interval.duration
 
-    time_data["before"]["all"] = (audible + silent, 1)
-    time_data["before"]["audible"] = (audible, audible / time_data["before"]["all"][0])
-    time_data["before"]["silent"] = (silent, silent / time_data["before"]["all"][0])
+    time_data["before"]["all"] = (audible_before + silent_before, 1)
+    time_data["before"]["audible"] = (audible_before, audible_before / time_data["before"]["all"][0])
+    time_data["before"]["silent"] = (silent_before, silent_before / time_data["before"]["all"][0])
 
-    new_audible = audible / audible_speed
-    new_silent = silent / silent_speed
+    audible_after, silent_after = get_silent_and_audible(intervals.intervals_without_breaks)
+    new_audible = audible_after / audible_speed
+    new_silent = silent_after / silent_speed
 
     time_data["after"]["all"] = (new_audible + new_silent, (new_audible + new_silent) / time_data["before"]["all"][0])
     time_data["after"]["audible"] = (new_audible, new_audible / time_data["before"]["all"][0])

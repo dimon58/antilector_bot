@@ -110,6 +110,7 @@ class Vad(FastUnsilence):
     def detect_silence(
         self,
         *,
+        silence_upper_threshold: float = float("inf"),
         short_interval_threshold: float = 0.3,
         stretch_time: float = 0.25,
         threshold: float = 0.5,
@@ -142,7 +143,7 @@ class Vad(FastUnsilence):
             on_silence_detect_progress_update=on_silence_detect_progress_update,
         )
 
-        self._intervals.optimize(short_interval_threshold, stretch_time)
+        self._intervals.optimize(short_interval_threshold, stretch_time, silence_upper_threshold)
 
         return self._intervals
 
@@ -218,6 +219,7 @@ class UnsilenceAndVad(Vad):
         *,
         silence_level: float = -35.0,
         silence_time_threshold: float = 0.5,
+        silence_upper_threshold: float = float("inf"),
         short_interval_threshold: float = 0.3,
         stretch_time: float = 0.25,
         on_silence_detect_progress_update: UpdateCallbackType | None = None,
@@ -257,7 +259,7 @@ class UnsilenceAndVad(Vad):
 
         intervals = intervals_or(silence, no_speech)
         intervals = intervals_collapse(intervals)
-        intervals.optimize(short_interval_threshold, stretch_time)
+        intervals.optimize(short_interval_threshold, stretch_time, silence_upper_threshold)
 
         self._intervals = intervals
 

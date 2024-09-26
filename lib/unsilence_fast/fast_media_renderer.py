@@ -86,10 +86,6 @@ class FastMediaRenderer(MediaRenderer):
     def _create_tasks(
         self, input_file: Path, intervals: Intervals, render_options: RenderOptions
     ) -> list[IntervalGroupRenderTask]:
-        intervals = intervals.remove_short_intervals_from_start(
-            audible_speed=render_options.audible_speed,
-            silent_speed=render_options.silent_speed,
-        )
 
         max_seconds_buffer = self.get_max_seconds_buffer(
             input_file=input_file,
@@ -100,7 +96,7 @@ class FastMediaRenderer(MediaRenderer):
 
         current_render_group = IntervalGroupRenderTask()
 
-        for interval in intervals.intervals:
+        for interval in intervals.intervals_without_breaks:
 
             if (
                 current_render_group.total_interval_duration + interval.duration > max_seconds_buffer
