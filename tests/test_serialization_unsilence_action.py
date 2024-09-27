@@ -1,6 +1,6 @@
 import unittest
 
-from lib.unsilence import Unsilence
+from libs.unsilence import Unsilence
 from tools.video_processing.actions.unsilence_actions import UnsilenceAction
 from tools.video_processing.vad.vad_unsilence import UnsilenceAndVad, Vad
 

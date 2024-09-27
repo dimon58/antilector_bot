@@ -5,7 +5,7 @@ from typing import Self
 
 import pydantic
 
-from lib.nisqa.model import NisqaModel
+from libs.nisqa.model import NisqaModel
 from tools.audio_processing.actions.ffmpeg_actions import ExtractAudioFromVideo
 from tools.audio_processing.pipeline import AudioPipeline, AudioPipelineStatistics, StepStatistics
 from utils.audio import measure_volume, read_audio

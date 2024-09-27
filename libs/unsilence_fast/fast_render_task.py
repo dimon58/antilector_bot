@@ -5,9 +5,9 @@ from typing import TypeAlias
 
 from ffmpeg.types import Option
 
-from lib.unsilence import Interval
-from lib.unsilence.render_media.options import RenderOptions
-from lib.unsilence.render_media.render_filter import (
+from libs.unsilence import Interval
+from libs.unsilence.render_media.options import RenderOptions
+from libs.unsilence.render_media.render_filter import (
     get_audio_filter,
     get_fade_filter,
     get_speed_and_volume,

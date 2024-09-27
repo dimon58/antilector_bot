@@ -19,10 +19,10 @@ def format_timedelta(seconds: float) -> str:
 
 def pretty_time_estimate(time_data: TimeData) -> PrettyTable:
     """
-    Generates a rich.table.Table object from the time_data dict (from lib.Intervals.TimeCalculations.calculate_time)
+    Generates a rich.table.Table object from the time_data dict (from libs.Intervals.TimeCalculations.calculate_time)
 
     modified unsilence.command_line.PrettyTimeEstimate.pretty_time_estimate for use prettytable instead of rich.Table
-    :param time_data: time_data dict (from lib.Intervals.TimeCalculations.calculate_time)
+    :param time_data: time_data dict (from libs.Intervals.TimeCalculations.calculate_time)
     :return: rich.table.Table object
     """
     table = PrettyTable(field_names=("Type", "Before", "After", "Difference"))

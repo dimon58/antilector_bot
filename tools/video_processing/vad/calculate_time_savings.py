@@ -1,4 +1,4 @@
-from lib.unsilence.intervals.time_calculations import TimeData
+from libs.unsilence.intervals.time_calculations import TimeData
 from utils.pathtools import PathType
 from utils.video.measure import get_video_duration
 

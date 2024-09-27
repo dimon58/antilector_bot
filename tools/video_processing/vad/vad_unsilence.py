@@ -3,10 +3,10 @@ from pathlib import Path
 import silero_vad
 from torch.jit import ScriptModule
 
-from lib.unsilence import Interval, Intervals
-from lib.unsilence.detect_silence.detect_silence import detect_silence
-from lib.unsilence.unsilence import UpdateCallbackType
-from lib.unsilence_fast.unsilence import FastUnsilence
+from libs.unsilence import Interval, Intervals
+from libs.unsilence.detect_silence.detect_silence import detect_silence
+from libs.unsilence.unsilence import UpdateCallbackType
+from libs.unsilence_fast.unsilence import FastUnsilence
 from utils.audio import read_audio
 
 

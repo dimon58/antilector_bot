@@ -12,10 +12,10 @@ from configs import (
     MAX_VRAM_FOR_UNSILENCE_RENDERING,
     UNSILENCE_MIN_INTERVAL_LENGTH_FOR_LOGGING,
 )
-from lib.unsilence import Intervals
-from lib.unsilence._typing import UpdateCallbackType
-from lib.unsilence.render_media.media_renderer import MediaRenderer
-from lib.unsilence.render_media.options import RenderOptions
+from libs.unsilence import Intervals
+from libs.unsilence._typing import UpdateCallbackType
+from libs.unsilence.render_media.media_renderer import MediaRenderer
+from libs.unsilence.render_media.options import RenderOptions
 from utils.video.measure import get_video_bits_per_raw_sample, get_video_framerate, get_video_resolution
 
 from .fast_render_interval_thread import RenderIntervalThread, ThreadTask

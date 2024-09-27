@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from lib.unsilence import Unsilence
-from lib.unsilence._typing import UpdateCallbackType
-from lib.unsilence.render_media.options import RenderOptions
-from lib.unsilence.unsilence import default_render_options
+from libs.unsilence import Unsilence
+from libs.unsilence._typing import UpdateCallbackType
+from libs.unsilence.render_media.options import RenderOptions
+from libs.unsilence.unsilence import default_render_options
 
 from .fast_media_renderer import FastMediaRenderer
 

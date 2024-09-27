@@ -8,7 +8,7 @@ from pathlib import Path
 
 from ffmpeg import FFmpegError
 
-from lib.unsilence.render_media.options import RenderOptions
+from libs.unsilence.render_media.options import RenderOptions
 from utils.progress_bar import setup_progress_for_ffmpeg
 
 from .fast_render_task import IntervalGroupRenderTask

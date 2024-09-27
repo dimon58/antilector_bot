@@ -6,8 +6,8 @@ from typing import Self, Union
 import pydantic
 from pydantic import ConfigDict
 
-from lib.nisqa.metrics import NisqaMetrics
-from lib.nisqa.model import NisqaModel
+from libs.nisqa.metrics import NisqaMetrics
+from libs.nisqa.model import NisqaModel
 from utils.audio import measure_volume
 from utils.misc import get_all_subclasses
 

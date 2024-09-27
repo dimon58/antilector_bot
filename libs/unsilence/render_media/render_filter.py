@@ -1,7 +1,7 @@
 import logging
 
-from lib.unsilence import Interval
-from lib.unsilence.render_media.options import RenderOptions
+from libs.unsilence import Interval
+from libs.unsilence.render_media.options import RenderOptions
 
 # FFMpeg не позволяет делать скорость аудио меньше 0.5 или больше 100
 # https://ffmpeg.org/ffmpeg-filters.html#atempo
