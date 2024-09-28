@@ -22,6 +22,22 @@ class VideoPipelineStatistics(pydantic.BaseModel):
     audio_pipeline_stats: AudioPipelineStatistics
     unsilence_stats: StepStatistics
 
+    def get_nisqa_time(self) -> float:
+        """
+        Возвращает полной время, потраченное на nisqa
+        """
+        res = 0
+
+        if self.extract_audio_stats.nisqa is not None:
+            res += self.extract_audio_stats.nisqa.time
+
+        res += self.audio_pipeline_stats.get_nisqa_time()
+
+        if self.unsilence_stats.nisqa is not None:
+            res += self.unsilence_stats.nisqa.time
+
+        return res
+
 
 class VideoPipeline(pydantic.BaseModel):
     audio_pipeline: AudioPipeline

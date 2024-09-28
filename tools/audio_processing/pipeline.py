@@ -36,6 +36,12 @@ class AudioPipelineStatistics(pydantic.BaseModel):
     step_statistics: list[StepStatistics]
     total_time: float
 
+    def get_nisqa_time(self) -> float:
+        """
+        Возвращает полной время, потраченное на nisqa
+        """
+        return sum(step_stat.nisqa.time for step_stat in self.step_statistics if step_stat.nisqa is not None)
+
 
 class AudioPipeline(pydantic.BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
