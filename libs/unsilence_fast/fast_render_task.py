@@ -6,6 +6,7 @@ from typing import TypeAlias
 from ffmpeg.types import Option
 
 from libs.unsilence import Interval
+from libs.unsilence.intervals.interval import SerializedInterval
 from libs.unsilence.render_media.options import RenderOptions
 from libs.unsilence.render_media.render_filter import (
     get_audio_filter,
@@ -49,6 +50,9 @@ class IntervalRenderTask:
         logger.debug("Audio filter: %s", task.audio_filter)
 
         return task
+
+    def serialize(self) -> SerializedInterval:
+        return self.interval.serialize()
 
 
 @dataclass
@@ -295,3 +299,6 @@ class IntervalGroupRenderTask:
             output_options["c:a"] = render_options.force_audio_codec
 
         return ffmpeg.output(output_file, output_options)
+
+    def serialize(self) -> list[SerializedInterval]:
+        return [task.interval.serialize() for task in self.interval_render_tasks]

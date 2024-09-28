@@ -20,6 +20,9 @@ DETECTION_TIME_KEY = "detection_time"
 RENDERING_TIME_KEY = "rendering_time"
 TIME_SAVINGS_ESTIMATION_KEY = "time_savings_estimation"
 TIME_SAVINGS_REAL_KEY = "time_savings_real"
+INTERVAL_LIST_KEY = "interval_list"
+INTERVAL_LIST_WITHOUT_BREAKS_KEY = "interval_list_without_breaks"
+INTERVAL_GROUPS_KEY = "interval_groups"
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +113,7 @@ class UnsilenceAction(Action):
         concat_progress = ProgressBar("Concatenating intervals", mininterval=TQDM_LOGGING_INTERVAL)
 
         rendering_start = time.perf_counter()
-        u.render_media(
+        interval_groups = u.render_media(
             output_file,
             separated_audio=self.separated_audio,
             temp_dir=self.temp_dir,
@@ -123,9 +126,13 @@ class UnsilenceAction(Action):
         time_savings_real = calculate_time_savings(input_file, output_file)
         logger.info("Got time savings\n%s", pretty_time_estimate(time_savings_real))
 
+        interval_list, interval_list_without_breaks = intervals.serialize()
         return {
             DETECTION_TIME_KEY: detection_end - detection_start,
             RENDERING_TIME_KEY: rendering_end - rendering_start,
             TIME_SAVINGS_ESTIMATION_KEY: time_savings_estimation,
             TIME_SAVINGS_REAL_KEY: time_savings_real,
+            INTERVAL_LIST_KEY: interval_list,
+            INTERVAL_LIST_WITHOUT_BREAKS_KEY: interval_list_without_breaks,
+            INTERVAL_GROUPS_KEY: interval_groups,
         }

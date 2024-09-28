@@ -14,6 +14,7 @@ from configs import (
 )
 from libs.unsilence import Intervals
 from libs.unsilence._typing import UpdateCallbackType
+from libs.unsilence.intervals.interval import SerializedInterval
 from libs.unsilence.render_media.media_renderer import MediaRenderer
 from libs.unsilence.render_media.options import RenderOptions
 from utils.video.measure import get_video_bits_per_raw_sample, get_video_framerate, get_video_resolution
@@ -227,7 +228,7 @@ class FastMediaRenderer(MediaRenderer):
         separated_audio: Path | None = None,
         on_render_progress_update: UpdateCallbackType | None = None,
         on_concat_progress_update: UpdateCallbackType | None = None,
-    ) -> None:
+    ) -> list[list[SerializedInterval]]:
         """
         Renders an input_file and writes the final output to output_file
 
@@ -270,3 +271,5 @@ class FastMediaRenderer(MediaRenderer):
         )
 
         shutil.move(final_output, output_file)
+
+        return [task.serialize() for task in tasks]

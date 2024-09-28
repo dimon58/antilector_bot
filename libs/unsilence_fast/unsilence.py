@@ -2,6 +2,7 @@ from pathlib import Path
 
 from libs.unsilence import Unsilence
 from libs.unsilence._typing import UpdateCallbackType
+from libs.unsilence.intervals.interval import SerializedInterval
 from libs.unsilence.render_media.options import RenderOptions
 from libs.unsilence.unsilence import default_render_options
 
@@ -17,7 +18,7 @@ class FastUnsilence(Unsilence):
         separated_audio: Path | None = None,
         on_render_progress_update: UpdateCallbackType | None = None,
         on_concat_progress_update: UpdateCallbackType | None = None,
-    ) -> None:
+    ) -> list[list[SerializedInterval]]:
         """
         Renders the current intervals with options specified in the kwargs
 
@@ -34,7 +35,7 @@ class FastUnsilence(Unsilence):
             raise ValueError("Silence detection was not yet run and no intervals where given manually!")
 
         renderer = FastMediaRenderer(temp_dir)
-        renderer.render(
+        return renderer.render(
             input_file=self._input_file,
             output_file=output_file,
             intervals=self._intervals,
