@@ -109,10 +109,12 @@ class RecalcIds(yt_dlp.postprocessor.PostProcessor):
         sanitizer: Callable[[dict, bool], dict] | None = None,
         remove_private_keys: bool = False,
         downloader: FileDownloader | None = None,
+        nested: bool = False,
     ):
         super().__init__(downloader)
         self.__sanitizer = sanitizer
         self.__sanitizer__remove_private_keys = remove_private_keys
+        self.__nested = nested
 
     @staticmethod
     def recalc_id(info: YtDlpInfoDict, extractor: str) -> str:
@@ -141,6 +143,9 @@ class RecalcIds(yt_dlp.postprocessor.PostProcessor):
         """
         extractor = info["extractor"]
         info["id"] = self.recalc_id(info, extractor)
+
+        if not self.__nested:
+            return info
 
         entries = info.get("entries")
         if isinstance(entries, Generator):
@@ -240,7 +245,9 @@ def download(url: str, output_dir: str, **additional_ydl_opts) -> DownloadData:
 
     with YoutubeDL(ydl_opts) as ydl:
         ydl.add_post_processor(RecalcIds(), when="pre_process")
+        ydl.add_post_processor(RecalcIds(), when="playlist")
         ydl.add_post_processor(SaveInfo(data), when="pre_process")
+        ydl.add_post_processor(SaveInfo(data), when="playlist")
         ydl.download([url])
 
     return data
