@@ -187,7 +187,7 @@ def resolve_type(info: YtDlpInfoDict) -> str:
     """
     Определяет тип канала на youtube
     """
-    _type = info["_type"]
+    _type = info.get("_type", YtDlpContentType.VIDEO)
 
     if (
         _type == YtDlpContentType.PLAYLIST
@@ -269,6 +269,7 @@ def extract_info(
     )
     with YoutubeDL(ydl_opts) as ydl:
         ydl.add_post_processor(RecalcIds(ydl.sanitize_info, remove_private_keys), when="pre_process")
+        ydl.add_post_processor(RecalcIds(ydl.sanitize_info, remove_private_keys), when="playlist")
         info = ydl.extract_info(url, download=False, process=process)
         info["_type"] = resolve_type(info)
         return info
