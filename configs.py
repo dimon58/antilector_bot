@@ -7,15 +7,21 @@ import torch
 from utils.torch_utils import is_cuda
 from utils.video.misc import NVENC_MAX_CONCURRENT_SESSIONS
 
+DEBUG = False
+#: Корень проекта
+BASE_DIR = Path(__file__).resolve().parent
+
+# Настройка устройств для
 USE_CUDA = torch.cuda.is_available()
 TORCH_DEVICE = torch.device("cuda:0" if USE_CUDA else "cpu")
+os.environ["DEVICE"] = str(TORCH_DEVICE) # Setup device for deepfilternet
+
+# Лимиты на использование памяти
 TOTAL_VRAM = torch.cuda.mem_get_info(TORCH_DEVICE)[1] if is_cuda(TORCH_DEVICE) else 0
 MAX_VRAM_FOR_UNSILENCE_RENDERING = 0.8 * TOTAL_VRAM
 MAX_RAM_FOR_UNSILENCE_RENDERING = 8 * 2**30
 
-# Setup device for deepfilternet
-os.environ["DEVICE"] = str(TORCH_DEVICE)
-
+# Настройки обработки видео
 USE_NVENC = USE_CUDA
 FORCE_VIDEO_CODEC = "hevc_nvenc" if USE_NVENC else "hevc"
 FORCE_AUDIO_CODEC = "aac"
@@ -28,16 +34,8 @@ UNSILENCE_DEFAULT_CPU_COUNT = min(max(1, os.cpu_count() - 1), NVENC_MAX_CONCURRE
 # Если менять в разумных пределах, то время работы почти не зависит от этого параметра
 MAX_DEEPFILTERNET_CHUNK_SIZE_BYTES = 1 * 2**30
 
-UNSILENCE_MIN_INTERVAL_LENGTH_FOR_LOGGING = 300
-TQDM_LOGGING_INTERVAL = 5
-
-DEBUG = False
-#: Корень проекта
-BASE_DIR = Path(__file__).resolve().parent
-
 # ---------- yt-dlp ---------- #
 
-YT_DLP_LOGGING_DEBOUNCE_TIME = 5
 YT_DLP_HTTP_CHUNK_SIZE = 10485760  # 10 MB
 
 # Лекции чётче 1080p не имеют смысла
@@ -45,6 +43,10 @@ YT_DLP_VIDEO_MAX_HEIGHT = 1080
 YT_DLP_VIDEO_MAX_WIDTH = 1920 * 2  # формат 32x9 подходит
 
 # ---------- Логирование ---------- #
+
+UNSILENCE_MIN_INTERVAL_LENGTH_FOR_LOGGING = 300
+TQDM_LOGGING_INTERVAL = 5
+YT_DLP_LOGGING_DEBOUNCE_TIME = 5
 
 #: Папка для логирования
 LOGGING_FOLDER = BASE_DIR / "logs"
