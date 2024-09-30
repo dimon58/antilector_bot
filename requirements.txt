@@ -14,7 +14,7 @@ silero-vad==5.1
 torch==2.4.1+cu124
 torchaudio==2.4.1+cu124
 
-onnxruntime
+onnxruntime==1.19.2
 #--extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
 #onnxruntime-gpu
 
@@ -25,3 +25,18 @@ pydantic==2.9.2
 orjson==3.10.7
 
 yt-dlp==2024.8.6
+
+# -------- Telegram bot -------- #
+-r djgram/requirements.txt
+
+# Работа с telegram
+aiogram==3.13.1
+
+# Работа с базой данных
+alembic==1.13.3
+asyncpg==0.29.0
+redis==5.1.0
+hiredis==3.0.0
+
+# Прочее
+python-dotenv==1.0.1

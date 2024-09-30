@@ -81,6 +81,7 @@ RUN pip install --break-system-packages --no-cache-dir \
 
 # Python requirements
 WORKDIR /app
+COPY ./djgram/requirements.txt djgram/requirements.txt
 COPY ./libs/nisqa/requirements.txt libs/nisqa/requirements.txt
 COPY ./libs/unsilence/requirements.txt libs/unsilence/requirements.txt
 COPY ./requirements.txt requirements.txt

@@ -1,0 +1,77 @@
+services:
+  redis:
+    image: redis:7.4.0-alpine3.20
+    command: /usr/local/etc/redis/run.sh
+    hostname: redis
+    restart: always
+    volumes:
+      - redis-data:/data
+      - ./docker/redis:/usr/local/etc/redis
+    ports:
+      - "${REDIS_PORT:-6379}:${REDIS_PORT:-6379}"
+    env_file:
+      - .env
+
+  postgres:
+    image: postgres:17.0-alpine3.20
+    hostname: postgres
+    restart: always
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    environment:
+      PGPORT: ${POSTGRES_PORT:-5432}
+    ports:
+      - "${PGPORT:-5432}:${PGPORT:-5432}"
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.9.1.3278-alpine
+    hostname: clickhouse
+    restart: always
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+      - "9009:9009"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./docker/clickhouse/config.d:/etc/clickhouse-server/config.d
+      - ./logs/clickhouse:/var/log/clickhouse-server
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 262144
+        hard: 262144
+    env_file:
+      - .env
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: [ "python", "main.py" ]
+    restart: always
+    volumes:
+      - ./:/app
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_HOST=redis
+      - CLICKHOUSE_HOST=clickhouse
+    depends_on:
+      - redis
+      - clickhouse
+      - postgres
+
+  migrate:
+    extends:
+      service: bot
+    command: [ "alembic", "upgrade", "head" ]
+    # Ждём, пока бд запустится окончательно
+    restart: on-failure
+
+volumes:
+  redis-data:
+  postgres-data:
+  clickhouse-data:

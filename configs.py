@@ -3,18 +3,73 @@ from pathlib import Path
 
 import silero_vad
 import torch
+from dotenv import load_dotenv
 
 from utils.torch_utils import is_cuda
 from utils.video.misc import NVENC_MAX_CONCURRENT_SESSIONS
 
-DEBUG = False
 #: Корень проекта
 BASE_DIR = Path(__file__).resolve().parent
+
+# Переменные окружения из файла .env
+# Загружаем без перезаписи, чтобы ими можно было управлять из вне
+load_dotenv(BASE_DIR / ".env", override=False)
+
+#: Включить режим отладки
+DEBUG = bool(int(os.environ.get("DEBUG", "1")))  # pyright: ignore [reportArgumentType]
+
+
+# --------------------------------- api токены --------------------------------- #
+
+#: Токен телеграм бота
+TELEGRAM_BOT_TOKEN: str = os.environ.get("TELEGRAM_BOT_TOKEN", "")  # pyright: ignore [reportAssignmentType]
+
+# ---------- База данных ---------- #
+
+# Данные для подключения к PostgreSQL
+POSTGRES_HOST: str = os.environ.get("POSTGRES_HOST", "localhost")  # pyright: ignore [reportAssignmentType]
+POSTGRES_PORT: int = int(os.environ.get("POSTGRES_PORT", "5432"))  # pyright: ignore [reportArgumentType]
+POSTGRES_DB: str = os.environ.get("POSTGRES_DB", "postgres")  # pyright: ignore [reportAssignmentType]
+POSTGRES_USER: str = os.environ.get("POSTGRES_USER", "admin")  # pyright: ignore [reportAssignmentType]
+POSTGRES_PASSWORD: str = os.environ.get("POSTGRES_PASSWORD", "admin")  # pyright: ignore [reportAssignmentType]
+
+# https://docs.sqlalchemy.org/en/20/core/engines.html#database-urls
+DB_URL = "postgresql+asyncpg://{user}:{password}@{host}:{port}/{dbname}".format(  # noqa: UP032
+    user=POSTGRES_USER,
+    password=POSTGRES_PASSWORD,
+    host=POSTGRES_HOST,
+    port=POSTGRES_PORT,
+    dbname=POSTGRES_DB,
+)
+
+DB_ENGINE_SETTINGS = {
+    # https://stackoverflow.com/questions/24956894/sql-alchemy-queuepool-limit-overflow
+    "pool_size": 25,
+}
+DB_SUPPORTS_ARRAYS = True
+
+# Данные для подключения к ClickHouse
+CLICKHOUSE_HOST: str = os.environ.get("CLICKHOUSE_HOST", "localhost")  # pyright: ignore [reportAssignmentType]
+CLICKHOUSE_PORT: int = int(os.environ.get("CLICKHOUSE_PORT", 9000))  # pyright: ignore [reportArgumentType]
+CLICKHOUSE_DB: str = os.environ.get("CLICKHOUSE_DB", "default")  # pyright: ignore [reportAssignmentType]
+CLICKHOUSE_USER: str = os.environ.get("CLICKHOUSE_USER", "default")  # pyright: ignore [reportAssignmentType]
+CLICKHOUSE_PASSWORD: str = os.environ.get("CLICKHOUSE_PASSWORD", "")  # pyright: ignore [reportAssignmentType]
+
+REDIS_HOST: str = os.environ.get("REDIS_HOST", "localhost")  # pyright: ignore [reportAssignmentType]
+REDIS_PORT: int = int(os.environ.get("REDIS_PORT", 6379))  # pyright: ignore [reportArgumentType]
+REDIS_USER: str | None = os.environ.get("REDIS_USER")
+REDIS_PASSWORD: str | None = os.environ.get("REDIS_PASSWORD")
+
+#: Номер базы данных для хранилища машины конченых состояний
+REDIS_STORAGE_DB: int = int(os.environ.get("REDIS_STORAGE_DB", 0))  # pyright: ignore [reportArgumentType]
+
+
+# ---------- Настройка логики обработки ---------- #
 
 # Настройка устройств для
 USE_CUDA = torch.cuda.is_available()
 TORCH_DEVICE = torch.device("cuda:0" if USE_CUDA else "cpu")
-os.environ["DEVICE"] = str(TORCH_DEVICE) # Setup device for deepfilternet
+os.environ["DEVICE"] = str(TORCH_DEVICE)  # Setup device for deepfilternet
 
 # Лимиты на использование памяти
 TOTAL_VRAM = torch.cuda.mem_get_info(TORCH_DEVICE)[1] if is_cuda(TORCH_DEVICE) else 0
@@ -59,7 +114,7 @@ LOG_FILE = LOGGING_FOLDER / "logs.log"
 # Красим точку в тот же цвет, что и дату и миллисекунды
 LOGGING_FORMAT = (
     "[%(name)s:%(filename)s:%(funcName)s:%(lineno)d:"
-    "%(asctime)s\033[32m.\033[0m%(msecs)03d:%(levelname)s] %(message)s"
+    "%(asctime)s\033[32m.\033[0m%(msecs)03d:%(levelname)s:%(update_id)s] %(message)s"
 )
 
 #: Формат даты в логах
@@ -69,6 +124,11 @@ LOGGING_DATE_FORMAT = "%d-%m-%Y %H:%M:%S"
 LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "update_filter": {
+            "()": "djgram.contrib.logs.context.UpdateIdContextFilter",
+        },
+    },
     "formatters": {
         "default": {
             "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
@@ -76,7 +136,7 @@ LOGGING_CONFIG = {
             "datefmt": LOGGING_DATE_FORMAT,
         },
         "colored": {
-            "()": "coloredlogs.ColoredFormatter",
+            "()": "djgram.contrib.logs.extended_colored_formatter.ExtendedColoredFormatter",
             "format": LOGGING_FORMAT,
             "datefmt": LOGGING_DATE_FORMAT,
             "field_styles": {
@@ -93,10 +153,12 @@ LOGGING_CONFIG = {
         "stream_handler": {
             "class": "logging.StreamHandler",
             "formatter": "colored",
+            "filters": ["update_filter"],
         },
         "file_handler": {
             "class": "logging.handlers.TimedRotatingFileHandler",
             "formatter": "default",
+            "filters": ["update_filter"],
             "filename": LOG_FILE,
             "encoding": "utf-8",
             "when": "W0",
@@ -108,6 +170,9 @@ LOGGING_CONFIG = {
             "level": "DEBUG" if DEBUG else "INFO",
             "propagate": True,
             "encoding": "utf-8",
+        },
+        "sqlalchemy.engine": {
+            "level": "DEBUG" if DEBUG else "WARNING",
         },
     },
 }
