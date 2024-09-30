@@ -27,6 +27,7 @@ from configs import (
 # noinspection PyUnresolvedReferences
 from djgram.db.models import BaseModel  # noqa: F401 нужно для корректной работы alembic
 from djgram.setup import setup_djgram
+from tg_bot.apps.lectures import router as lectures_router
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
@@ -66,6 +67,7 @@ def setup_routers(dp: Dispatcher) -> None:
     """
     Установка роутеров
     """
+    dp.include_router(lectures_router)
     dp.include_router(main_router)
 
     logger.info("Routers setup")
@@ -89,8 +91,7 @@ async def main() -> None:
     dp = Dispatcher(storage=storage)
     bot = Bot(TELEGRAM_BOT_TOKEN)
 
-    setup_djgram(dp)
+    setup_djgram(dp, analytics=True)
     setup_routers(dp)
 
     await dp.start_polling(bot, skip_updates=False, allowed_updates=list(UpdateType))
-
