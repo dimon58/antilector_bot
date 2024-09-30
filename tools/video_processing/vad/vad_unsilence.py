@@ -10,7 +10,7 @@ from libs.unsilence_fast.unsilence import FastUnsilence
 from utils.audio import read_audio
 
 
-def silent_detect_progress_update_proxy(callback: UpdateCallbackType, duration: float):  # noqa: ANN201
+def silent_detect_progress_update_proxy(callback: UpdateCallbackType, duration: float):
     def inner(current: float) -> None:
         callback(current * duration / 100, duration)
 
