@@ -132,7 +132,6 @@ class DeepFilterNet3Denoise(Action):
     _cuda_memory_warning_threshold = 0.01
     _CUDA_MEMORY_KEY = "cuda_memory"
 
-    @pydantic.model_validator(mode="after")
     def load_model(self) -> Self:
         self.model, self.df_state, self.df_model_name = init_df(default_model=self.df_model_name)
         self.device = get_device()
@@ -163,7 +162,8 @@ class DeepFilterNet3Denoise(Action):
 
     def run(self, input_file: Path, output_file: Path) -> ActionStatsType | None:
 
-        self.device = get_device()
+        if self.model is None:
+            self.load_model()
         stats = {
             "model": self.df_model_name,
             "device": {
@@ -187,7 +187,7 @@ class DeepFilterNet3Denoise(Action):
             torch.cuda.reset_peak_memory_stats()
 
             audio_chunk = audio[:, offset : offset + chunk_size]
-            enhanced_audio_chunk = enhance(self.model.cuda(), self.df_state, audio_chunk)
+            enhanced_audio_chunk = enhance(self.model, self.df_state, audio_chunk)
             enhanced_audio.append(enhanced_audio_chunk)
 
             if is_cuda(self.device):
