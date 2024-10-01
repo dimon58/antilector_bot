@@ -18,7 +18,6 @@ load_dotenv(BASE_DIR / ".env", override=False)
 #: Включить режим отладки
 DEBUG = bool(int(os.environ.get("DEBUG", "1")))  # pyright: ignore [reportArgumentType]
 
-
 # --------------------------------- api токены --------------------------------- #
 
 #: Токен телеграм бота
@@ -63,6 +62,10 @@ REDIS_PASSWORD: str | None = os.environ.get("REDIS_PASSWORD")
 #: Номер базы данных для хранилища машины конченых состояний
 REDIS_STORAGE_DB: int = int(os.environ.get("REDIS_STORAGE_DB", 0))  # pyright: ignore [reportArgumentType]
 
+RABBITMQ_HOST: str = os.environ.get("RABBITMQ_HOST", "localhost")
+RABBITMQ_PORT: int = int(os.environ.get("RABBITMQ_PORT", 5672))
+RABBITMQ_DEFAULT_USER: str | None = os.environ.get("RABBITMQ_DEFAULT_USER")
+RABBITMQ_DEFAULT_PASS: str | None = os.environ.get("RABBITMQ_DEFAULT_PASS")
 
 # ---------- Настройка логики обработки ---------- #
 

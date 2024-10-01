@@ -11,11 +11,18 @@ from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Select
 
+from djgram.system_configs import MIDDLEWARE_AUTH_USER_KEY
+from processing.schema import VideoOrPlaylistForProcessing
+from processing.tasks import process_video_or_playlist
+from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpContentType
+
 from .handle_url import URL_KEY, handle_url
 from .states import LectureProcessingStates
 
 VIDEO_KEY = "video"
 DOCUMENT_KEY = "document"
+MESSAGE_ID_KEY = "message_id"
+IS_PLAYLIST_KEY = "is_playlist"
 
 AUDIO_PROCESSING_PROFILE_ID_KEY = "audio_processing_profile_id"
 
@@ -45,21 +52,27 @@ async def add_video(message: Message, message_input: MessageInput, manager: Dial
         action=ChatAction.TYPING,
     ):
         if message.text is not None:
-            await handle_url(message, manager)
+            _type = await handle_url(message, manager)
             manager.dialog_data.pop(VIDEO_KEY, None)
             manager.dialog_data.pop(DOCUMENT_KEY, None)
+
+            if _type is not None:
+                manager.dialog_data[MESSAGE_ID_KEY] = message.message_id
+                manager.dialog_data[IS_PLAYLIST_KEY] = _type == YtDlpContentType.PLAYLIST
             return
 
         if message.video is not None:
             await handle_video(message, manager)
             manager.dialog_data.pop(URL_KEY, None)
             manager.dialog_data.pop(DOCUMENT_KEY, None)
+            manager.dialog_data[MESSAGE_ID_KEY] = message.message_id
             return
 
         if message.document is not None:
             await handle_document(message, manager)
             manager.dialog_data.pop(URL_KEY, None)
             manager.dialog_data.pop(VIDEO_KEY, None)
+            manager.dialog_data[MESSAGE_ID_KEY] = message.message_id
             return
 
         await message.answer("Отправьте ссылку или видеофайл")
@@ -73,4 +86,23 @@ async def select_audio_processing_profile(
 ):
     manager.dialog_data[AUDIO_PROCESSING_PROFILE_ID_KEY] = int(audio_processing_profile_id)
 
-    # TODO: начало обработки здесь
+    task = VideoOrPlaylistForProcessing(
+        url=manager.dialog_data.get(URL_KEY),
+        video=manager.dialog_data.get(VIDEO_KEY),
+        document=manager.dialog_data.get(DOCUMENT_KEY),
+        user_id=manager.middleware_data[MIDDLEWARE_AUTH_USER_KEY].id,
+        telegram_chat_id=callback.message.chat.id,
+        telegram_message_id=manager.dialog_data[MESSAGE_ID_KEY],
+        audio_processing_profile_id=int(audio_processing_profile_id),
+        is_playlist=manager.dialog_data.get(IS_PLAYLIST_KEY, False),
+    )
+
+    task_id = process_video_or_playlist.delay(task.model_dump(mode="json"))
+
+    logger.info("Published video processing task %s", task_id)
+
+    await callback.bot.send_message(
+        text="Добавлено в очередь на обработку",
+        chat_id=task.telegram_chat_id,
+        reply_to_message_id=task.telegram_message_id,
+    )
