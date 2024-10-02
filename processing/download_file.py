@@ -14,7 +14,7 @@ from sqlalchemy_file.storage import StorageManager
 from djgram.db.base import get_autocommit_session
 from djgram.db.utils import get_or_create
 from djgram.utils.download import download_file
-from tools.yt_dlp_downloader.misc import convert_entries_generator
+from tools.yt_dlp_downloader.misc import convert_entries_generator, yt_dlp_jsonify
 from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpInfoDict, extract_info, download, get_url
 from .models import Playlist, Video
 from .schema import VideoOrPlaylistForProcessing, FILE_TYPE
@@ -67,7 +67,7 @@ async def _create_video(
         db_video = Video(
             id=video_id,
             source=FILE_TYPE,
-            yt_dlp_info=yt_dlp_info,
+            yt_dlp_info=yt_dlp_jsonify(yt_dlp_info),
             file=None,
             waiters_ids=[video_or_playlist_for_processing.user_id],
         )
@@ -104,7 +104,7 @@ async def _create_playlist(
             with_for_update=False,
             defaults={
                 "source": yt_dlp_info["extractor"],
-                "yt_dlp_info": yt_dlp_info,
+                "yt_dlp_info": yt_dlp_jsonify(yt_dlp_info),
             },
             id=yt_dlp_info["id"],
         )
@@ -131,6 +131,7 @@ async def _create_playlist(
         else:
             await logging_message.edit_text(text=text, disable_web_page_preview=True, parse_mode=ParseMode.MARKDOWN)
 
+        video = extract_info(url=get_url(video), process=False)
         videos.append(await _create_video(video, video_or_playlist_for_processing, playlist))
 
     return videos

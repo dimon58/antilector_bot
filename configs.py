@@ -114,7 +114,13 @@ MAX_DEEPFILTERNET_CHUNK_SIZE_BYTES = 1 * 2**30
 
 # ---------- yt-dlp ---------- #
 
-YT_DLP_HTTP_CHUNK_SIZE = 10485760  # 10 MB
+# YT_DLP_HTTP_CHUNK_SIZE = 10485760  # 10 MB
+YT_DLP_HTTP_CHUNK_SIZE = None
+# Потенциальный способ ускорения загрузки
+# https://github.com/yt-dlp/yt-dlp/issues/7987
+# https://github.com/yt-dlp/yt-dlp/issues/985
+# Хотя скорость в основном зависит от кэширования на стороне провайдера
+YT_DLP_YOUTUBE_FORMATS_DASHY = False
 
 # Лекции чётче 1080p не имеют смысла
 YT_DLP_VIDEO_MAX_HEIGHT = 1080

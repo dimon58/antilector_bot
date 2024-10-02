@@ -11,7 +11,7 @@ import yt_dlp
 from yt_dlp.downloader import FileDownloader
 from yt_dlp.extractor.common import InfoExtractor
 
-from configs import YT_DLP_HTTP_CHUNK_SIZE, YT_DLP_LOGGING_DEBOUNCE_TIME
+from configs import YT_DLP_HTTP_CHUNK_SIZE, YT_DLP_LOGGING_DEBOUNCE_TIME, YT_DLP_YOUTUBE_FORMATS_DASHY
 
 from .yt_dlp_extractors import CUSTOM_EXTRACTORS
 from .yt_dlp_format_select import select_format
@@ -209,10 +209,19 @@ def get_url(info: YtDlpInfoDict) -> str:
 
 COMMON_YT_DLP_OPTIONS = {
     "logger": DebouncedLogger(),
-    "http_chunk_size": YT_DLP_HTTP_CHUNK_SIZE,
     "format": select_format,
     "noplaylist": True,
 }
+
+if YT_DLP_HTTP_CHUNK_SIZE is not None:
+    COMMON_YT_DLP_OPTIONS["http_chunk_size"] = YT_DLP_HTTP_CHUNK_SIZE
+
+if YT_DLP_YOUTUBE_FORMATS_DASHY:
+    COMMON_YT_DLP_OPTIONS["extractor_args"] = {
+        "youtube": {
+            "formats": ["dashy"],
+        },
+    }
 
 
 def download(url: str, output_dir: str, **additional_ydl_opts) -> DownloadData:
@@ -272,4 +281,8 @@ def extract_info(
         ydl.add_post_processor(RecalcIds(ydl.sanitize_info, remove_private_keys), when="playlist")
         info = ydl.extract_info(url, download=False, process=process)
         info["_type"] = resolve_type(info)
-        return info
+
+        if not process:
+            _, info = RecalcIds(ydl.sanitize_info, remove_private_keys).run(info)
+
+    return info
