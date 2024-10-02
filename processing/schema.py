@@ -31,3 +31,14 @@ class VideoOrPlaylistForProcessing(pydantic.BaseModel):
             raise ValueError(err_msg)
 
         return self
+
+    def get_tg_video(self) -> aiogram.types.Video | aiogram.types.Document | None:
+        return self.video or self.document
+
+    def make_id_from_telegram(self) -> str:
+
+        video = self.get_tg_video()
+        if video is None:
+            raise ValueError("There is not telegram video")
+
+        return f"{FILE_TYPE}_{video.file_id}"

@@ -4,6 +4,7 @@ from pathlib import Path
 import silero_vad
 import torch
 from dotenv import load_dotenv
+from libcloud.storage.drivers.minio import MinIOStorageDriver
 
 from utils.torch_utils import is_cuda
 from utils.video.misc import NVENC_MAX_CONCURRENT_SESSIONS
@@ -66,6 +67,25 @@ RABBITMQ_HOST: str = os.environ.get("RABBITMQ_HOST", "localhost")
 RABBITMQ_PORT: int = int(os.environ.get("RABBITMQ_PORT", 5672))
 RABBITMQ_DEFAULT_USER: str | None = os.environ.get("RABBITMQ_DEFAULT_USER")
 RABBITMQ_DEFAULT_PASS: str | None = os.environ.get("RABBITMQ_DEFAULT_PASS")
+
+MINIO_HOST: str = os.environ.get("MINIO_HOST", "localhost")
+MINIO_PORT: int = int(os.environ.get("MINIO_PORT", 19000))
+MINIO_USER: str | None = os.environ.get("MINIO_USER")
+MINIO_PASSWORD: str | None = os.environ.get("MINIO_PASSWORD")
+
+S3_DRIVER = MinIOStorageDriver(
+    key=MINIO_USER,
+    secret=MINIO_PASSWORD,
+    secure=False,
+    host=MINIO_HOST,
+    port=MINIO_PORT,
+)
+
+ORIGINAL_VIDEO_STORAGE = "original-video"
+PROCESSED_VIDEO_STORAGE = "processed-video"
+
+ORIGINAL_VIDEO_CONTAINER = S3_DRIVER.get_container(ORIGINAL_VIDEO_STORAGE)
+PROCESSED_VIDEO_CONTAINER = S3_DRIVER.get_container(PROCESSED_VIDEO_STORAGE)
 
 # ---------- Настройка логики обработки ---------- #
 

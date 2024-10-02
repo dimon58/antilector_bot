@@ -83,12 +83,33 @@ services:
       - REDIS_HOST=redis
       - CLICKHOUSE_HOST=clickhouse
       - RABBITMQ_HOST=rabbitmq
+      - MINIO_HOST=minio
     depends_on:
       - redis
       - clickhouse
       - postgres
       - rabbitmq
     profiles:
+      - production
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-09-22T00-33-43Z
+    hostname: minio
+    command: server --address ":19000" --console-address ":19001" /data
+    ports:
+      - "19000:19000"
+      - "19001:19001"
+    env_file:
+      - .env
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: [ "CMD", "mc", "ready", "local" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - dev
       - production
 
   celery:
@@ -111,3 +132,4 @@ volumes:
   postgres-data:
   clickhouse-data:
   rabbitmq-data:
+  minio-data:

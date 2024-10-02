@@ -41,3 +41,4 @@ hiredis==3.0.0
 # Прочее
 python-dotenv==1.0.1
 celery==5.4.0
+apache-libcloud==3.8.0

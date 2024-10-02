@@ -88,7 +88,7 @@ async def is_user_error(message: Message, exc: YoutubeDLError) -> bool:
     return False
 
 
-async def handle_url(message: Message, manager: DialogManager):
+async def handle_url(message: Message, manager: DialogManager) -> YtDlpContentType | None:
     user: User = manager.middleware_data["user"]
 
     await message.answer("Скачиваю информацию")
@@ -100,18 +100,18 @@ async def handle_url(message: Message, manager: DialogManager):
             info["entries"] = list(entries)  # Превращает итератор в список
     except yt_dlp.utils.UnsupportedError as exc:
         await handle_unsupported_url(exc, message)
-        return
+        return None
     except yt_dlp.utils.YoutubeDLError as exc:
         if await is_user_error(message, exc):
-            return
+            return None
 
         logger.exception(exc.msg, exc_info=exc)
         await message.reply("Ошибка")
-        return
+        return None
 
     if info.get("is_live") or info.get("live_status") == "is_live":
         await message.reply("Работа с прямыми трансляциями не поддерживается")
-        return
+        return None
 
     _type = info["_type"]
 
@@ -149,6 +149,8 @@ async def handle_url(message: Message, manager: DialogManager):
             manager.dialog_data.pop(URL_KEY, None)
             logger.error("User %s tried to process unsupported content type %s", user.id, _type)
             await message.reply(f"Работа с типом _{_type}_ не поддерживается", parse_mode=ParseMode.MARKDOWN)
-            return
+            return None
 
     await manager.switch_to(LectureProcessingStates.choose_audio_processing_profile)
+
+    return _type
