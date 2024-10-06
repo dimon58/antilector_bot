@@ -1,11 +1,12 @@
 import asyncio
+import logging.config
 import sys
 from pathlib import Path
 
-from sqlalchemy import exists, select
+from sqlalchemy import select
 
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
-
+from configs import LOGGING_CONFIG
 from djgram.db import async_session_maker
 from processing.models import AudioProcessingProfile
 from processing.predefined_profile import predefined_audio_pipelines
@@ -45,11 +46,15 @@ async def main():
             if await db_session.scalar(
                 select(AudioProcessingProfile).where(AudioProcessingProfile.name == profile.name)
             ):
+                logging.info("Skip adding %s", profile.name)
                 continue
+
             db_session.add(profile)
+            logging.info("Added %s", profile.name)
 
         await db_session.commit()
 
 
 if __name__ == "__main__":
+    logging.config.dictConfig(LOGGING_CONFIG)
     asyncio.run(main())
