@@ -86,6 +86,14 @@ async def process_video(db_video_id: str, video_or_playlist_for_processing: Vide
         )
         db_session.add(processed_video)
 
+    async with get_tg_bot() as bot:
+        await bot.send_message(
+            text="Скачиваю",
+            chat_id=video_or_playlist_for_processing.telegram_chat_id,
+            reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+            disable_web_page_preview=True,
+            disable_notification=True,
+        )
     processed_video = await run_video_pipeline(audio_processing_profile, db_video, processed_video)
 
     logger.info("Broadcasting video")

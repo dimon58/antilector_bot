@@ -5,7 +5,9 @@ from pathlib import Path
 import aiogram
 import pydantic
 from aiogram import Bot
+from aiogram.enums import ChatAction
 from aiogram.types import Message
+from aiogram.utils.chat_action import ChatActionSender
 from pydantic import ConfigDict
 from sqlalchemy import ForeignKey, Table, Column, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
@@ -197,29 +199,33 @@ class ProcessedVideo(Waitable, TimeTrackableBaseModel):
     )
 
     async def send(self, bot: Bot, chat_id: int | str, reply_to_message_id: int | None = None) -> Message:
+        async with ChatActionSender(
+            bot=bot,
+            chat_id=chat_id,
+            action=ChatAction.TYPING,
+        ):
+            if self.telegram_file is not None:
+                logger.info("Sending cached in telegram video %s", self.id)
+                video = self.telegram_file.file_id
+            else:
+                logger.info("Uploading video %s to telegram", self.id)
+                ext = Path(self.file["filename"]).suffix
+                video = S3FileInput(
+                    obj=self.file.file.object,
+                    filename=f"processed{ext}",
+                )
 
-        if self.telegram_file is not None:
-            logger.info("Sending cached in telegram video %s", self.id)
-            video = self.telegram_file.file_id
-        else:
-            logger.info("Uploading video %s to telegram", self.id)
-            ext = Path(self.file["filename"]).suffix
-            video = S3FileInput(
-                file=self.file.file.object,
-                filename=f"processed{ext}",
+            message = await bot.send_video(
+                video=video,
+                chat_id=chat_id,
+                supports_streaming=True,
+                reply_to_message_id=reply_to_message_id,
             )
 
-        message = await bot.send_video(
-            video=video,
-            chat_id=chat_id,
-            supports_streaming=True,
-            reply_to_message_id=reply_to_message_id,
-        )
+            if self.telegram_file is None:
+                self.telegram_file = message.video
 
-        if self.telegram_file is None:
-            self.telegram_file = message.video
-
-        return message
+            return message
 
     async def broadcast_for_waiters(self, bot: Bot):
 
