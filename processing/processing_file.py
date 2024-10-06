@@ -101,5 +101,4 @@ async def run_video_pipeline(
         .returning(ProcessedVideo)
     )
 
-    result = await execute_file_update_statement(file, stmt)
-    return next(result)[0]
+    return await execute_file_update_statement(file, stmt)

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 async def execute_file_update_statement(file: File, stmt):
     async with get_autocommit_session() as db_session:
         try:
-            db_video = await db_session.execute(stmt)
+            db_video = await db_session.scalar(stmt)
         except Exception as exc:
             logger.error(exc)
             for path in file["files"]:
