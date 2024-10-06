@@ -66,7 +66,7 @@ async def _create_video(
         logger.info("Creating new video %s", video_id)
         db_video = Video(
             id=video_id,
-            source=FILE_TYPE,
+            source=yt_dlp_info["extractor"],
             yt_dlp_info=yt_dlp_jsonify(yt_dlp_info),
             file=None,
             waiters_ids=[video_or_playlist_for_processing.user_id],
