@@ -6,6 +6,7 @@ import torch
 from dotenv import load_dotenv
 from libcloud.storage.drivers.minio import MinIOStorageDriver
 
+from utils.minio_utils import get_container_safe
 from utils.torch_utils import is_cuda
 from utils.video.misc import NVENC_MAX_CONCURRENT_SESSIONS
 
@@ -84,8 +85,8 @@ S3_DRIVER = MinIOStorageDriver(
 ORIGINAL_VIDEO_STORAGE = "original-video"
 PROCESSED_VIDEO_STORAGE = "processed-video"
 
-ORIGINAL_VIDEO_CONTAINER = S3_DRIVER.get_container(ORIGINAL_VIDEO_STORAGE)
-PROCESSED_VIDEO_CONTAINER = S3_DRIVER.get_container(PROCESSED_VIDEO_STORAGE)
+ORIGINAL_VIDEO_CONTAINER = get_container_safe(S3_DRIVER, ORIGINAL_VIDEO_STORAGE)
+PROCESSED_VIDEO_CONTAINER = get_container_safe(S3_DRIVER, PROCESSED_VIDEO_STORAGE)
 
 # ---------- Настройка логики обработки ---------- #
 

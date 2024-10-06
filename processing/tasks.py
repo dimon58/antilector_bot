@@ -4,6 +4,7 @@ from typing import Any
 
 from djgram.utils.async_tools import run_async_in_sync
 from run_celery import app
+from .models import setup_storage
 from .schema import VideoOrPlaylistForProcessing
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -19,6 +20,8 @@ def process_video_or_playlist(video_or_playlist_for_processing: dict[str, Any]):
         from . import processors as _processors
 
         globals()["processors"] = _processors
+
+    setup_storage()
 
     run_async_in_sync(
         processors.process_video_or_playlist(
