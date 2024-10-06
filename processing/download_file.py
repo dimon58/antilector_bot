@@ -9,31 +9,17 @@ from aiogram.types import Message
 from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 from sqlalchemy_file import File
-from sqlalchemy_file.storage import StorageManager
 
 from djgram.db.base import get_autocommit_session
 from djgram.db.utils import get_or_create
 from djgram.utils.download import download_file
 from tools.yt_dlp_downloader.misc import convert_entries_generator, yt_dlp_jsonify
 from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpInfoDict, extract_info, download, get_url
-from .models import Playlist, Video
+from .misc import execute_file_update_statement
+from .models import Playlist, Video, Waiter
 from .schema import VideoOrPlaylistForProcessing, FILE_TYPE
 
 logger = logging.getLogger(__name__)
-
-
-async def execute_file_update_statement(file, stmt):
-    async with get_autocommit_session() as db_session:
-        try:
-            db_video = await db_session.execute(stmt)
-        except Exception as exc:
-            logger.error(exc)
-            for path in file["files"]:
-                StorageManager.delete_file(path)
-                logger.info("Deleted %s", path)
-            raise
-
-        return db_video
 
 
 async def _create_video(
@@ -49,7 +35,7 @@ async def _create_video(
 
         if db_video is not None:
             logger.info("Using existing original video %s", video_id)
-            db_video.add_if_not_in_waiters(video_or_playlist_for_processing.user_id)
+            db_video.add_if_not_in_waiters_from_task(video_or_playlist_for_processing)
 
             if playlist is not None:
                 # Неправильный результат
@@ -69,7 +55,7 @@ async def _create_video(
             source=yt_dlp_info["extractor"],
             yt_dlp_info=yt_dlp_jsonify(yt_dlp_info),
             file=None,
-            waiters_ids=[video_or_playlist_for_processing.user_id],
+            waiters=[Waiter.from_task(video_or_playlist_for_processing)],
         )
         if playlist is not None:
             db_video.playlists.add(playlist)
@@ -169,7 +155,7 @@ async def get_from_telegram(
 
         if db_video is not None:
             logger.info("Using existing original video %s", video_id)
-            db_video.add_if_not_in_waiters(video_or_playlist_for_processing.user_id)
+            db_video.add_if_not_in_waiters_from_task(video_or_playlist_for_processing)
             return db_video
 
         video = video_or_playlist_for_processing.get_tg_video()
@@ -185,7 +171,7 @@ async def get_from_telegram(
             source=FILE_TYPE,
             yt_dlp_info=yt_dlp_info,
             file=None,
-            waiters_ids=[video_or_playlist_for_processing.user_id],
+            waiters=[Waiter.from_task(video_or_playlist_for_processing)],
         )
         db_session.add(db_video)
 

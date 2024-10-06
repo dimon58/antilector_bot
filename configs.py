@@ -105,6 +105,10 @@ USE_NVENC = USE_CUDA
 FORCE_VIDEO_CODEC = "hevc_nvenc" if USE_NVENC else "hevc"
 FORCE_AUDIO_CODEC = "aac"
 
+PROCESSED_EXT = ".mp4"
+
+USE_NISQA = True
+
 VAD_MODEL = silero_vad.load_silero_vad(onnx=True)
 SILERO_VAD_SAMPLE_RATE = 16000
 # Больше 8 потоков будут проблемы с nvenc
