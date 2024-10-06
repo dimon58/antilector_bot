@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-import shlex
 import subprocess  # nosec: B404
 import tempfile
 import time
@@ -89,17 +88,18 @@ def measure_volume(filename: PathType) -> float:
 
     path = Path(filename).as_posix()
 
+    # https://trac.ffmpeg.org/wiki/AudioVolume
+    # https://trac.ffmpeg.org/wiki/Null
     process = subprocess.Popen(  # noqa: S603 # nosec: B603, B607
         [  # noqa: S607
-            "ffprobe",
-            "-f",
-            "lavfi",
+            "ffmpeg",
             "-i",
-            f"amovie={shlex.quote(path)}, volumedetect",
-            "-show_entries",
-            "frame_tags=lavfi.volumedetect.mean_volume",
-            "-of",
-            "default=nw=1:nk=1",
+            path,
+            "-af",
+            "volumedetect",
+            "-f",
+            "null",
+            "-",
         ],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
