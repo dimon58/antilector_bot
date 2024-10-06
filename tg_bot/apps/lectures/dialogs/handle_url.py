@@ -4,9 +4,10 @@ from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import yt_dlp
-from aiogram.enums import ParseMode
+from aiogram.enums import ChatAction, ParseMode
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message
+from aiogram.utils.chat_action import ChatActionSender
 from aiogram_dialog import DialogManager
 from yt_dlp.utils import YoutubeDLError
 
@@ -91,66 +92,71 @@ async def is_user_error(message: Message, exc: YoutubeDLError) -> bool:
 async def handle_url(message: Message, manager: DialogManager) -> YtDlpContentType | None:
     user: User = manager.middleware_data["user"]
 
-    await message.answer("Скачиваю информацию")
-    try:
-        # TODO: почему-то это блокирует event loop
-        info = await extract_info_async(message.text, process=False)
-        entries: list[YtDlpInfoDict] | None = info.get("entries", None)
-        if entries is not None:
-            info["entries"] = list(entries)  # Превращает итератор в список
-    except yt_dlp.utils.UnsupportedError as exc:
-        await handle_unsupported_url(exc, message)
-        return None
-    except yt_dlp.utils.YoutubeDLError as exc:
-        if await is_user_error(message, exc):
+    async with ChatActionSender(
+        bot=message.bot,
+        chat_id=message.chat.id,
+        action=ChatAction.TYPING,
+    ):
+        await message.answer("Скачиваю информацию")
+        try:
+            # TODO: почему-то это блокирует event loop
+            info = await extract_info_async(message.text, process=False)
+            entries: list[YtDlpInfoDict] | None = info.get("entries", None)
+            if entries is not None:
+                info["entries"] = list(entries)  # Превращает итератор в список
+        except yt_dlp.utils.UnsupportedError as exc:
+            await handle_unsupported_url(exc, message)
+            return None
+        except yt_dlp.utils.YoutubeDLError as exc:
+            if await is_user_error(message, exc):
+                return None
+
+            logger.exception(exc.msg, exc_info=exc)
+            await message.reply("Ошибка")
             return None
 
-        logger.exception(exc.msg, exc_info=exc)
-        await message.reply("Ошибка")
-        return None
-
-    if info.get("is_live") or info.get("live_status") == "is_live":
-        await message.reply("Работа с прямыми трансляциями не поддерживается")
-        return None
-
-    _type = info["_type"]
-
-    if _type == "url":
-        logger.warning('User sent url with type "url": %s', message.text)
-
-    manager.dialog_data[URL_KEY] = message.text
-
-    match _type:
-        case YtDlpContentType.VIDEO:
-            thumbnail_url = get_thumbnail_url_for_preview(info)
-            await send_preview(
-                message,
-                f"По ссылке находиться видео\n{info['title']} - {seconds_to_human_readable(info["duration"])}",
-                thumbnail_url,
-            )
-
-        case YtDlpContentType.PLAYLIST:
-            thumbnail_url = get_thumbnail_url_for_preview(info)
-
-            info["entries"] = list(info["entries"])  # Превращает итератор в список
-            playlist_desc = (
-                f"По ссылке находиться плейлист\n"
-                f"[{info['title']}]({info["webpage_url"]})\n"
-                f"Общая продолжительность - {seconds_to_human_readable(get_playlist_duration(info))}"
-            )
-            videos_desc = "\n●".join(
-                f"[{video["title"]}]({video["url"]}) - {seconds_to_human_readable(video["duration"])}"
-                for video in info["entries"]
-            )
-            msg = f"{playlist_desc}\n\nСписок видео:\n●{videos_desc}"
-            await send_preview(message, msg, thumbnail_url, parse_mode=ParseMode.MARKDOWN)
-
-        case _:
-            manager.dialog_data.pop(URL_KEY, None)
-            logger.error("User %s tried to process unsupported content type %s", user.id, _type)
-            await message.reply(f"Работа с типом _{_type}_ не поддерживается", parse_mode=ParseMode.MARKDOWN)
+        if info.get("is_live") or info.get("live_status") == "is_live":
+            await message.reply("Работа с прямыми трансляциями не поддерживается")
             return None
 
-    await manager.switch_to(LectureProcessingStates.choose_audio_processing_profile)
+        _type = info["_type"]
 
-    return _type
+        if _type == "url":
+            logger.warning('User sent url with type "url": %s', message.text)
+
+        manager.dialog_data[URL_KEY] = message.text
+
+        match _type:
+            case YtDlpContentType.VIDEO:
+                thumbnail_url = get_thumbnail_url_for_preview(info)
+                await send_preview(
+                    message,
+                    f"По ссылке находиться видео\n{info['title']} - {seconds_to_human_readable(info["duration"])}",
+                    thumbnail_url,
+                )
+
+            case YtDlpContentType.PLAYLIST:
+                thumbnail_url = get_thumbnail_url_for_preview(info)
+
+                info["entries"] = list(info["entries"])  # Превращает итератор в список
+                playlist_desc = (
+                    f"По ссылке находиться плейлист\n"
+                    f"[{info['title']}]({info["webpage_url"]})\n"
+                    f"Общая продолжительность - {seconds_to_human_readable(get_playlist_duration(info))}"
+                )
+                videos_desc = "\n●".join(
+                    f"[{video["title"]}]({video["url"]}) - {seconds_to_human_readable(video["duration"])}"
+                    for video in info["entries"]
+                )
+                msg = f"{playlist_desc}\n\nСписок видео:\n●{videos_desc}"
+                await send_preview(message, msg, thumbnail_url, parse_mode=ParseMode.MARKDOWN)
+
+            case _:
+                manager.dialog_data.pop(URL_KEY, None)
+                logger.error("User %s tried to process unsupported content type %s", user.id, _type)
+                await message.reply(f"Работа с типом _{_type}_ не поддерживается", parse_mode=ParseMode.MARKDOWN)
+                return None
+
+        await manager.switch_to(LectureProcessingStates.choose_audio_processing_profile)
+
+        return _type
