@@ -144,6 +144,7 @@ async def get_from_url(
     if yt_dlp_info.get("entries") is not None:
         async for video in _create_playlist(bot, yt_dlp_info, video_or_playlist_for_processing):
             yield video
+        return
 
     await bot.send_message(
         text="Скачиваю",
