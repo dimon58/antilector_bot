@@ -1,6 +1,6 @@
-import json
 import logging
 import tempfile
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 from aiogram import Bot
@@ -33,14 +33,14 @@ async def execute_file_update_statement(file, stmt):
                 logger.info("Deleted %s", path)
             raise
 
-        return True, db_video
+        return db_video
 
 
 async def _create_video(
     yt_dlp_info: YtDlpInfoDict,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
     playlist: Playlist | None,
-) -> tuple[bool, Video]:
+) -> Video:
     video_id = yt_dlp_info["id"]
 
     async with get_autocommit_session() as db_session:
@@ -61,7 +61,7 @@ async def _create_video(
                 else:
                     db_video.playlists.add(playlist)
 
-            return False, db_video
+            return db_video
 
         logger.info("Creating new video %s", video_id)
         db_video = Video(
@@ -95,7 +95,7 @@ async def _create_playlist(
     bot: Bot,
     yt_dlp_info: YtDlpInfoDict,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
-) -> list[tuple[bool, Video]]:
+) -> AsyncGenerator[Video]:
     yt_dlp_info = convert_entries_generator(yt_dlp_info)
     async with get_autocommit_session() as db_session:
         playlist, created = await get_or_create(
@@ -115,7 +115,6 @@ async def _create_playlist(
             logger.info("Using existing playlist %s", playlist.id)
 
     logging_message: Message | None = None
-    videos = []
     playlist_count = yt_dlp_info["playlist_count"]
     for idx, video in enumerate(yt_dlp_info["entries"], start=1):
         text = f"Скачиваю {idx}/{playlist_count} [{video["title"]}]({get_url(video)})"
@@ -132,20 +131,19 @@ async def _create_playlist(
             await logging_message.edit_text(text=text, disable_web_page_preview=True, parse_mode=ParseMode.MARKDOWN)
 
         video = extract_info(url=get_url(video), process=False)
-        videos.append(await _create_video(video, video_or_playlist_for_processing, playlist))
-
-    return videos
+        yield await _create_video(video, video_or_playlist_for_processing, playlist)
 
 
 async def get_from_url(
     bot: Bot,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
-) -> list[tuple[bool, Video]]:
+) -> AsyncGenerator[Video]:
     logger.info("Downloading video or playlist")
     yt_dlp_info = extract_info(url=video_or_playlist_for_processing.url, process=False)
 
     if yt_dlp_info.get("entries") is not None:
-        return await _create_playlist(bot, yt_dlp_info, video_or_playlist_for_processing)
+        async for video in _create_playlist(bot, yt_dlp_info, video_or_playlist_for_processing):
+            yield video
 
     await bot.send_message(
         text="Скачиваю",
@@ -154,13 +152,13 @@ async def get_from_url(
         disable_web_page_preview=True,
         disable_notification=True,
     )
-    return [await _create_video(yt_dlp_info, video_or_playlist_for_processing, None)]
+    yield await _create_video(yt_dlp_info, video_or_playlist_for_processing, None)
 
 
 async def get_from_telegram(
     bot: Bot,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
-) -> tuple[bool, Video]:
+) -> Video:
     # Создаём видео в базе данных, если его нет
     # Иначе присоединяемся к ожидающим скачивание
     async with get_autocommit_session() as db_session:
@@ -171,7 +169,7 @@ async def get_from_telegram(
         if db_video is not None:
             logger.info("Using existing original video %s", video_id)
             db_video.add_if_not_in_waiters(video_or_playlist_for_processing.user_id)
-            return False, db_video
+            return db_video
 
         video = video_or_playlist_for_processing.get_tg_video()
         yt_dlp_info = video.model_dump(mode="json") | {
@@ -213,11 +211,14 @@ async def get_from_telegram(
 async def get_downloaded_videos(
     bot: Bot,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
-) -> list[tuple[bool, Video]]:
+) -> AsyncGenerator[Video]:
     """
-    Возвращает скачанные видео в формате (скачано текущим заданием или нет, само видео)
+    Возвращает скачанные видео
     """
     if video_or_playlist_for_processing.url is not None:
-        return await get_from_url(bot, video_or_playlist_for_processing)
+        async for video in get_from_url(bot, video_or_playlist_for_processing):
+            yield video
 
-    return [await get_from_telegram(bot, video_or_playlist_for_processing)]
+        return
+
+    yield await get_from_telegram(bot, video_or_playlist_for_processing)
