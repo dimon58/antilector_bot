@@ -27,6 +27,7 @@ from configs import (
 # noinspection PyUnresolvedReferences
 from djgram.db.models import BaseModel  # noqa: F401 нужно для корректной работы alembic
 from djgram.setup import setup_djgram
+from system_init import system_init
 from tg_bot.apps.lectures import router as lectures_router
 
 logging.config.dictConfig(LOGGING_CONFIG)
@@ -77,6 +78,8 @@ async def main() -> None:
     """
     Точка входа в бота
     """
+
+    system_init()
 
     redis_for_storage = Redis(
         host=REDIS_HOST,

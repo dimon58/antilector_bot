@@ -9,6 +9,7 @@ from configs import (
     RABBITMQ_HOST,
     RABBITMQ_PORT,
 )
+from system_init import system_init
 
 logging.config.dictConfig(LOGGING_CONFIG)
 
@@ -24,3 +25,5 @@ app = Celery(
 )
 
 app.autodiscover_tasks(tasks, force=True)
+
+system_init()
