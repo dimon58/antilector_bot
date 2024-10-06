@@ -134,6 +134,15 @@ services:
     # Внутри и так используется многопоточность, поэтому нет смысла в нескольких воркерах
     command: celery -A run_celery worker --loglevel=INFO --pool=solo
 
+  init_db:
+    extends:
+      service: bot
+    command: [ "python", "run_init.py" ]
+    # Ждём, пока бд запустится окончательно
+    restart: on-failure
+    profiles:
+      - production
+
   migrate:
     extends:
       service: bot
