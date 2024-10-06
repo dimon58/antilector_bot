@@ -67,6 +67,9 @@ class YtDlpBase:
 
     yt_dlp_info: Mapped[YtDlpInfoDict] = mapped_column(JSONB(), nullable=False, doc="Информация из yt dlp")
 
+    def get_title_for_admin(self):
+        return f"{self.source}: {self.yt_dlp_info["title"]}"
+
 
 playlist_video_table = Table(
     "playlist_video",
