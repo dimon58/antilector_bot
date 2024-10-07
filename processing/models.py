@@ -41,10 +41,15 @@ def setup_storage():
         StorageManager.add_storage(PROCESSED_VIDEO_STORAGE, PROCESSED_VIDEO_CONTAINER)
 
 
-class AudioProcessingProfile(BaseModel):
-    name: Mapped[str] = mapped_column(sqltypes.String, nullable=False)
-    description: Mapped[str] = mapped_column(sqltypes.String, nullable=False)
+class ProfileBase(TimeTrackableBaseModel):
+    __abstract__ = True
 
+    slug: Mapped[str] = mapped_column(doc="Название профиля для технических нужд", unique=True, index=True)
+    name: Mapped[str] = mapped_column(doc="Название профиля")
+    description: Mapped[str] = mapped_column(doc="Описание профиля")
+
+
+class AudioProcessingProfile(ProfileBase):
     audio_pipeline: Mapped[AudioPipeline] = mapped_column(
         ImmutablePydanticField(AudioPipeline, should_frozen=False),
         nullable=False,
@@ -52,7 +57,7 @@ class AudioProcessingProfile(BaseModel):
     )
 
 
-class UnsilenceProfile(BaseModel):
+class UnsilenceProfile(ProfileBase):
     name: Mapped[str]
     description: Mapped[str]
 

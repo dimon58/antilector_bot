@@ -172,6 +172,6 @@ async def handle_url(message: Message, manager: DialogManager) -> YtDlpContentTy
                 await message.reply(f"Работа с типом _{_type}_ не поддерживается", parse_mode=ParseMode.MARKDOWN)
                 return None
 
-        await manager.switch_to(LectureProcessingStates.choose_audio_processing_profile)
+        await manager.switch_to(LectureProcessingStates.confirm)
 
         return _type

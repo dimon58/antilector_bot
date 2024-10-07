@@ -14,12 +14,14 @@ from processing.predefined_profile import predefined_audio_pipelines, predefined
 
 async def load_audio_processing_profiles():
     excellent = AudioProcessingProfile(
+        slug="excellent",
         name="Прекрасный",
         description="Подходит для идеального студийного звука. Только сводит в моно и нормализует звук.",
         audio_pipeline=predefined_audio_pipelines.excellent_audio_pipeline,
     )
 
     good = AudioProcessingProfile(
+        slug="good",
         name="Хороший",
         description="Подходит для качественных записей с непостоянной громкостью речи и без шумов."
         " Старается выровнять громкость речи.",
@@ -27,12 +29,14 @@ async def load_audio_processing_profiles():
     )
 
     normal = AudioProcessingProfile(
+        slug="normal",
         name="Нормальный",
         description="Подходит для относительно хороших записей с непостоянной громкостью речи и с посторонними шумами. "
         "Старается выровнять громкость речи и подавить шумы.",
         audio_pipeline=predefined_audio_pipelines.normal_audio_pipeline,
     )
     terrible = AudioProcessingProfile(
+        slug="terrible",
         name="Ужасный",
         description="Используйте только, если у вас очень плохая запись. "
         "Может помочь в случаях, когда звук очень тихий и шумы, громче, чем речь.",
@@ -57,16 +61,19 @@ async def load_audio_processing_profiles():
 
 async def load_unsilence_profiles():
     unsilence_and_vad_profile = UnsilenceProfile(
+        slug="unsilence_and_vad_profile",
         name="Поиск речи",
         description="Хорошо подходит для лекций. Не стоит использовать для видео содержащих музыку.",
         unsilence_action=predefined_unsilence_profiles.unsilence_and_vad_action,
     )
     # vad_profile = UnsilenceProfile(
+    #     slug="vad_profile",
     #     name="Детекция речи",
     #     description="Подходит для лекций. Не стоит использовать для видео содержащих музыку.",
     #     unsilence_action=predefined_unsilence_profiles.vad_only_action,
     # )
     unsilence_profile = UnsilenceProfile(
+        slug="unsilence_profile",
         name="Поиск тишины",
         description="Убирает немного меньше тишины, чем профиль с поиском речи,"
         " зато хорошо работает для видео, содержащих музыку.",

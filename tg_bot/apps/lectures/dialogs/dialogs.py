@@ -19,13 +19,13 @@ from . import callbacks, getters
 from .states import LectureProcessingStates
 
 logger = logging.getLogger(__name__)
-BACK_TEXT = "Назад"
+BACK_TEXT = "◀ Назад"
 
 lecture_processing_dialog = Dialog(
     Window(
         Const("Чтобы удалить тишину из лекции отправьте ссылку или видеофайл"),
         MessageInput(callbacks.add_video),
-        SwitchTo(Const("Подробнее"), id="detailed", state=LectureProcessingStates.detailed),
+        SwitchTo(Const("ℹ Подробнее"), id="detailed", state=LectureProcessingStates.detailed),
         Cancel(Const(BACK_TEXT)),
         state=LectureProcessingStates.link_or_file,
         preview_add_transitions=[
@@ -65,11 +65,15 @@ lecture_processing_dialog = Dialog(
             on_click=callbacks.select_audio_processing_profile,
         ),
         SwitchTo(
-            Const("Описание профилей"),
+            Const("ℹ Описание профилей"),
             id="detailed",
             state=LectureProcessingStates.audio_processing_profiles_description,
         ),
-        SwitchTo(Const(BACK_TEXT), id="back_to_video_input", state=LectureProcessingStates.link_or_file),
+        SwitchTo(
+            Const(BACK_TEXT),
+            id="back_to_confirm",
+            state=LectureProcessingStates.confirm,
+        ),
         state=LectureProcessingStates.choose_audio_processing_profile,
         getter=getters.get_audio_processing_profiles,
     ),
@@ -90,7 +94,7 @@ lecture_processing_dialog = Dialog(
             on_click=callbacks.select_unsilence_profile,
         ),
         SwitchTo(
-            Const("Описание профилей"),
+            Const("ℹ Описание профилей"),
             id="detailed",
             state=LectureProcessingStates.unsilence_profiles_description,
         ),
@@ -111,11 +115,16 @@ lecture_processing_dialog = Dialog(
     ),
     Window(
         Format(f"{{{getters.CONFIRM_TEXT}}}"),
-        Button(Const("Начать обработку"), id="start_processing", on_click=callbacks.start_processing),
+        Button(Const("🚀 Начать обработку"), id="start_processing", on_click=callbacks.start_processing),
+        SwitchTo(
+            Const("⚙️ Настроить обработку"),
+            id="configure_processing_profiles",
+            state=LectureProcessingStates.choose_audio_processing_profile,
+        ),
         SwitchTo(
             Const(BACK_TEXT),
-            id="back_to_unsilence_profile_choice",
-            state=LectureProcessingStates.choose_unsilence_profile,
+            id="back_to_url",
+            state=LectureProcessingStates.link_or_file,
         ),
         state=LectureProcessingStates.confirm,
         getter=getters.get_confirm_text,

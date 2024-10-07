@@ -20,6 +20,8 @@ load_dotenv(BASE_DIR / ".env", override=False)
 #: Включить режим отладки
 DEBUG = bool(int(os.environ.get("DEBUG", "1")))  # pyright: ignore [reportArgumentType]
 
+SUPPORT_LINK = "@support"
+
 # --------------------------------- api токены --------------------------------- #
 
 #: Токен телеграм бота
