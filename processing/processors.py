@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from configs import TELEGRAM_BOT_TOKEN
 from djgram.db.base import get_autocommit_session
-from tools.yt_dlp_downloader.yt_dlp_download_videos import get_url
+from tools.yt_dlp_downloader.misc import yt_dlp_get_html_link
 from utils.get_bot import get_tg_bot
 from .download_file import get_downloaded_videos
 from .models import ProcessedVideo, AudioProcessingProfile, UnsilenceProfile, Video, Waiter
@@ -121,12 +121,12 @@ async def process_video(db_video_id: str, video_or_playlist_for_processing: Vide
 
     async with get_tg_bot() as bot:
         await bot.send_message(
-            text=f"Обрабатываю [{db_video.yt_dlp_info["title"]}]({get_url(db_video.yt_dlp_info)})",
+            text=f"Обрабатываю {yt_dlp_get_html_link(db_video.yt_dlp_info)}",
             chat_id=video_or_playlist_for_processing.telegram_chat_id,
             reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
             disable_web_page_preview=True,
             disable_notification=True,
-            parse_mode=ParseMode.MARKDOWN,
+            parse_mode=ParseMode.HTML,
         )
     processed_video = await run_video_pipeline(audio_processing_profile, unsilence_profile, db_video, processed_video)
 

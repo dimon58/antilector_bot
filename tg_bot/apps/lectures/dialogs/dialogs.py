@@ -23,7 +23,7 @@ BACK_TEXT = "◀ Назад"
 
 lecture_processing_dialog = Dialog(
     Window(
-        Const("Чтобы удалить тишину из лекции отправьте ссылку или видеофайл"),
+        Const("Чтобы сократить лекцию отправьте ссылку или видеофайл"),
         MessageInput(callbacks.add_video),
         SwitchTo(Const("ℹ Подробнее"), id="detailed", state=LectureProcessingStates.detailed),
         Cancel(Const(BACK_TEXT)),

@@ -14,7 +14,7 @@ from yt_dlp.utils import DownloadError
 from djgram.db.base import get_autocommit_session
 from djgram.db.utils import get_or_create
 from djgram.utils.download import download_file
-from tools.yt_dlp_downloader.misc import convert_entries_generator, yt_dlp_jsonify
+from tools.yt_dlp_downloader.misc import convert_entries_generator, yt_dlp_jsonify, yt_dlp_get_html_link
 from tools.yt_dlp_downloader.yt_dlp_download_videos import (
     YtDlpInfoDict,
     extract_info,
@@ -122,18 +122,18 @@ async def _create_playlist(
     logging_message: Message | None = None
     playlist_count = yt_dlp_info["playlist_count"]
     for idx, video in enumerate(yt_dlp_info["entries"], start=1):
-        text = f"Скачиваю {idx}/{playlist_count} [{video["title"]}]({get_url(video)})"
+        text = f"Скачиваю {idx}/{playlist_count} {yt_dlp_get_html_link(video)}"
         if logging_message is None:
             logging_message = await bot.send_message(
                 text=text,
                 chat_id=video_or_playlist_for_processing.telegram_chat_id,
                 reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
-                parse_mode=ParseMode.MARKDOWN,
+                parse_mode=ParseMode.HTML,
                 disable_web_page_preview=True,
                 disable_notification=True,
             )
         else:
-            await logging_message.edit_text(text=text, disable_web_page_preview=True, parse_mode=ParseMode.MARKDOWN)
+            await logging_message.edit_text(text=text, disable_web_page_preview=True, parse_mode=ParseMode.HTML)
 
         video = extract_info(url=get_url(video), process=False)
         yield await _create_video(video, video_or_playlist_for_processing, playlist)

@@ -1,14 +1,22 @@
+import html
 from typing import TypeAlias
 
 from yt_dlp.utils import LazyList
 
-from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpInfoDict
+from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpInfoDict, get_url
 
 Json: TypeAlias = dict | list | str | float | int | bool | None
 
 
 def get_playlist_duration(info: YtDlpInfoDict) -> float:
     return sum([x["duration"] for x in info["entries"]])
+
+
+def yt_dlp_get_html_link(info: YtDlpInfoDict) -> str:
+    title = info["title"]
+    url = get_url(info)
+
+    return f'<a href="{url}">{html.escape(title)}</a>'
 
 
 def convert_entries_generator(info: YtDlpInfoDict):

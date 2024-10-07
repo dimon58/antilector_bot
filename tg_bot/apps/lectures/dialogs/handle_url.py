@@ -14,10 +14,9 @@ from cashews import Cache
 from yt_dlp.utils import YoutubeDLError
 
 from djgram.utils.async_tools import run_async_wrapper
-from djgram.utils.formating import seconds_to_human_readable
-from tools.yt_dlp_downloader.misc import get_playlist_duration
 from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpContentType, YtDlpInfoDict, extract_info
 
+from ..formating import format_as_playlist_html, format_as_video_html
 from .states import LectureProcessingStates
 
 if TYPE_CHECKING:
@@ -146,30 +145,22 @@ async def handle_url(message: Message, manager: DialogManager) -> YtDlpContentTy
                 thumbnail_url = get_thumbnail_url_for_preview(info)
                 await send_preview(
                     message,
-                    f"По ссылке находиться видео\n{info['title']} - {seconds_to_human_readable(info["duration"])}",
+                    f"По ссылке находиться видео\n{format_as_video_html(info)}",
                     thumbnail_url,
+                    parse_mode=ParseMode.HTML,
                 )
 
             case YtDlpContentType.PLAYLIST:
                 thumbnail_url = get_thumbnail_url_for_preview(info)
 
                 info["entries"] = list(info["entries"])  # Превращает итератор в список
-                playlist_desc = (
-                    f"По ссылке находиться плейлист\n"
-                    f"[{info['title']}]({info["webpage_url"]})\n"
-                    f"Общая продолжительность - {seconds_to_human_readable(get_playlist_duration(info))}"
-                )
-                videos_desc = "\n●".join(
-                    f"[{video["title"]}]({video["url"]}) - {seconds_to_human_readable(video["duration"])}"
-                    for video in info["entries"]
-                )
-                msg = f"{playlist_desc}\n\nСписок видео:\n●{videos_desc}"
-                await send_preview(message, msg, thumbnail_url, parse_mode=ParseMode.MARKDOWN)
+                playlist_desc = f"По ссылке находиться плейлист\n{format_as_playlist_html(info)}"
+                await send_preview(message, playlist_desc, thumbnail_url, parse_mode=ParseMode.HTML)
 
             case _:
                 manager.dialog_data.pop(URL_KEY, None)
                 logger.error("User %s tried to process unsupported content type %s", user.id, _type)
-                await message.reply(f"Работа с типом _{_type}_ не поддерживается", parse_mode=ParseMode.MARKDOWN)
+                await message.reply(f"Работа с типом <i>{_type}</i> не поддерживается", parse_mode=ParseMode.HTML)
                 return None
 
         await manager.switch_to(LectureProcessingStates.confirm)
