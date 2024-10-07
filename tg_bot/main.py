@@ -4,7 +4,7 @@
 
 import logging.config
 
-from aiogram import Bot, Dispatcher, Router
+from aiogram import Dispatcher, Router
 from aiogram.enums import UpdateType
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.storage.redis import (
@@ -22,7 +22,12 @@ from configs import (
     REDIS_STORAGE_DB,
     REDIS_USER,
     TELEGRAM_BOT_TOKEN,
+    TELEGRAM_LOCAL,
+    TELEGRAM_LOCAL_SERVER_FILES_URL,
+    TELEGRAM_LOCAL_SERVER_URL,
 )
+from djgram.contrib.analytics.local_server import run_telegram_local_server_stats_collection_in_background
+from djgram.contrib.local_server.local_bot import get_local_bot
 
 # noinspection PyUnresolvedReferences
 from djgram.db.models import BaseModel  # noqa: F401 нужно для корректной работы alembic
@@ -92,9 +97,15 @@ async def main() -> None:
     storage = RedisStorage(redis_for_storage, key_builder=DefaultKeyBuilder(with_destiny=True))
 
     dp = Dispatcher(storage=storage)
-    bot = Bot(TELEGRAM_BOT_TOKEN)
+    bot = get_local_bot(
+        telegram_bot_token=TELEGRAM_BOT_TOKEN,
+        telegram_local=TELEGRAM_LOCAL,
+        telegram_local_server_url=TELEGRAM_LOCAL_SERVER_URL,
+        telegram_local_server_files_url=TELEGRAM_LOCAL_SERVER_FILES_URL,
+    )
 
     setup_djgram(dp, analytics=True)
     setup_routers(dp)
 
+    await run_telegram_local_server_stats_collection_in_background()
     await dp.start_polling(bot, skip_updates=False, allowed_updates=list(UpdateType))

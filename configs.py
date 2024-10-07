@@ -27,6 +27,11 @@ SUPPORT_LINK = "@support"
 #: Токен телеграм бота
 TELEGRAM_BOT_TOKEN: str = os.environ.get("TELEGRAM_BOT_TOKEN", "")  # pyright: ignore [reportAssignmentType]
 
+TELEGRAM_LOCAL: bool = bool(int(os.environ["TELEGRAM_LOCAL"]))
+TELEGRAM_LOCAL_SERVER_URL: str = os.environ["TELEGRAM_LOCAL_SERVER_URL"]
+TELEGRAM_LOCAL_SERVER_STATS_URL: str = os.environ["TELEGRAM_LOCAL_SERVER_STATS_URL"]
+TELEGRAM_LOCAL_SERVER_FILES_URL: str = os.environ["TELEGRAM_LOCAL_SERVER_FILES_URL"]
+
 # ---------- База данных ---------- #
 
 # Данные для подключения к PostgreSQL
