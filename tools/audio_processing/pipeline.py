@@ -80,7 +80,7 @@ class AudioPipeline(pydantic.BaseModel):
         logger.info("Input: %s", input_stats.repr_for_logging)
 
         for step, action in enumerate(self.pipeline[:-1], start=1):
-            logger.info("Running step %s - %s", step, action.__class__.__name__)
+            logger.info("Running step %s/%s - %s", step, len(self.pipeline), action.__class__.__name__)
             temp_file_name = tempdir / self._generate_temp_file_name(step, action, self._in_working_ext)
             start = time.perf_counter()
             action_stats = action.run(input_file, temp_file_name)
@@ -102,7 +102,9 @@ class AudioPipeline(pydantic.BaseModel):
                     step_stats.nisqa = nisqa_model.measure_from_path(input_file)
             logger.info("Step %s: %s done in %s", step, step_stats.repr_for_logging, end - start)
 
-        logger.info("Running step %s - %s", len(self.pipeline), self.pipeline[-1].__class__.__name__)
+        logger.info(
+            "Running step %s/%s - %s", len(self.pipeline), len(self.pipeline), self.pipeline[-1].__class__.__name__
+        )
         start = time.perf_counter()
         action_stats = self.pipeline[-1].run(input_file, output_file)
         end = time.perf_counter()
