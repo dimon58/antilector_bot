@@ -9,15 +9,24 @@ from aiogram.types import Message
 from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 from sqlalchemy_file import File
+from yt_dlp.utils import DownloadError
 
 from djgram.db.base import get_autocommit_session
 from djgram.db.utils import get_or_create
 from djgram.utils.download import download_file
 from tools.yt_dlp_downloader.misc import convert_entries_generator, yt_dlp_jsonify
-from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpInfoDict, extract_info, download, get_url
+from tools.yt_dlp_downloader.yt_dlp_download_videos import (
+    YtDlpInfoDict,
+    extract_info,
+    download,
+    get_url,
+    YtDlpContentType,
+)
 from .misc import execute_file_update_statement
 from .models import Playlist, Video, Waiter
 from .schema import VideoOrPlaylistForProcessing, FILE_TYPE
+
+DOWNLOAD_ATTEMPTS = 3
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +71,17 @@ async def _create_video(
         db_session.add(db_video)
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        download_data = download(url=get_url(yt_dlp_info), output_dir=temp_dir)
+        for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+            url = get_url(yt_dlp_info)
+            try:
+                download_data = download(url=url, output_dir=temp_dir)
+            except DownloadError as exc:
+                logger.error("Download attempt %s failed for %s: %s", attempt, url, exc)
+            else:
+                break
+        else:
+            raise DownloadError(f"Failed to download {url} in {DOWNLOAD_ATTEMPTS} attempts: {exc}")
+
         video_file = Path(download_data.filenames[download_data.info["id"]])
 
         file = File(content_path=video_file.as_posix())
@@ -126,6 +145,9 @@ async def get_from_url(
 ) -> AsyncGenerator[Video]:
     logger.info("Downloading video or playlist")
     yt_dlp_info = extract_info(url=video_or_playlist_for_processing.url, process=False)
+    if yt_dlp_info["_type"] == YtDlpContentType.URL:
+        logger.info('Resolving url with type "url": %s', video_or_playlist_for_processing.url)
+        yt_dlp_info = extract_info(url=yt_dlp_info["url"], process=False)
 
     if yt_dlp_info.get("entries") is not None:
         async for video in _create_playlist(bot, yt_dlp_info, video_or_playlist_for_processing):

@@ -26,6 +26,8 @@ class YtDlpContentType(enum.StrEnum):
     VIDEO = "video"
     MULTI_VIDEO = "multi_video"
 
+    URL = "url"
+
     # custom types
     CHANNEL = "channel"
 
@@ -263,7 +265,11 @@ def download(url: str, output_dir: str, **additional_ydl_opts) -> DownloadData:
 
 
 def extract_info(
-    url: str, process: bool = True, remove_private_keys: bool = False, **additional_ydl_opts
+    url: str,
+    process: bool = True,
+    remove_private_keys: bool = False,
+    convert_entries_to_list: bool = True,
+    **additional_ydl_opts,
 ) -> YtDlpInfoDict:
     """
     Извлекает информацию про видео
@@ -281,6 +287,11 @@ def extract_info(
         ydl.add_post_processor(RecalcIds(ydl.sanitize_info, remove_private_keys), when="playlist")
         info = ydl.extract_info(url, download=False, process=process)
         info["_type"] = resolve_type(info)
+
+        if convert_entries_to_list:
+            entries: list[YtDlpInfoDict] | None = info.get("entries", None)
+            if entries is not None:
+                info["entries"] = list(entries)  # Превращает итератор в список
 
         if not process:
             _, info = RecalcIds(ydl.sanitize_info, remove_private_keys).run(info)

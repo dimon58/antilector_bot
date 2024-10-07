@@ -1,5 +1,6 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
@@ -9,6 +10,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message
 from aiogram.utils.chat_action import ChatActionSender
 from aiogram_dialog import DialogManager
+from cashews import Cache
 from yt_dlp.utils import YoutubeDLError
 
 from djgram.utils.async_tools import run_async_wrapper
@@ -26,7 +28,10 @@ URL_KEY = "url"
 logger = logging.getLogger(__name__)
 
 thread_executor = ThreadPoolExecutor()
-extract_info_async = run_async_wrapper(extract_info, thread_executor)
+
+cache = Cache()
+cache.setup("mem://")
+extract_info_async = cache(ttl=timedelta(minutes=5))(run_async_wrapper(extract_info, thread_executor))
 
 
 def is_possible_thumbnail_url(thumbnail_url: str | None) -> bool:
@@ -89,6 +94,22 @@ async def is_user_error(message: Message, exc: YoutubeDLError) -> bool:
     return False
 
 
+async def try_get_info(url: str, message: Message) -> YtDlpInfoDict | None:
+    try:
+        # TODO: почему-то это блокирует event loop
+        return await extract_info_async(url, process=False, convert_entries_to_list=True)
+    except yt_dlp.utils.UnsupportedError as exc:
+        await handle_unsupported_url(exc, message)
+        return None
+    except yt_dlp.utils.YoutubeDLError as exc:
+        if await is_user_error(message, exc):
+            return None
+
+        logger.exception(exc.msg, exc_info=exc)
+        await message.reply("Ошибка")
+        return None
+
+
 async def handle_url(message: Message, manager: DialogManager) -> YtDlpContentType | None:
     user: User = manager.middleware_data["user"]
 
@@ -98,31 +119,25 @@ async def handle_url(message: Message, manager: DialogManager) -> YtDlpContentTy
         action=ChatAction.TYPING,
     ):
         await message.answer("Скачиваю информацию")
-        try:
-            # TODO: почему-то это блокирует event loop
-            info = await extract_info_async(message.text, process=False)
-            entries: list[YtDlpInfoDict] | None = info.get("entries", None)
-            if entries is not None:
-                info["entries"] = list(entries)  # Превращает итератор в список
-        except yt_dlp.utils.UnsupportedError as exc:
-            await handle_unsupported_url(exc, message)
+        info = await try_get_info(message.text, message)
+        if info is None:
             return None
-        except yt_dlp.utils.YoutubeDLError as exc:
-            if await is_user_error(message, exc):
+
+        _type = info["_type"]
+        if _type == YtDlpContentType.URL:
+            logger.info('Resolving url with type "url": %s', message.text)
+            info = await try_get_info(info["url"], message)
+            if info is None:
                 return None
 
-            logger.exception(exc.msg, exc_info=exc)
-            await message.reply("Ошибка")
-            return None
+        _type = info["_type"]
+        if _type == YtDlpContentType.URL:
+            # Второй раз получили тип url -> что-то не так
+            logger.warning('User sent url with type "url": %s', message.text)
 
         if info.get("is_live") or info.get("live_status") == "is_live":
             await message.reply("Работа с прямыми трансляциями не поддерживается")
             return None
-
-        _type = info["_type"]
-
-        if _type == "url":
-            logger.warning('User sent url with type "url": %s', message.text)
 
         manager.dialog_data[URL_KEY] = message.text
 

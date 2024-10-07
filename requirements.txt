@@ -23,8 +23,8 @@ coloredlogs~=15.0.1
 python-json-logger==2.0.7
 pydantic==2.9.2
 orjson==3.10.7
-
 yt-dlp==2024.8.6
+cashews==7.3.2
 
 # -------- Telegram bot -------- #
 -r djgram/requirements.txt
