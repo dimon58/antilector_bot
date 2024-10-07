@@ -149,13 +149,14 @@ class FastMediaRenderer(MediaRenderer):
 
             thread_lock.release()
 
-        logger.info("Spawning %s threads for rendering intervals", render_options.threads)
         if render_options.use_nvenc:
             logger.info("Rendering using nvenc")
         else:
             logger.info("Rendering on cpu")
 
-        for i in range(render_options.threads):
+        render_threads = min(render_options.threads, len(tasks))
+        logger.info("Spawning %s threads for rendering intervals", render_threads)
+        for i in range(render_threads):
             thread = RenderIntervalThread(
                 thread_id=i,
                 input_file=input_file,
