@@ -16,6 +16,7 @@ class VideoOrPlaylistForProcessing(pydantic.BaseModel):
     telegram_message_id: int
 
     audio_processing_profile_id: int
+    unsilence_profile_id: int
 
     @model_validator(mode="after")
     def validate_content(self, _info):

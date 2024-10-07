@@ -22,7 +22,7 @@ from djgram.db.models import BaseModel, TimeTrackableBaseModel
 from djgram.db.pydantic_field import ImmutablePydanticField
 from djgram.utils.input_file_ext import S3FileInput
 from tools.audio_processing.pipeline import AudioPipeline
-from tools.video_processing.actions.unsilence_actions import TIME_SAVINGS_REAL_KEY
+from tools.video_processing.actions.unsilence_actions import TIME_SAVINGS_REAL_KEY, UnsilenceAction
 from tools.video_processing.pipeline import VideoPipelineStatistics
 from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpInfoDict
 from .representation import silence_remove_done_report
@@ -49,6 +49,16 @@ class AudioProcessingProfile(BaseModel):
         ImmutablePydanticField(AudioPipeline, should_frozen=False),
         nullable=False,
         doc="Audio processing pipeline",
+    )
+
+
+class UnsilenceProfile(BaseModel):
+    name: Mapped[str]
+    description: Mapped[str]
+
+    unsilence_action: Mapped[UnsilenceAction] = mapped_column(
+        ImmutablePydanticField(UnsilenceAction, should_frozen=False),
+        doc="Unsilence action",
     )
 
 
@@ -179,13 +189,20 @@ class Video(Waitable, YtDlpBase, TimeTrackableBaseModel):
 
 
 class ProcessedVideo(Waitable, TimeTrackableBaseModel):
-    __table_args__ = (UniqueConstraint("original_video_id", "audio_processing_profile_id", name="uniq_pipeline"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "original_video_id", "audio_processing_profile_id", "unsilence_profile_id", name="uniq_pipeline"
+        ),
+    )
 
     original_video_id: Mapped[str] = mapped_column(ForeignKey(Video.id), index=True)
     original_video: Mapped[Video] = relationship(Video)
 
     audio_processing_profile_id: Mapped[int] = mapped_column(ForeignKey(AudioProcessingProfile.id), index=True)
     audio_processing_profile: Mapped[AudioProcessingProfile] = relationship(AudioProcessingProfile)
+
+    unsilence_profile_id: Mapped[int] = mapped_column(ForeignKey(UnsilenceProfile.id), index=True)
+    unsilence_profile: Mapped[UnsilenceProfile] = relationship(UnsilenceProfile)
 
     processing_stats: Mapped[VideoPipelineStatistics | None] = mapped_column(
         ImmutablePydanticField(VideoPipelineStatistics, should_frozen=False)

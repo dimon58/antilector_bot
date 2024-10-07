@@ -9,7 +9,7 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.utils.chat_action import ChatActionSender
 from aiogram_dialog import DialogManager
 from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.kbd import Select
+from aiogram_dialog.widgets.kbd import Button, Select
 
 from djgram.system_configs import MIDDLEWARE_AUTH_USER_KEY
 from processing.schema import VideoOrPlaylistForProcessing
@@ -25,6 +25,7 @@ MESSAGE_ID_KEY = "message_id"
 IS_PLAYLIST_KEY = "is_playlist"
 
 AUDIO_PROCESSING_PROFILE_ID_KEY = "audio_processing_profile_id"
+UNSILENCE_PROFILE_ID_KEY = "unsilence_profile_id"
 
 logger = logging.getLogger(__name__)
 
@@ -84,14 +85,30 @@ async def select_audio_processing_profile(
     manager: DialogManager,
     audio_processing_profile_id: str,
 ):
+    manager.dialog_data[AUDIO_PROCESSING_PROFILE_ID_KEY] = int(audio_processing_profile_id)
+    await manager.switch_to(LectureProcessingStates.choose_unsilence_profile)
+
+
+async def select_unsilence_profile(
+    callback: CallbackQuery,
+    widget: Select,
+    manager: DialogManager,
+    unsilence_profile_id: str,
+):
+    manager.dialog_data[UNSILENCE_PROFILE_ID_KEY] = int(unsilence_profile_id)
+    await manager.switch_to(LectureProcessingStates.confirm)
+
+
+async def start_processing(
+    callback: CallbackQuery,
+    button: Button,
+    manager: DialogManager,
+):
     async with ChatActionSender(
         bot=callback.bot,
         chat_id=callback.message.chat.id,
         action=ChatAction.TYPING,
     ):
-        audio_processing_profile_id = int(audio_processing_profile_id)
-        manager.dialog_data[AUDIO_PROCESSING_PROFILE_ID_KEY] = audio_processing_profile_id
-
         task = VideoOrPlaylistForProcessing(
             url=manager.dialog_data.get(URL_KEY),
             video=manager.dialog_data.get(VIDEO_KEY),
@@ -99,7 +116,8 @@ async def select_audio_processing_profile(
             user_id=manager.middleware_data[MIDDLEWARE_AUTH_USER_KEY].id,
             telegram_chat_id=callback.message.chat.id,
             telegram_message_id=manager.dialog_data[MESSAGE_ID_KEY],
-            audio_processing_profile_id=int(audio_processing_profile_id),
+            audio_processing_profile_id=manager.dialog_data[AUDIO_PROCESSING_PROFILE_ID_KEY],
+            unsilence_profile_id=manager.dialog_data[UNSILENCE_PROFILE_ID_KEY],
             is_playlist=manager.dialog_data.get(IS_PLAYLIST_KEY, False),
         )
 

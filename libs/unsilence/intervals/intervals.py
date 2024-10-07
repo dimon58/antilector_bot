@@ -53,13 +53,13 @@ class Intervals:
         self,
         short_interval_threshold: float = 0.3,
         stretch_time: float = 0.25,
-        silence_upper_threshold: float = float("inf"),
+        silence_upper_threshold: float | None = None,
     ) -> None:
         """
         Optimizes the Intervals to be a better fit for media cutting
 
         :param silence_upper_threshold: Time intervals longer than which are considered a break,
-            so they are cut out completely
+            so they are cut out completely. None приравнивается  к float("inf").
         :param short_interval_threshold: The shortest allowed interval length (in seconds)
         :param stretch_time: The time that should be added/removed from a audible/silent interval
         :return: None
@@ -106,8 +106,8 @@ class Intervals:
                 stretch_time, is_start_interval=(i == 0), is_end_interval=(i == len(self._interval_list) - 1)
             )
 
-    def __remove_breaks(self, silence_upper_threshold: float) -> None:
-        if silence_upper_threshold == float("inf"):
+    def __remove_breaks(self, silence_upper_threshold: float | None) -> None:
+        if silence_upper_threshold is None or silence_upper_threshold == float("inf"):
             self._interval_list_without_breaks = self._interval_list
             return
 

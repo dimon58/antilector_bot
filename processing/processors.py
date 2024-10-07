@@ -11,7 +11,7 @@ from djgram.db.base import get_autocommit_session
 from tools.yt_dlp_downloader.yt_dlp_download_videos import get_url
 from utils.get_bot import get_tg_bot
 from .download_file import get_downloaded_videos
-from .models import ProcessedVideo, AudioProcessingProfile, Video, Waiter
+from .models import ProcessedVideo, AudioProcessingProfile, UnsilenceProfile, Video, Waiter
 from .processing_file import run_video_pipeline, handle_processed_video
 from .schema import VideoOrPlaylistForProcessing
 
@@ -40,9 +40,10 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                 continue
 
         logger.info(
-            "Send video %s (audio profile %s) to processing",
+            "Send video %s (audio profile %s, unsilence profile %s) to processing",
             db_video,
             video_or_playlist_for_processing.audio_processing_profile_id,
+            video_or_playlist_for_processing.unsilence_profile_id,
         )
         process_video_task.delay(db_video.id, video_or_playlist_for_processing.model_dump(mode="json"))
 
@@ -65,6 +66,7 @@ async def try_send_processed(
         .where(
             ProcessedVideo.original_video_id == db_video_id,
             ProcessedVideo.audio_processing_profile_id == video_or_playlist_for_processing.audio_processing_profile_id,
+            ProcessedVideo.unsilence_profile_id == video_or_playlist_for_processing.unsilence_profile_id,
         )
     )
     processed_video: ProcessedVideo | None = await db_session.scalar(stmt)
@@ -93,6 +95,16 @@ async def process_video(db_video_id: str, video_or_playlist_for_processing: Vide
             raise ValueError(msg)
 
         # noinspection PyTypeChecker
+        stmt = select(UnsilenceProfile).where(
+            UnsilenceProfile.id == video_or_playlist_for_processing.unsilence_profile_id
+        )
+        unsilence_profile: UnsilenceProfile | None = await db_session.scalar(stmt)
+        if unsilence_profile is None:
+            msg = "Unsilence profile %s not found" % video_or_playlist_for_processing.unsilence_profile_id
+            logger.error(msg)
+            raise ValueError(msg)
+
+        # noinspection PyTypeChecker
         db_video: Video | None = await db_session.scalar(select(Video).where(Video.id == db_video_id))
         if db_video is None:
             msg = "Video %s not found in database" % db_video_id
@@ -102,6 +114,7 @@ async def process_video(db_video_id: str, video_or_playlist_for_processing: Vide
         processed_video = ProcessedVideo(
             original_video_id=db_video_id,
             audio_processing_profile=audio_processing_profile,
+            unsilence_profile=unsilence_profile,
             waiters=[Waiter.from_task(video_or_playlist_for_processing)],
         )
         db_session.add(processed_video)
@@ -115,7 +128,7 @@ async def process_video(db_video_id: str, video_or_playlist_for_processing: Vide
             disable_notification=True,
             parse_mode=ParseMode.MARKDOWN,
         )
-    processed_video = await run_video_pipeline(audio_processing_profile, db_video, processed_video)
+    processed_video = await run_video_pipeline(audio_processing_profile, unsilence_profile, db_video, processed_video)
 
     logger.info("Broadcasting video")
     async with get_tg_bot() as bot:

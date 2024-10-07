@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: e20414916be4
+Revision ID: 95d4d8d1a8aa
 Revises: 3d29382bcd16
-Create Date: 2024-10-07 02:14:17.753906
+Create Date: 2024-10-07 19:10:31.971417
 
 """
 
@@ -14,10 +14,11 @@ from sqlalchemy_file import FileField
 import aiogram.types.video
 import processing.models
 import tools.audio_processing.pipeline
+import tools.video_processing.actions.unsilence_actions
 import tools.video_processing.pipeline
 
 # revision identifiers, used by Alembic.
-revision = "e20414916be4"
+revision = "95d4d8d1a8aa"
 down_revision = "3d29382bcd16"
 branch_labels = None
 depends_on = None
@@ -44,6 +45,20 @@ def upgrade() -> None:
         sa.Column("yt_dlp_info", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_table(
+        "unsilenceprofile",
+        sa.Column("name", sa.String(), nullable=False),
+        sa.Column("description", sa.String(), nullable=False),
+        sa.Column(
+            "unsilence_action",
+            ImmutablePydanticField(
+                tools.video_processing.actions.unsilence_actions.UnsilenceAction, should_frozen=False
+            ),
+            nullable=False,
+        ),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
@@ -80,6 +95,7 @@ def upgrade() -> None:
         "processedvideo",
         sa.Column("original_video_id", sa.String(), nullable=False),
         sa.Column("audio_processing_profile_id", sa.BigInteger(), nullable=False),
+        sa.Column("unsilence_profile_id", sa.BigInteger(), nullable=False),
         sa.Column(
             "processing_stats",
             ImmutablePydanticField(tools.video_processing.pipeline.VideoPipelineStatistics, should_frozen=False),
@@ -106,8 +122,14 @@ def upgrade() -> None:
             ["original_video_id"],
             ["video.id"],
         ),
+        sa.ForeignKeyConstraint(
+            ["unsilence_profile_id"],
+            ["unsilenceprofile.id"],
+        ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("original_video_id", "audio_processing_profile_id", name="uniq_pipeline"),
+        sa.UniqueConstraint(
+            "original_video_id", "audio_processing_profile_id", "unsilence_profile_id", name="uniq_pipeline"
+        ),
     )
     op.create_index(
         op.f("ix_processedvideo_audio_processing_profile_id"),
@@ -116,6 +138,9 @@ def upgrade() -> None:
         unique=False,
     )
     op.create_index(op.f("ix_processedvideo_original_video_id"), "processedvideo", ["original_video_id"], unique=False)
+    op.create_index(
+        op.f("ix_processedvideo_unsilence_profile_id"), "processedvideo", ["unsilence_profile_id"], unique=False
+    )
     op.create_unique_constraint(None, "telegramchat", ["id"])
     op.create_unique_constraint(None, "telegramchatfullinfo", ["id"])
     op.create_unique_constraint(None, "telegramuser", ["id"])
@@ -127,11 +152,13 @@ def downgrade() -> None:
     op.drop_constraint(None, "telegramuser", type_="unique")
     op.drop_constraint(None, "telegramchatfullinfo", type_="unique")
     op.drop_constraint(None, "telegramchat", type_="unique")
+    op.drop_index(op.f("ix_processedvideo_unsilence_profile_id"), table_name="processedvideo")
     op.drop_index(op.f("ix_processedvideo_original_video_id"), table_name="processedvideo")
     op.drop_index(op.f("ix_processedvideo_audio_processing_profile_id"), table_name="processedvideo")
     op.drop_table("processedvideo")
     op.drop_table("playlist_video")
     op.drop_table("video")
+    op.drop_table("unsilenceprofile")
     op.drop_table("playlist")
     op.drop_table("audioprocessingprofile")
     # ### end Alembic commands ###

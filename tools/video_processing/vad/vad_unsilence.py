@@ -24,7 +24,7 @@ def detect_speech(
     threshold: float = 0.5,
     sampling_rate: int = 16000,
     min_speech_duration_ms: int = 250,
-    max_speech_duration_s: float = float("inf"),
+    max_speech_duration_s: float | None = None,
     min_silence_duration_ms: int = 100,
     speech_pad_ms: int = 30,
     return_seconds: bool = False,
@@ -32,6 +32,9 @@ def detect_speech(
     window_size_samples: int = 512,
     on_silence_detect_progress_update: UpdateCallbackType | None = None,
 ) -> Intervals:
+    """
+    max_speech_duration_s = None расценивается, как отсутвие ограничений
+    """
     if not input_file.exists():
         raise FileNotFoundError(f"Input file {input_file} does not exist!")
 
@@ -45,6 +48,10 @@ def detect_speech(
         )
 
     # ---------------------- Detection ---------------------- #
+
+    if max_speech_duration_s is None:
+        max_speech_duration_s = float("inf")
+
     model.reset_states()
     speech_timestamps = silero_vad.get_speech_timestamps(
         audio=wav,
@@ -110,13 +117,13 @@ class Vad(FastUnsilence):
     def detect_silence(
         self,
         *,
-        silence_upper_threshold: float = float("inf"),
+        silence_upper_threshold: float | None = None,
         short_interval_threshold: float = 0.3,
         stretch_time: float = 0.25,
         threshold: float = 0.5,
         sampling_rate: int = 16000,
         min_speech_duration_ms: int = 250,
-        max_speech_duration_s: float = float("inf"),
+        max_speech_duration_s: float | None = None,
         min_silence_duration_ms: int = 100,
         speech_pad_ms: int = 30,
         return_seconds: bool = False,
@@ -219,14 +226,14 @@ class UnsilenceAndVad(Vad):
         *,
         silence_level: float = -35.0,
         silence_time_threshold: float = 0.5,
-        silence_upper_threshold: float = float("inf"),
+        silence_upper_threshold: float | None = None,
         short_interval_threshold: float = 0.3,
         stretch_time: float = 0.25,
         on_silence_detect_progress_update: UpdateCallbackType | None = None,
         threshold: float = 0.5,
         sampling_rate: int = 16000,
         min_speech_duration_ms: int = 250,
-        max_speech_duration_s: float = float("inf"),
+        max_speech_duration_s: float | None = None,
         min_silence_duration_ms: int = 100,
         speech_pad_ms: int = 30,
         return_seconds: bool = False,

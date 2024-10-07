@@ -9,7 +9,7 @@ import os
 from aiogram.enums import ParseMode
 from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.kbd import Back, Cancel, Select, SwitchTo
+from aiogram_dialog.widgets.kbd import Back, Button, Cancel, Select, SwitchTo
 from aiogram_dialog.widgets.text import Const, Format
 
 from djgram.configs import DIALOG_DIAGRAMS_DIR, ENABLE_DIALOG_DIAGRAMS_GENERATION
@@ -59,9 +59,9 @@ lecture_processing_dialog = Dialog(
         Const("Выберите профиль звука"),
         Select(
             Format("{item[1]}"),
-            id=getters.AUDIO_PROFILE_KEY,
+            id=getters.AUDIO_PROCESSING_PROFILE_KEY,
             item_id_getter=operator.itemgetter(0),
-            items=getters.AUDIO_PROFILES_KEY,
+            items=getters.AUDIO_PROCESSING_PROFILES_KEY,
             on_click=callbacks.select_audio_processing_profile,
         ),
         SwitchTo(
@@ -78,6 +78,47 @@ lecture_processing_dialog = Dialog(
         Back(Const(BACK_TEXT)),
         state=LectureProcessingStates.audio_processing_profiles_description,
         getter=getters.get_audio_processing_profiles_description,
+        parse_mode=ParseMode.MARKDOWN,
+    ),
+    Window(
+        Const("Выберите метод поиска тишины"),
+        Select(
+            Format("{item[1]}"),
+            id=getters.UNSILENCE_PROFILE_KEY,
+            item_id_getter=operator.itemgetter(0),
+            items=getters.UNSILENCE_PROFILES_KEY,
+            on_click=callbacks.select_unsilence_profile,
+        ),
+        SwitchTo(
+            Const("Описание профилей"),
+            id="detailed",
+            state=LectureProcessingStates.unsilence_profiles_description,
+        ),
+        SwitchTo(
+            Const(BACK_TEXT),
+            id="back_to_audio_processing_profile_choice",
+            state=LectureProcessingStates.choose_audio_processing_profile,
+        ),
+        state=LectureProcessingStates.choose_unsilence_profile,
+        getter=getters.get_unsilence_profiles,
+    ),
+    Window(
+        Format(f"{{{getters.UNSILENCE_PROFILES_DESCRIPTION_KEY}}}"),
+        Back(Const(BACK_TEXT)),
+        state=LectureProcessingStates.unsilence_profiles_description,
+        getter=getters.get_unsilence_profiles_description,
+        parse_mode=ParseMode.MARKDOWN,
+    ),
+    Window(
+        Format(f"{{{getters.CONFIRM_TEXT}}}"),
+        Button(Const("Начать обработку"), id="start_processing", on_click=callbacks.start_processing),
+        SwitchTo(
+            Const(BACK_TEXT),
+            id="back_to_unsilence_profile_choice",
+            state=LectureProcessingStates.choose_unsilence_profile,
+        ),
+        state=LectureProcessingStates.confirm,
+        getter=getters.get_confirm_text,
         parse_mode=ParseMode.MARKDOWN,
     ),
 )

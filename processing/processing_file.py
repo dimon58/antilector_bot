@@ -11,8 +11,7 @@ from libs.nisqa.model import NisqaModel
 from tools.video_processing.pipeline import VideoPipeline
 from utils.get_bot import get_tg_bot
 from .misc import execute_file_update_statement
-from .models import ProcessedVideo, Video, AudioProcessingProfile
-from .predefined_profile.default_unsilence_profile import default_unsilence_profile
+from .models import ProcessedVideo, Video, AudioProcessingProfile, UnsilenceProfile
 from .schema import VideoOrPlaylistForProcessing
 
 logger = logging.getLogger(__name__)
@@ -25,9 +24,10 @@ async def handle_processed_video(
 ) -> None:
     if processed_video.file is None:
         logger.info(
-            "Video %s (audio profile %s) processing in other task. Appending waiter id.",
+            "Video %s (audio profile %s, unsilence profile %s) processing in other task. Appending waiter id.",
             db_video_id,
             video_or_playlist_for_processing.audio_processing_profile_id,
+            video_or_playlist_for_processing.unsilence_profile_id,
         )
         processed_video.add_if_not_in_waiters(video_or_playlist_for_processing.user_id)
         return
@@ -35,9 +35,10 @@ async def handle_processed_video(
     # Уже обработано
     async with get_tg_bot() as bot:
         logger.info(
-            "Sending processing video %s (audio profile %s)",
+            "Sending processing video %s (audio profile %s, unsilence profile %s)",
             db_video_id,
             video_or_playlist_for_processing.audio_processing_profile_id,
+            video_or_playlist_for_processing.unsilence_profile_id,
         )
         await processed_video.send(
             bot=bot,
@@ -48,13 +49,15 @@ async def handle_processed_video(
 
 async def run_video_pipeline(
     audio_processing_profile: AudioProcessingProfile,
+    unsilence_profile: UnsilenceProfile,
     db_video: Video,
     processed_video: ProcessedVideo,
 ) -> ProcessedVideo:
     logger.info(
-        "Start processing video %s (audio profile %s). Result will be in processed video %s",
+        "Start processing video %s (audio profile %s, unsilence profile %s). Result will be in processed video %s",
         db_video.id,
         audio_processing_profile.id,
+        unsilence_profile.id,
         processed_video.id,
     )
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -70,7 +73,7 @@ async def run_video_pipeline(
         logger.info("Start processing")
         video_pipeline = VideoPipeline(
             audio_pipeline=audio_processing_profile.audio_pipeline,
-            unsilence_action=default_unsilence_profile,
+            unsilence_action=unsilence_profile.unsilence_action,
             use_nvenc=USE_NVENC,
             force_video_codec=FORCE_VIDEO_CODEC,
             force_audio_codec=FORCE_AUDIO_CODEC,

@@ -14,5 +14,11 @@ class LectureProcessingStates(StatesGroup):
     detailed = State()
 
     link_or_file = State()
+
     choose_audio_processing_profile = State()
     audio_processing_profiles_description = State()
+
+    choose_unsilence_profile = State()
+    unsilence_profiles_description = State()
+
+    confirm = State()
