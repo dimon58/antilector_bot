@@ -84,25 +84,31 @@ async def select_audio_processing_profile(
     manager: DialogManager,
     audio_processing_profile_id: str,
 ):
-    manager.dialog_data[AUDIO_PROCESSING_PROFILE_ID_KEY] = int(audio_processing_profile_id)
+    async with ChatActionSender(
+        bot=callback.bot,
+        chat_id=callback.message.chat.id,
+        action=ChatAction.TYPING,
+    ):
+        audio_processing_profile_id = int(audio_processing_profile_id)
+        manager.dialog_data[AUDIO_PROCESSING_PROFILE_ID_KEY] = audio_processing_profile_id
 
-    task = VideoOrPlaylistForProcessing(
-        url=manager.dialog_data.get(URL_KEY),
-        video=manager.dialog_data.get(VIDEO_KEY),
-        document=manager.dialog_data.get(DOCUMENT_KEY),
-        user_id=manager.middleware_data[MIDDLEWARE_AUTH_USER_KEY].id,
-        telegram_chat_id=callback.message.chat.id,
-        telegram_message_id=manager.dialog_data[MESSAGE_ID_KEY],
-        audio_processing_profile_id=int(audio_processing_profile_id),
-        is_playlist=manager.dialog_data.get(IS_PLAYLIST_KEY, False),
-    )
+        task = VideoOrPlaylistForProcessing(
+            url=manager.dialog_data.get(URL_KEY),
+            video=manager.dialog_data.get(VIDEO_KEY),
+            document=manager.dialog_data.get(DOCUMENT_KEY),
+            user_id=manager.middleware_data[MIDDLEWARE_AUTH_USER_KEY].id,
+            telegram_chat_id=callback.message.chat.id,
+            telegram_message_id=manager.dialog_data[MESSAGE_ID_KEY],
+            audio_processing_profile_id=int(audio_processing_profile_id),
+            is_playlist=manager.dialog_data.get(IS_PLAYLIST_KEY, False),
+        )
 
-    task_id = process_video_or_playlist.delay(task.model_dump(mode="json"))
+        task_id = process_video_or_playlist.delay(task.model_dump(mode="json"))
 
-    logger.info("Published video processing task %s", task_id)
+        logger.info("Published video processing task %s", task_id)
 
-    await callback.bot.send_message(
-        text="Добавлено в очередь на обработку",
-        chat_id=task.telegram_chat_id,
-        reply_to_message_id=task.telegram_message_id,
-    )
+        await callback.bot.send_message(
+            text="Добавлено в очередь на обработку",
+            chat_id=task.telegram_chat_id,
+            reply_to_message_id=task.telegram_message_id,
+        )

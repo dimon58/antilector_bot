@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 
 from sqlalchemy import update
+from sqlalchemy.orm import selectinload
 from sqlalchemy_file import File
 
 from configs import USE_NVENC, FORCE_VIDEO_CODEC, FORCE_AUDIO_CODEC, PROCESSED_EXT, USE_NISQA, TORCH_DEVICE
@@ -99,6 +100,7 @@ async def run_video_pipeline(
         .where(ProcessedVideo.id == processed_video.id)
         .values(file=file, processing_stats=processing_stats)
         .returning(ProcessedVideo)
+        .options(selectinload(ProcessedVideo.original_video))
     )
 
     return await execute_file_update_statement(file, stmt)

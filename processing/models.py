@@ -5,7 +5,7 @@ from pathlib import Path
 import aiogram
 import pydantic
 from aiogram import Bot
-from aiogram.enums import ChatAction
+from aiogram.enums import ChatAction, ParseMode
 from aiogram.types import Message
 from aiogram.utils.chat_action import ChatActionSender
 from pydantic import ConfigDict
@@ -22,8 +22,10 @@ from djgram.db.models import BaseModel, TimeTrackableBaseModel
 from djgram.db.pydantic_field import ImmutablePydanticField
 from djgram.utils.input_file_ext import S3FileInput
 from tools.audio_processing.pipeline import AudioPipeline
+from tools.video_processing.actions.unsilence_actions import TIME_SAVINGS_REAL_KEY
 from tools.video_processing.pipeline import VideoPipelineStatistics
 from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpInfoDict
+from .representation import silence_remove_done_report
 from .schema import VideoOrPlaylistForProcessing
 
 logger = logging.getLogger(__name__)
@@ -198,11 +200,24 @@ class ProcessedVideo(Waitable, TimeTrackableBaseModel):
         doc="Отправленный файл в телеграм",
     )
 
+    def get_caption(self):
+        yt_dlp_info = self.original_video.yt_dlp_info
+
+        original_url = yt_dlp_info.get("webpage_url")
+        if original_url is not None:  # noqa: SIM108
+            original_ref = f"\n\n[Ссылка на оригинальное видео]({original_url})"
+        else:  # если обрабатывался файл, загруженный пользователем
+            original_ref = ""
+
+        time_savings = self.processing_stats.unsilence_stats.action_stats[TIME_SAVINGS_REAL_KEY]
+
+        return f"{yt_dlp_info["title"]}\n" f"\n" f"{silence_remove_done_report(time_savings)}" f"{original_ref}"
+
     async def send(self, bot: Bot, chat_id: int | str, reply_to_message_id: int | None = None) -> Message:
         async with ChatActionSender(
             bot=bot,
             chat_id=chat_id,
-            action=ChatAction.TYPING,
+            action=ChatAction.UPLOAD_VIDEO,
         ):
             if self.telegram_file is not None:
                 logger.info("Sending cached in telegram video %s", self.id)
@@ -217,9 +232,11 @@ class ProcessedVideo(Waitable, TimeTrackableBaseModel):
 
             message = await bot.send_video(
                 video=video,
+                caption=self.get_caption(),
                 chat_id=chat_id,
                 supports_streaming=True,
                 reply_to_message_id=reply_to_message_id,
+                parse_mode=ParseMode.MARKDOWN,
             )
 
             if self.telegram_file is None:
