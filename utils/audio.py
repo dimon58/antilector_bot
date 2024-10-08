@@ -97,6 +97,7 @@ def measure_volume(filename: PathType) -> float:
             path,
             "-af",
             "volumedetect",
+            "-vn",
             "-f",
             "null",
             "-",

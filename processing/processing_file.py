@@ -63,7 +63,7 @@ async def run_video_pipeline(
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir = Path(temp_dir)
 
-        logger.info("Downloading video %s to temporary directory", db_video.id)
+        logger.info("Downloading video %s from storage to temporary directory", db_video.id)
         file = db_video.file.file
         input_file = temp_dir / file.filename
         with open(input_file, "wb") as f:
