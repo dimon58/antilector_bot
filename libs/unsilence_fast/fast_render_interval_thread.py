@@ -1,4 +1,6 @@
+import logging
 import queue
+import shlex
 import subprocess
 import sys
 import threading
@@ -12,6 +14,8 @@ from libs.unsilence.render_media.options import RenderOptions
 from utils.progress_bar import setup_progress_for_ffmpeg
 
 from .fast_render_task import IntervalGroupRenderTask
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -124,6 +128,8 @@ class RenderIntervalThread(threading.Thread):
                 f"{{{task.interval_group_render_task.start_timestamp}, "
                 f"{task.interval_group_render_task.end_timestamp}}}",
             )
+
+        logger.debug("Executing ffmpeg command on thread %s: %s", self.thread_id, shlex.join(ffmpeg.arguments))
 
         try:
             ffmpeg.execute()

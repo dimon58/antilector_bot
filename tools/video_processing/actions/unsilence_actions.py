@@ -92,6 +92,7 @@ class UnsilenceAction(Action):
         # ----------------- Detecting ----------------- #
         u = self.unsilence_class(input_file, **init_additional_options)
 
+        logger.debug("Running silence detection")
         detection_start = time.perf_counter()
         intervals = u.detect_silence(
             **self.detect_silence_options,
@@ -100,6 +101,7 @@ class UnsilenceAction(Action):
         )
         detection_end = time.perf_counter()
 
+        logger.debug("Estimating time savings")
         time_savings_estimation = u.estimate_time(
             audible_speed=self.render_options.audible_speed,
             silent_speed=self.render_options.silent_speed,

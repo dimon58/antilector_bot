@@ -37,7 +37,6 @@ class IntervalRenderTask:
 
         if not render_options.audio_only:
             task.video_filter = get_video_filter(current_speed)
-            logger.debug("Video filter: %s", task.video_filter)
 
         # ----------------- audio filter ----------------- #
         fade = get_fade_filter(
@@ -47,7 +46,6 @@ class IntervalRenderTask:
             fade_curve=render_options.fade_curve,
         )
         task.audio_filter = get_audio_filter(fade, current_speed, current_volume)
-        logger.debug("Audio filter: %s", task.audio_filter)
 
         return task
 
@@ -159,7 +157,8 @@ class IntervalGroupRenderTask:
 
                 trim_filters.append(
                     f"[0:v]"
-                    f"trim=start={task.interval.start - start_timestamp}:end={task.interval.end - start_timestamp}"
+                    f"trim=start={task.interval.start - start_timestamp:.4f}"
+                    f":end={task.interval.end - start_timestamp:.4f}"
                     f",setpts=PTS-STARTPTS{video_filter}"
                     f"[vf{idx}]"
                 )
@@ -167,7 +166,8 @@ class IntervalGroupRenderTask:
             audio_filter = f",{task.audio_filter}" if task.audio_filter is not None else ""
             trim_filters.append(
                 f"[{audio_idx}:a]"
-                f"atrim=start={task.interval.start - start_timestamp}:end={task.interval.end - start_timestamp}"
+                f"atrim=start={task.interval.start - start_timestamp:.4f}"
+                f":end={task.interval.end - start_timestamp:.4f}"
                 f",asetpts=PTS-STARTPTS{audio_filter}"
                 f"[af{idx}]"
             )
@@ -205,8 +205,8 @@ class IntervalGroupRenderTask:
         if render_options.use_nvenc:
             logger.debug("Rendering using nvenc")
             ffmpeg = ffmpeg.option("hwaccel", "cuda").option("hwaccel_output_format", "cuda")
-
-        logger.debug("Rendering on cpu")
+        else:
+            logger.debug("Rendering on cpu")
 
         if len(self.interval_render_tasks) == 1:
             input_options, output_options = self._generate_command_for_single_interval(render_options, separated_audio)

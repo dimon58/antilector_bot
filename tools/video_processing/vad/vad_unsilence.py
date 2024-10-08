@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import silero_vad
@@ -8,6 +9,8 @@ from libs.unsilence.detect_silence.detect_silence import detect_silence
 from libs.unsilence.unsilence import UpdateCallbackType
 from libs.unsilence_fast.unsilence import FastUnsilence
 from utils.audio import read_audio
+
+logger = logging.getLogger(__name__)
 
 
 def silent_detect_progress_update_proxy(callback: UpdateCallbackType, duration: float):
@@ -52,6 +55,7 @@ def detect_speech(
     if max_speech_duration_s is None:
         max_speech_duration_s = float("inf")
 
+    logger.debug("Executing VAD")
     model.reset_states()
     speech_timestamps = silero_vad.get_speech_timestamps(
         audio=wav,
@@ -70,6 +74,7 @@ def detect_speech(
     # ---------------------- Detection ---------------------- #
 
     # ---------------------- Converting ---------------------- #
+    logger.debug("Converting timestamps to intervals")
     for speech_timestamp in speech_timestamps:
         speech_timestamp["start"] /= sampling_rate
         speech_timestamp["end"] /= sampling_rate

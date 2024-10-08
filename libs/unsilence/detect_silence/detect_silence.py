@@ -1,9 +1,13 @@
+import logging
 import re
+import shlex
 import subprocess
 from pathlib import Path
 
 from .._typing import UpdateCallbackType
 from ..intervals.intervals import Interval, Intervals
+
+logger = logging.getLogger(__name__)
 
 
 def detect_silence(
@@ -37,6 +41,8 @@ def detect_silence(
         "null",
         "-",
     ]
+
+    logger.debug("Executing ffmpeg command: %s", shlex.join(command))
 
     console_output = subprocess.Popen(  # noqa: S603
         command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True

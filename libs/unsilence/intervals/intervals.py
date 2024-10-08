@@ -1,4 +1,8 @@
+import logging
+
 from .interval import Interval, SerializedInterval
+
+logger = logging.getLogger(__name__)
 
 
 class Intervals:
@@ -64,6 +68,7 @@ class Intervals:
         :param stretch_time: The time that should be added/removed from a audible/silent interval
         :return: None
         """
+        logger.debug("Optimazing intervals")
         self.__combine_intervals(short_interval_threshold)
         self.__enlarge_audible_intervals(stretch_time)
         self.__remove_breaks(silence_upper_threshold)
@@ -93,6 +98,7 @@ class Intervals:
 
         intervals.append(current_interval)
 
+        logger.debug("%s intervals combined in %s", len(self._interval_list), len(intervals))
         self._interval_list = intervals
 
     def __enlarge_audible_intervals(self, stretch_time: float) -> None:
@@ -101,6 +107,7 @@ class Intervals:
         :param stretch_time: Time the intervals should be enlarged/shrunken
         :return: None
         """
+        logger.debug("Enlarging intervals")
         for i, interval in enumerate(self._interval_list):
             interval.enlarge_audible_interval(
                 stretch_time, is_start_interval=(i == 0), is_end_interval=(i == len(self._interval_list) - 1)
@@ -108,6 +115,7 @@ class Intervals:
 
     def __remove_breaks(self, silence_upper_threshold: float | None) -> None:
         if silence_upper_threshold is None or silence_upper_threshold == float("inf"):
+            logger.debug("Skip removing breaks")
             self._interval_list_without_breaks = self._interval_list
             return
 
@@ -116,6 +124,8 @@ class Intervals:
             if interval.is_silent and interval.duration >= silence_upper_threshold:
                 continue
             intervals.append(interval)
+
+        logger.debug("Removed %s intervals with breaks", len(self._interval_list) - len(intervals))
 
         self._interval_list_without_breaks = intervals
 
