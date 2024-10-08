@@ -95,14 +95,17 @@ class FastMediaRenderer(MediaRenderer):
 
         tasks: list[IntervalGroupRenderTask] = []
 
+        logger.debug("Grouping intervals")
         current_render_group = IntervalGroupRenderTask()
 
         for interval in intervals.intervals_without_breaks:
 
-            if (
-                current_render_group.total_interval_duration + interval.duration > max_seconds_buffer
+            if current_render_group.has_tasks() and (
+                # Нельзя складывать длительности, так как интервалы идут не непрерывно
+                # current_render_group.total_interval_duration + interval.duration > max_seconds_buffer
+                interval.end - current_render_group.start_timestamp > max_seconds_buffer
                 or len(current_render_group.interval_render_tasks) >= self.max_group_size
-            ) and current_render_group.has_tasks():
+            ):
                 tasks.append(current_render_group)
                 current_render_group = IntervalGroupRenderTask()
 
@@ -122,6 +125,8 @@ class FastMediaRenderer(MediaRenderer):
         separated_audio: Path | None,
         on_render_progress_update: UpdateCallbackType | None = None,
     ) -> list[Path]:
+
+        logger.debug("Starting tasks")
 
         thread_exceptions = queue.Queue()
         thread_lock = threading.Lock()
@@ -171,6 +176,7 @@ class FastMediaRenderer(MediaRenderer):
             thread.start()
             thread_list.append(thread)
 
+        logger.debug("Sending tasks to queue")
         self._temp_path.mkdir(parents=True, exist_ok=True)
         file_list = []
         for i, task in enumerate(tasks):
@@ -189,6 +195,7 @@ class FastMediaRenderer(MediaRenderer):
             task_queue.put(thread_task)
             thread_lock.release()
 
+        logger.debug("Waiting for tasks complete")
         while len(completed_tasks) < (len(tasks) - len(corrupted_intervals)):
             if thread_exceptions.empty():
                 time.sleep(0.5)
@@ -196,9 +203,11 @@ class FastMediaRenderer(MediaRenderer):
                 exc_type, exc_obj, exc_trace = thread_exceptions.get(block=False)
                 raise exc_obj
 
+        logger.debug("Stopping threads")
         for thread in thread_list:
             thread.stop()
 
+        logger.debug("Joining threads")
         for thread in thread_list:
             thread.join()
 
@@ -207,6 +216,8 @@ class FastMediaRenderer(MediaRenderer):
     def _concat_rendered_files(
         self, completed_file_list: list[Path], on_concat_progress_update: UpdateCallbackType | None, output_file: Path
     ) -> Path:
+
+        logger.info("Concatenating files")
 
         concat_file = self._temp_path / "concat_list.txt"
         final_output = self._temp_path / f"out_final{output_file.suffix}"
