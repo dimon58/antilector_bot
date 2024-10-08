@@ -147,6 +147,6 @@ class RenderIntervalThread(threading.Thread):
             if "Error initializing complex filter" in exc.message:
                 raise ValueError("Invalid render options") from exc
 
-            raise ValueError(f"{exc.message}: {exc.arguments}") from exc
+            raise ValueError(f"{exc.message}: {shlex.join(exc.arguments)}") from exc
 
         return True
