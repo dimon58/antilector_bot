@@ -30,6 +30,8 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
         text=start_text,
         chat_id=video_or_playlist_for_processing.telegram_chat_id,
         reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+        disable_notification=True,
+        disable_web_page_preview=True,
     )
 
     from .tasks import process_video_task
@@ -38,6 +40,9 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
         async with get_autocommit_session() as db_session:
             if await try_send_processed(db_session, db_video.id, video_or_playlist_for_processing):
                 continue
+
+        # TODO: Если видео в процессе скачивания,
+        #  то не надо спавнить сразу работу, а нужно делегировать спавн скачивающей таске
 
         logger.info(
             "Send video %s (audio profile %s, unsilence profile %s) to processing",
