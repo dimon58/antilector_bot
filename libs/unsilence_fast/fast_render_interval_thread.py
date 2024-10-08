@@ -13,7 +13,7 @@ from ffmpeg import FFmpegError
 from libs.unsilence.render_media.options import RenderOptions
 from utils.progress_bar import setup_progress_for_ffmpeg
 
-from .fast_render_task import IntervalGroupRenderTask
+from .fast_render_task import InputFileInfo, IntervalGroupRenderTask
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,7 @@ class ThreadTask:
     task_id: int
     total_tasks: int
     output_file: Path
+    input_file_info: InputFileInfo
 
     interval_group_render_task: IntervalGroupRenderTask
 
@@ -33,7 +34,7 @@ class RenderIntervalThread(threading.Thread):
         thread_id: int,
         input_file: Path,
         render_options: RenderOptions,
-        task_queue: queue.Queue,
+        task_queue: queue.Queue[ThreadTask],
         thread_exceptions: queue.Queue,
         thread_lock: threading.Lock,
         on_task_completed: Callable[[ThreadTask, bool], None],
@@ -114,6 +115,7 @@ class RenderIntervalThread(threading.Thread):
         ffmpeg = task.interval_group_render_task.generate_command(
             input_file=self._input_file,
             output_file=task.output_file,
+            input_file_info=task.input_file_info,
             render_options=self._render_options,
             separated_audio=self._separated_audio,
         )

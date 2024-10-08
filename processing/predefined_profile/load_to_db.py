@@ -3,7 +3,7 @@ import logging.config
 import sys
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 from configs import LOGGING_CONFIG
@@ -47,14 +47,25 @@ async def load_audio_processing_profiles():
         await db_session.begin()
 
         for profile in (excellent, good, normal, terrible):
+            # noinspection PyTypeChecker
             if await db_session.scalar(
-                select(AudioProcessingProfile).where(AudioProcessingProfile.name == profile.name)
+                select(AudioProcessingProfile).with_for_update().where(AudioProcessingProfile.slug == profile.slug)
             ):
-                logging.info("Skip adding %s", profile.name)
+                # noinspection PyTypeChecker
+                await db_session.execute(
+                    update(AudioProcessingProfile)
+                    .values(
+                        name=profile.name,
+                        description=profile.description,
+                        audio_pipeline=profile.audio_pipeline,
+                    )
+                    .where(AudioProcessingProfile.slug == profile.slug)
+                )
+                logging.info("Updated %s", profile.slug)
                 continue
 
             db_session.add(profile)
-            logging.info("Added %s", profile.name)
+            logging.info("Added %s", profile.slug)
 
         await db_session.commit()
 
@@ -84,12 +95,25 @@ async def load_unsilence_profiles():
         await db_session.begin()
 
         for profile in (unsilence_and_vad_profile, unsilence_profile):
-            if await db_session.scalar(select(UnsilenceProfile).where(UnsilenceProfile.name == profile.name)):
-                logging.info("Skip adding %s", profile.name)
+            # noinspection PyTypeChecker
+            if await db_session.scalar(
+                select(UnsilenceProfile).with_for_update().where(UnsilenceProfile.slug == profile.slug)
+            ):
+                # noinspection PyTypeChecker
+                await db_session.execute(
+                    update(UnsilenceProfile)
+                    .values(
+                        name=profile.name,
+                        description=profile.description,
+                        unsilence_action=profile.unsilence_action,
+                    )
+                    .where(UnsilenceProfile.slug == profile.slug)
+                )
+                logging.info("Updated %s", profile.slug)
                 continue
 
             db_session.add(profile)
-            logging.info("Added %s", profile.name)
+            logging.info("Added %s", profile.slug)
 
         await db_session.commit()
 

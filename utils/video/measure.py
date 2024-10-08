@@ -233,3 +233,30 @@ def get_video_bits_per_raw_sample(filename: str | Path) -> float:
         raise FFmpegError.create(f"ffmpeg return code {retcode}: {err}", [])
 
     return int(out.strip().split()[0])
+
+
+def get_media_bit_rate(filename: str | Path, media_stream_type: MediaStreamType) -> int:
+    command = [
+        "ffprobe",
+        "-v",
+        "error",
+        "-select_streams",
+        f"{media_stream_type}:0",
+        "-show_entries",
+        "stream=bit_rate",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        os.fspath(filename),
+    ]
+    process = subprocess.Popen(  # noqa: S603 # nosec: B603, B607
+        command,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    out, err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        raise FFmpegError.create(f"ffmpeg return code {retcode}: {err}", command)
+
+    return int(out.strip())

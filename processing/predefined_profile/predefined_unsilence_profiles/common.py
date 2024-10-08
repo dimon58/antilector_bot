@@ -1,4 +1,11 @@
-from configs import FORCE_VIDEO_CODEC, UNSILENCE_DEFAULT_CPU_COUNT, USE_NVENC, SILERO_VAD_SAMPLE_RATE
+from configs import (
+    FORCE_VIDEO_CODEC,
+    UNSILENCE_DEFAULT_CPU_COUNT,
+    USE_NVENC,
+    SILERO_VAD_SAMPLE_RATE,
+    NVENC_ADDITIONAL_OPTIONS,
+    CPU_ADDITIONAL_OPTIONS,
+)
 from libs.unsilence.render_media.options import RenderOptions
 
 common = {
@@ -39,4 +46,5 @@ default_render_options = RenderOptions(
     threads=UNSILENCE_DEFAULT_CPU_COUNT,
     use_nvenc=USE_NVENC,
     force_video_codec=FORCE_VIDEO_CODEC,
+    additional_output_options=NVENC_ADDITIONAL_OPTIONS if USE_NVENC else CPU_ADDITIONAL_OPTIONS,
 )

@@ -17,10 +17,16 @@ from libs.unsilence._typing import UpdateCallbackType
 from libs.unsilence.intervals.interval import SerializedInterval
 from libs.unsilence.render_media.media_renderer import MediaRenderer
 from libs.unsilence.render_media.options import RenderOptions
-from utils.video.measure import get_video_bits_per_raw_sample, get_video_framerate, get_video_resolution
+from utils.video.measure import (
+    MediaStreamType,
+    get_media_bit_rate,
+    get_video_bits_per_raw_sample,
+    get_video_framerate,
+    get_video_resolution,
+)
 
 from .fast_render_interval_thread import RenderIntervalThread, ThreadTask
-from .fast_render_task import IntervalGroupRenderTask, IntervalRenderTask
+from .fast_render_task import InputFileInfo, IntervalGroupRenderTask, IntervalRenderTask
 
 MAX_FILTERS_WITHOUT_DEGRADATION = 25
 
@@ -179,6 +185,12 @@ class FastMediaRenderer(MediaRenderer):
         logger.debug("Sending tasks to queue")
         self._temp_path.mkdir(parents=True, exist_ok=True)
         file_list = []
+        video_bit_rate = get_media_bit_rate(input_file, MediaStreamType.VIDEO)
+        input_file_info = InputFileInfo(
+            video_bit_rate=video_bit_rate,
+            max_video_bit_rate=2 * video_bit_rate,
+            audio_bit_rate=get_media_bit_rate(input_file, MediaStreamType.AUDIO),
+        )
         for i, task in enumerate(tasks):
             current_file_name = f"out_{i}{output_file.suffix}"
             current_path = self._temp_path / current_file_name
@@ -188,6 +200,7 @@ class FastMediaRenderer(MediaRenderer):
                 total_tasks=len(tasks),
                 output_file=current_path,
                 interval_group_render_task=task,
+                input_file_info=input_file_info,
             )
             file_list.append(current_path)
 

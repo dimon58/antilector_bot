@@ -1,9 +1,12 @@
 import warnings
-from typing import Self
+from collections.abc import Iterable
+from typing import Self, TypeAlias
 
 from pydantic import BaseModel, Field, PositiveInt, model_validator
 
 from utils.video.misc import ensure_nvenc_correct
+
+FFmpegOption: TypeAlias = int | float | str | Iterable[int | float | str]
 
 
 class RenderOptions(BaseModel):
@@ -33,6 +36,10 @@ class RenderOptions(BaseModel):
     use_nvenc: bool = Field(False, description="Use nvenc for transcoding")
     force_video_codec: str | None = Field(None, description="Video codec to use for rendering")
     force_audio_codec: str | None = Field(None, description="Audio codec to use for rendering")
+
+    additional_output_options: dict[str, FFmpegOption | None] | None = Field(
+        None, description="Дополнительные параметры кодирования"
+    )
 
     # Можно ли копировать видеопоток при рендеринге.
     # Стоит давать разрешение, только если будут

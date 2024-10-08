@@ -1,3 +1,4 @@
+import copy
 import os
 from pathlib import Path
 
@@ -113,6 +114,31 @@ FORCE_VIDEO_CODEC = "hevc_nvenc" if USE_NVENC else "hevc"
 FORCE_AUDIO_CODEC = "aac"
 
 PROCESSED_EXT = ".mp4"
+
+# https://docs.nvidia.com/video-technologies/video-codec-sdk/12.0/ffmpeg-with-nvidia-gpu/index.html#command-line-for-latency-tolerant-high-quality-transcoding
+NVENC_ADDITIONAL_OPTIONS = {
+    "preset": "p6",
+    "tune": "hq",
+    # "b:v": "5M", # Устанавливается равным битрейту входного видео
+    "bufsize": "5M",
+    # "maxrate": "10M", # Устанавливается равным битрейту входного видео * 2
+    "qmin": "0",
+    "g": "250",
+    # "bf": "3", # Не поддерживается на Pascal
+    # "b_ref_mode": "middle", # Не поддерживается на Pascal
+    # "temporal-aq": "1", # Не поддерживается на Pascal
+    "rc-lookahead": "20",
+    "i_qfactor": "0.75",
+    "b_qfactor": "1.1",
+}
+CPU_ADDITIONAL_OPTIONS = copy.deepcopy(NVENC_ADDITIONAL_OPTIONS) | {
+    "c:v": "libx265",
+    "preset": "slower",
+    "tune": "fastdecode",
+    "bf": "3",
+    "b_ref_mode": "middle",
+    "temporal-aq": "1",
+}
 
 USE_NISQA = True
 

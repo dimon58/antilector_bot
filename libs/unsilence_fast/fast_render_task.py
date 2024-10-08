@@ -7,7 +7,7 @@ from ffmpeg.types import Option
 
 from libs.unsilence import Interval
 from libs.unsilence.intervals.interval import SerializedInterval
-from libs.unsilence.render_media.options import RenderOptions
+from libs.unsilence.render_media.options import FFmpegOption, RenderOptions
 from libs.unsilence.render_media.render_filter import (
     get_audio_filter,
     get_fade_filter,
@@ -18,8 +18,27 @@ from utils.fixed_ffmpeg import FixedFFmpeg
 
 FFmpegOptionsType: TypeAlias = dict[str, Option | None]
 
-
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class InputFileInfo:
+    video_bit_rate: int
+    max_video_bit_rate: int
+    audio_bit_rate: int
+
+    def update_output_options(
+        self,
+        render_options: RenderOptions,
+        output_options: dict[str, FFmpegOption | None],
+    ) -> dict[str, FFmpegOption | None]:
+        if not render_options.audio_only:
+            output_options["b:v"] = self.video_bit_rate
+            output_options["maxrate"] = self.max_video_bit_rate
+
+        output_options["b:a"] = self.audio_bit_rate
+
+        return output_options
 
 
 @dataclass
@@ -194,6 +213,7 @@ class IntervalGroupRenderTask:
         self,
         input_file: Path,
         output_file: Path,
+        input_file_info: InputFileInfo,
         render_options: RenderOptions,
         separated_audio: Path | None,
     ) -> FixedFFmpeg:
@@ -209,10 +229,14 @@ class IntervalGroupRenderTask:
             logger.debug("Rendering on cpu")
 
         if len(self.interval_render_tasks) == 1:
-            input_options, output_options = self._generate_command_for_single_interval(render_options, separated_audio)
+            input_options, output_options = self._generate_command_for_single_interval(
+                render_options=render_options,
+                separated_audio=separated_audio,
+            )
         else:
             input_options, output_options = self._generate_command_for_multiple_interval(
-                render_options, separated_audio
+                render_options=render_options,
+                separated_audio=separated_audio,
             )
 
         output_options |= {
@@ -232,10 +256,19 @@ class IntervalGroupRenderTask:
         if separated_audio:
             ffmpeg = ffmpeg.input(separated_audio, input_options)
 
+        output_options = input_file_info.update_output_options(render_options, output_options)
+
+        if render_options.additional_output_options is not None:
+            output_options |= render_options.additional_output_options
+
         return ffmpeg.output(output_file, output_options)
 
     def generate_command_notrim(
-        self, input_file: Path, output_file: Path, render_options: RenderOptions
+        self,
+        input_file: Path,
+        output_file: Path,
+        input_file_info: InputFileInfo,
+        render_options: RenderOptions,
     ) -> FixedFFmpeg:
         """
         НЕ ИСПОЛЬЗОВАТЬ!
@@ -297,6 +330,11 @@ class IntervalGroupRenderTask:
 
         if render_options.force_audio_codec is not None:
             output_options["c:a"] = render_options.force_audio_codec
+
+        output_options = input_file_info.update_output_options(render_options, output_options)
+
+        if render_options.additional_output_options is not None:
+            output_options |= render_options.additional_output_options
 
         return ffmpeg.output(output_file, output_options)
 
