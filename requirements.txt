@@ -23,7 +23,7 @@ coloredlogs~=15.0.1
 python-json-logger==2.0.7
 pydantic==2.9.2
 orjson==3.10.7
-yt-dlp==2024.8.6
+yt-dlp==2024.10.7
 cashews==7.3.2
 
 # -------- Telegram bot -------- #
@@ -35,7 +35,7 @@ aiogram==3.13.1
 # Работа с базой данных
 alembic==1.13.3
 asyncpg==0.29.0
-redis==5.1.0
+redis==5.1.1
 hiredis==3.0.0
 
 # Прочее
