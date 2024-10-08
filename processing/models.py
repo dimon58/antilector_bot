@@ -16,11 +16,18 @@ from sqlalchemy.sql import sqltypes
 from sqlalchemy_file import FileField, File
 from sqlalchemy_file.storage import StorageManager
 
-from configs import ORIGINAL_VIDEO_STORAGE, PROCESSED_VIDEO_STORAGE, PROCESSED_VIDEO_CONTAINER, ORIGINAL_VIDEO_CONTAINER
+from configs import (
+    ORIGINAL_VIDEO_STORAGE,
+    PROCESSED_VIDEO_STORAGE,
+    PROCESSED_VIDEO_CONTAINER,
+    ORIGINAL_VIDEO_CONTAINER,
+    VIDEO_UPLOAD_TIMEOUT,
+)
 from djgram.contrib.communication.broadcast import broadcast
 from djgram.db.models import BaseModel, TimeTrackableBaseModel
 from djgram.db.pydantic_field import ImmutablePydanticField
 from djgram.utils.input_file_ext import S3FileInput
+from djgram.utils.upload import LoggingInputFile
 from tools.audio_processing.pipeline import AudioPipeline
 from tools.video_processing.actions.unsilence_actions import TIME_SAVINGS_REAL_KEY, UnsilenceAction
 from tools.video_processing.pipeline import VideoPipelineStatistics
@@ -253,12 +260,13 @@ class ProcessedVideo(Waitable, TimeTrackableBaseModel):
                 )
 
             message = await bot.send_video(
-                video=video,
+                video=LoggingInputFile(video),
                 caption=self.get_caption(),
                 chat_id=chat_id,
                 supports_streaming=True,
                 reply_to_message_id=reply_to_message_id,
                 parse_mode=ParseMode.HTML,
+                request_timeout=VIDEO_UPLOAD_TIMEOUT,
             )
 
             if self.telegram_file is None:

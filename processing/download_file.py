@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy_file import File
 from yt_dlp.utils import DownloadError
 
+from configs import VIDEO_DOWNLOAD_TIMEOUT
 from djgram.db.base import get_autocommit_session
 from djgram.db.utils import get_or_create
 from djgram.utils.download import download_file
@@ -205,7 +206,7 @@ async def get_from_telegram(
     )
 
     # TODO: можно заливать файл напрямую в хранилище через container.upload_object_via_stream
-    buffer = await download_file(bot, video.file_id, video.file_size)
+    buffer = await download_file(bot, video.file_id, video.file_size, timeout=VIDEO_DOWNLOAD_TIMEOUT)
 
     file = File(
         content=buffer,

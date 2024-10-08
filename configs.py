@@ -124,6 +124,9 @@ UNSILENCE_DEFAULT_CPU_COUNT = min(max(1, os.cpu_count() - 1), NVENC_MAX_CONCURRE
 # Если менять в разумных пределах, то время работы почти не зависит от этого параметра
 MAX_DEEPFILTERNET_CHUNK_SIZE_BYTES = 1 * 2**30
 
+VIDEO_DOWNLOAD_TIMEOUT = 1200  # 100 mbit/sec -> 15 GB
+VIDEO_UPLOAD_TIMEOUT = 1200  # 100 mbit/sec -> 15 GB
+
 # ---------- yt-dlp ---------- #
 
 # YT_DLP_HTTP_CHUNK_SIZE = 10485760  # 10 MB
