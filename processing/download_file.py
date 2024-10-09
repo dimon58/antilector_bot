@@ -81,7 +81,7 @@ async def _create_video(
             else:
                 break
         else:
-            raise DownloadError(f"Failed to download {url} in {DOWNLOAD_ATTEMPTS} attempts: {exc}")
+            raise DownloadError(f"Failed to download {url} in {DOWNLOAD_ATTEMPTS} attempts: {attempt}")
 
         video_file = Path(download_data.filenames[download_data.info["id"]])
 
