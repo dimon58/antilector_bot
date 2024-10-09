@@ -2,7 +2,7 @@ import logging
 
 from aiogram import Bot
 from aiogram.enums import ParseMode
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -138,3 +138,10 @@ async def process_video(db_video_id: str, video_or_playlist_for_processing: Vide
     logger.info("Broadcasting video")
     async with get_tg_bot() as bot:
         await processed_video.broadcast_for_waiters(bot)
+
+    async with get_autocommit_session() as db_session:
+        await db_session.execute(
+            update(ProcessedVideo)
+            .where(ProcessedVideo.id == processed_video.id)
+            .values(telegram_file=processed_video.telegram_file)
+        )

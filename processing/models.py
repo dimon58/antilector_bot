@@ -254,13 +254,15 @@ class ProcessedVideo(Waitable, TimeTrackableBaseModel):
             else:
                 logger.info("Uploading video %s to telegram", self.id)
                 ext = Path(self.file["filename"]).suffix
-                video = S3FileInput(
-                    obj=self.file.file.object,
-                    filename=f"processed{ext}",
+                video = LoggingInputFile(
+                    S3FileInput(
+                        obj=self.file.file.object,
+                        filename=f"processed{ext}",
+                    )
                 )
 
             message = await bot.send_video(
-                video=LoggingInputFile(video),
+                video=video,
                 caption=self.get_caption(),
                 chat_id=chat_id,
                 supports_streaming=True,
