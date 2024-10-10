@@ -6,12 +6,14 @@ import logging.config
 
 from aiogram import Dispatcher, Router
 from aiogram.enums import UpdateType
-from aiogram.filters import Command, CommandStart
+from aiogram.filters import Command, CommandStart, ExceptionTypeFilter
 from aiogram.fsm.storage.redis import (
     DefaultKeyBuilder,  # pyright: ignore [reportPrivateImportUsage]
     RedisStorage,
 )
-from aiogram.types import Message
+from aiogram.types import ErrorEvent, Message
+from aiogram_dialog import DialogManager
+from aiogram_dialog.api.exceptions import UnknownIntent, UnknownState
 from redis.asyncio.client import Redis
 
 from configs import (
@@ -79,6 +81,15 @@ def setup_routers(dp: Dispatcher) -> None:
     logger.info("Routers setup")
 
 
+async def on_unknown_intent(event: ErrorEvent, dialog_manager: DialogManager):
+    logging.error("Error in dialog: %s", event.exception)
+
+
+async def on_unknown_state(event: ErrorEvent, dialog_manager: DialogManager):
+    # Example of handling UnknownState Error and starting new dialog.
+    logging.error("Error in dialog: %s", event.exception)
+
+
 async def main() -> None:
     """
     Точка входа в бота
@@ -97,6 +108,8 @@ async def main() -> None:
     storage = RedisStorage(redis_for_storage, key_builder=DefaultKeyBuilder(with_destiny=True))
 
     dp = Dispatcher(storage=storage)
+    dp.errors.register(on_unknown_intent, ExceptionTypeFilter(UnknownIntent))
+    dp.errors.register(on_unknown_state, ExceptionTypeFilter(UnknownState))
     bot = get_local_bot(
         telegram_bot_token=TELEGRAM_BOT_TOKEN,
         telegram_local=TELEGRAM_LOCAL,
