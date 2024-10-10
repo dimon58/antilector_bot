@@ -1,12 +1,13 @@
 import logging
 from contextlib import suppress
 from pathlib import Path
+from typing import Any
 
 import aiogram
 import pydantic
 from aiogram import Bot
 from aiogram.enums import ChatAction, ParseMode
-from aiogram.types import Message
+from aiogram.types import Message, InputFile
 from aiogram.utils.chat_action import ChatActionSender
 from pydantic import ConfigDict
 from sqlalchemy import ForeignKey, Table, Column, UniqueConstraint
@@ -22,6 +23,8 @@ from configs import (
     PROCESSED_VIDEO_CONTAINER,
     ORIGINAL_VIDEO_CONTAINER,
     VIDEO_UPLOAD_TIMEOUT,
+    THUMBNAILS_CONTAINER,
+    THUMBNAILS_STORAGE,
 )
 from djgram.contrib.communication.broadcast import broadcast
 from djgram.db.models import BaseModel, TimeTrackableBaseModel
@@ -46,6 +49,9 @@ def setup_storage():
 
     with suppress(RuntimeError):
         StorageManager.add_storage(PROCESSED_VIDEO_STORAGE, PROCESSED_VIDEO_CONTAINER)
+
+    with suppress(RuntimeError):
+        StorageManager.add_storage(THUMBNAILS_STORAGE, THUMBNAILS_CONTAINER)
 
 
 class ProfileBase(TimeTrackableBaseModel):
@@ -199,6 +205,11 @@ class Video(Waitable, YtDlpBase, TimeTrackableBaseModel):
         FileField(upload_storage=ORIGINAL_VIDEO_STORAGE),
         doc="Сам видеофайл. None в случае, когда файл в процессе скачивания",
     )
+    thumbnail: Mapped[File | None] = mapped_column(
+        FileField(upload_storage=THUMBNAILS_STORAGE),
+        doc="Лучшая миниатюра для видео в формате jpg",
+    )
+    meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB())
 
 
 class ProcessedVideo(Waitable, TimeTrackableBaseModel):
@@ -225,6 +236,7 @@ class ProcessedVideo(Waitable, TimeTrackableBaseModel):
         FileField(upload_storage=PROCESSED_VIDEO_STORAGE),
         doc="Сам видеофайл. None в случае, когда видео в процессе обработки",
     )
+    meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB())
     telegram_file: Mapped[aiogram.types.Video | None] = mapped_column(
         ImmutablePydanticField(aiogram.types.Video),
         doc="Отправленный файл в телеграм",
@@ -243,6 +255,38 @@ class ProcessedVideo(Waitable, TimeTrackableBaseModel):
 
         return f"{yt_dlp_info["title"]}\n\n{silence_remove_done_report(time_savings)}" f"{original_ref}"
 
+    async def get_thumbnail_input_file(self) -> InputFile | None:
+
+        thumbnail = self.original_video.thumbnail
+        if thumbnail is None:
+            return
+
+        return LoggingInputFile(
+            S3FileInput(
+                obj=thumbnail.file.object,
+                filename=thumbnail["filename"],
+            )
+        )
+
+    async def get_kwargs_for_first_send_to_telegram(self):
+        if self.meta is not None:
+            stream = next(stream for stream in self.meta["streams"] if stream["codec_type"] == "video")
+            kwargs = {
+                "duration": round(float(stream.get("duration", 0))) or None,
+                "width": int(stream.get("width", 0)) or None,
+                "height": int(stream.get("height", 0)) or None,
+            }
+        else:
+            logger.warning("Processed video %s has no metadata", self.id)
+            kwargs = {}
+
+        try:
+            kwargs["thumbnail"] = await self.get_thumbnail_input_file()
+        except Exception as exc:
+            logger.error("Failed to get thumbnail for processed video %s: %s", self.id, exc)
+
+        return kwargs
+
     async def send(self, bot: Bot, chat_id: int | str, reply_to_message_id: int | None = None) -> Message:
         async with ChatActionSender(
             bot=bot,
@@ -252,6 +296,7 @@ class ProcessedVideo(Waitable, TimeTrackableBaseModel):
             if self.telegram_file is not None:
                 logger.info("Sending cached in telegram video %s", self.id)
                 video = self.telegram_file.file_id
+                kwargs = {}
             else:
                 logger.info("Uploading video %s to telegram", self.id)
                 ext = Path(self.file["filename"]).suffix
@@ -261,6 +306,7 @@ class ProcessedVideo(Waitable, TimeTrackableBaseModel):
                         filename=f"processed{ext}",
                     )
                 )
+                kwargs = await self.get_kwargs_for_first_send_to_telegram()
 
             message = await bot.send_video(
                 video=video,
@@ -270,6 +316,7 @@ class ProcessedVideo(Waitable, TimeTrackableBaseModel):
                 reply_to_message_id=reply_to_message_id,
                 parse_mode=ParseMode.HTML,
                 request_timeout=VIDEO_UPLOAD_TIMEOUT,
+                **kwargs,
             )
 
             if self.telegram_file is None:

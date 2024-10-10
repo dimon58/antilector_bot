@@ -2,12 +2,11 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse
 
 import yt_dlp
 from aiogram.enums import ChatAction, ParseMode
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.types import Message
+from aiogram.types import BufferedInputFile, InputFile, Message
 from aiogram.utils.chat_action import ChatActionSender
 from aiogram_dialog import DialogManager
 from cashews import Cache
@@ -15,6 +14,7 @@ from yt_dlp.utils import YoutubeDLError
 
 from djgram.utils.async_tools import run_async_wrapper
 from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpContentType, YtDlpInfoDict, extract_info
+from utils.thumbnail import get_best_thumbnail
 
 from ..formating import format_as_playlist_html, format_as_video_html
 from .states import LectureProcessingStates
@@ -33,30 +33,10 @@ cache.setup("mem://")
 extract_info_async = cache(ttl=timedelta(minutes=5))(run_async_wrapper(extract_info, thread_executor))
 
 
-def is_possible_thumbnail_url(thumbnail_url: str | None) -> bool:
-    if thumbnail_url is None:
-        return False
-
-    return urlparse(thumbnail_url).path.endswith(".jpg")
-
-
-def get_thumbnail_url_for_preview(info: YtDlpInfoDict) -> str | None:
-    thumbnail_url = info.get("thumbnail")
-    if is_possible_thumbnail_url(thumbnail_url):
-        return thumbnail_url
-
-    for thumbnail in reversed(info.get("thumbnails", [])):
-        thumbnail_url = thumbnail.get("url")
-        if is_possible_thumbnail_url(thumbnail_url):
-            return thumbnail_url
-
-    return None
-
-
-async def send_preview(message: Message, msg: str, thumbnail_url: str, parse_mode: ParseMode | None = None) -> None:
-    if thumbnail_url is not None:
+async def send_preview(message: Message, msg: str, thumbnail: InputFile, parse_mode: ParseMode | None = None) -> None:
+    if thumbnail is not None:
         try:
-            await message.reply_photo(thumbnail_url, msg, parse_mode=parse_mode)
+            await message.reply_photo(thumbnail, msg, parse_mode=parse_mode)
         except TelegramBadRequest as exc:
             logger.warning("Failed to send thumbnail preview: %s", str(exc))
         else:
@@ -142,20 +122,27 @@ async def handle_url(message: Message, manager: DialogManager) -> YtDlpContentTy
 
         match _type:
             case YtDlpContentType.VIDEO:
-                thumbnail_url = get_thumbnail_url_for_preview(info)
+                thumbnail = BufferedInputFile(
+                    file=await get_best_thumbnail(info),
+                    filename="thumbnail.jpg",
+                )
+
                 await send_preview(
                     message,
                     f"По ссылке находиться видео\n{format_as_video_html(info)}",
-                    thumbnail_url,
+                    thumbnail,
                     parse_mode=ParseMode.HTML,
                 )
 
             case YtDlpContentType.PLAYLIST:
-                thumbnail_url = get_thumbnail_url_for_preview(info)
+                thumbnail = BufferedInputFile(
+                    file=await get_best_thumbnail(info),
+                    filename="thumbnail.jpg",
+                )
 
                 info["entries"] = list(info["entries"])  # Превращает итератор в список
                 playlist_desc = f"По ссылке находиться плейлист\n{format_as_playlist_html(info)}"
-                await send_preview(message, playlist_desc, thumbnail_url, parse_mode=ParseMode.HTML)
+                await send_preview(message, playlist_desc, thumbnail, parse_mode=ParseMode.HTML)
 
             case _:
                 manager.dialog_data.pop(URL_KEY, None)

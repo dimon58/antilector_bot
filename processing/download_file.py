@@ -24,6 +24,8 @@ from tools.yt_dlp_downloader.yt_dlp_download_videos import (
     YtDlpContentType,
 )
 from utils.get_bot import get_tg_bot
+from utils.thumbnail import get_best_thumbnail
+from utils.video.measure import ffprobe_extract_meta
 from .misc import execute_file_update_statement
 from .models import Playlist, Video, Waiter
 from .schema import VideoOrPlaylistForProcessing, FILE_TYPE
@@ -73,11 +75,21 @@ async def _download_video(db_video, yt_dlp_info):
         file = File(content_path=video_file.as_posix())
         logger.info("Uploading file to storage")
         file.save_to_storage(Video.file.type.upload_storage)
+
+        thumbnail = await get_best_thumbnail(yt_dlp_info)
+        if thumbnail is not None:
+            logger.info("Uploading thumbnail to storage")
+            thumbnail_file = File(content=thumbnail, filename="thumbnail.jpg")
+            thumbnail_file.save_to_storage(Video.thumbnail.type.upload_storage)
+        else:
+            thumbnail_file = None
+
+        meta = ffprobe_extract_meta(video_file)
         # noinspection PyTypeChecker
         stmt = (
             update(Video)
             .where(Video.id == db_video.id)
-            .values(file=file, yt_dlp_info=download_data.info)
+            .values(file=file, yt_dlp_info=download_data.info, meta=meta, thumbnail=thumbnail_file)
             .returning(Video)
         )
         return await execute_file_update_statement(file, stmt)

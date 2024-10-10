@@ -91,9 +91,11 @@ S3_DRIVER = MinIOStorageDriver(
 )
 
 ORIGINAL_VIDEO_STORAGE = "original-video"
+THUMBNAILS_STORAGE = "thumbnails"
 PROCESSED_VIDEO_STORAGE = "processed-video"
 
 ORIGINAL_VIDEO_CONTAINER = get_container_safe(S3_DRIVER, ORIGINAL_VIDEO_STORAGE)
+THUMBNAILS_CONTAINER = get_container_safe(S3_DRIVER, THUMBNAILS_STORAGE)
 PROCESSED_VIDEO_CONTAINER = get_container_safe(S3_DRIVER, PROCESSED_VIDEO_STORAGE)
 
 # ---------- Настройка логики обработки ---------- #

@@ -10,6 +10,7 @@ from configs import USE_NVENC, FORCE_VIDEO_CODEC, FORCE_AUDIO_CODEC, PROCESSED_E
 from libs.nisqa.model import NisqaModel
 from tools.video_processing.pipeline import VideoPipeline
 from utils.get_bot import get_tg_bot
+from utils.video.measure import ffprobe_extract_meta
 from .misc import execute_file_update_statement
 from .models import ProcessedVideo, Video, AudioProcessingProfile, UnsilenceProfile
 from .schema import VideoOrPlaylistForProcessing
@@ -93,15 +94,17 @@ async def run_video_pipeline(
             tempdir=processing_temp_dir,
             nisqa_model=nisqa_model,
         )
+        meta = ffprobe_extract_meta(output_file)
 
         logger.info("Uploading processed video to storage")
         file = File(content_path=output_file.as_posix())
         file.save_to_storage(ProcessedVideo.file.type.upload_storage)
 
+    # noinspection PyTypeChecker
     stmt = (
         update(ProcessedVideo)
         .where(ProcessedVideo.id == processed_video.id)
-        .values(file=file, processing_stats=processing_stats)
+        .values(file=file, processing_stats=processing_stats, meta=meta)
         .returning(ProcessedVideo)
         .options(selectinload(ProcessedVideo.original_video))
     )

@@ -3,7 +3,7 @@ import logging
 import os
 import subprocess
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import orjson
 from ffmpeg import FFmpegError
@@ -276,3 +276,34 @@ def get_media_bit_rate_safe(filename: str | Path, media_stream_type: MediaStream
     except ValueError:
         logger.warning("Changed %s bit rate origin to format for %s", media_stream_type.name, filename)
         return get_media_bit_rate(filename, media_stream_type, "format")
+
+
+def ffprobe_extract_meta(filename: str | Path) -> dict[str, Any]:
+    command = [
+        "ffprobe",
+        "-v",
+        "quiet",
+        "-show_format",
+        "-show_streams",
+        "-print_format",
+        "json",
+        os.fspath(filename),
+    ]
+    process = subprocess.Popen(  # noqa: S603 # nosec: B603, B607
+        command,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    out, err = process.communicate()
+    retcode = process.poll()
+    if retcode:
+        raise FFmpegError.create(f"ffmpeg return code {retcode}: {err}", command)
+
+    metadata: dict = orjson.loads(out)  # pylint: disable=no-member
+
+    if "format" in metadata and "filename" in metadata["format"]:
+        # Удаляем название файла, так как это просто его имя на диске
+        metadata["format"].pop("filename")
+
+    return metadata

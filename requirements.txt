@@ -25,6 +25,7 @@ pydantic==2.9.2
 orjson==3.10.7
 yt-dlp==2024.10.7
 cashews==7.3.2
+pillow==10.4.0
 
 # -------- Telegram bot -------- #
 -r djgram/requirements.txt
