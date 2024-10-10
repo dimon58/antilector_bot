@@ -1,12 +1,16 @@
 import enum
+import logging
 import os
 import subprocess
 from pathlib import Path
+from typing import Literal
 
 import orjson
 from ffmpeg import FFmpegError
 
 from utils.pathtools import split_filename_ext
+
+logger = logging.getLogger(__name__)
 
 # https://ru.wikipedia.org/wiki/MPEG-4_Part_14
 mp4_aliases = (
@@ -235,7 +239,11 @@ def get_video_bits_per_raw_sample(filename: str | Path) -> float:
     return int(out.strip().split()[0])
 
 
-def get_media_bit_rate(filename: str | Path, media_stream_type: MediaStreamType) -> int:
+def get_media_bit_rate(
+    filename: str | Path,
+    media_stream_type: MediaStreamType,
+    origin: Literal["stream", "format"] = "stream",
+) -> int:
     command = [
         "ffprobe",
         "-v",
@@ -243,7 +251,7 @@ def get_media_bit_rate(filename: str | Path, media_stream_type: MediaStreamType)
         "-select_streams",
         f"{media_stream_type}:0",
         "-show_entries",
-        "stream=bit_rate",
+        f"{origin}=bit_rate",
         "-of",
         "default=noprint_wrappers=1:nokey=1",
         os.fspath(filename),
@@ -260,3 +268,11 @@ def get_media_bit_rate(filename: str | Path, media_stream_type: MediaStreamType)
         raise FFmpegError.create(f"ffmpeg return code {retcode}: {err}", command)
 
     return int(out.strip())
+
+
+def get_media_bit_rate_safe(filename: str | Path, media_stream_type: MediaStreamType) -> int:
+    try:
+        return get_media_bit_rate(filename, media_stream_type, "stream")
+    except ValueError:
+        logger.warning("Changed %s bit rate origin to format for %s", media_stream_type.name, filename)
+        return get_media_bit_rate(filename, media_stream_type, "format")
