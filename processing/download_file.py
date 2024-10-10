@@ -59,7 +59,6 @@ async def _download_video(db_video, yt_dlp_info):
         for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
             try:
                 download_data = download(url=url, output_dir=temp_dir)
-                print(download_data.info["id"], download_data.filenames)
             except Exception as exc:  # (DownloadError, FileNotFoundError)
                 logger.error("Download attempt %s/%s failed for %s: %s", attempt, DOWNLOAD_ATTEMPTS, url, exc)
             else:
