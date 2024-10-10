@@ -2,14 +2,14 @@ import logging
 import tempfile
 from collections.abc import AsyncGenerator
 from pathlib import Path
+from typing import TypeVar, ParamSpec
 
 from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy_file import File
-from yt_dlp.utils import DownloadError
 
 from configs import VIDEO_DOWNLOAD_TIMEOUT
 from djgram.db.base import get_autocommit_session
@@ -23,20 +23,71 @@ from tools.yt_dlp_downloader.yt_dlp_download_videos import (
     get_url,
     YtDlpContentType,
 )
+from utils.get_bot import get_tg_bot
 from .misc import execute_file_update_statement
 from .models import Playlist, Video, Waiter
 from .schema import VideoOrPlaylistForProcessing, FILE_TYPE
+
+T = TypeVar("T")
+P = ParamSpec("P")
 
 DOWNLOAD_ATTEMPTS = 3
 
 logger = logging.getLogger(__name__)
 
 
+async def delete_downloaded_video(db_video: Video):
+    async with get_autocommit_session() as db_session:
+        logger.debug("Deleting not downloaded video %s", db_video.id)
+        # noinspection PyTypeChecker
+        await db_session.execute(delete(Video).where(Video.id == db_video.id))
+
+    async with get_tg_bot() as bot:
+        await db_video.broadcast_text_for_waiters(
+            bot,
+            f"Ошибка скачивания видео {yt_dlp_get_html_link(db_video.yt_dlp_info)}",
+            parse_mode=ParseMode.HTML,
+            disable_web_page_preview=True,
+        )
+
+
+async def _download_video(db_video, yt_dlp_info):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        url = get_url(yt_dlp_info)
+        for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+            try:
+                download_data = download(url=url, output_dir=temp_dir)
+                print(download_data.info["id"], download_data.filenames)
+            except Exception as exc:  # (DownloadError, FileNotFoundError)
+                logger.error("Download attempt %s/%s failed for %s: %s", attempt, DOWNLOAD_ATTEMPTS, url, exc)
+            else:
+                break
+
+        else:
+            logger.error("Failed to download %s in %s attempts", url, DOWNLOAD_ATTEMPTS)
+            await delete_downloaded_video(db_video)
+            return None
+
+        video_file = Path(download_data.filenames[download_data.info["id"]])
+
+        file = File(content_path=video_file.as_posix())
+        logger.info("Uploading file to storage")
+        file.save_to_storage(Video.file.type.upload_storage)
+        # noinspection PyTypeChecker
+        stmt = (
+            update(Video)
+            .where(Video.id == db_video.id)
+            .values(file=file, yt_dlp_info=download_data.info)
+            .returning(Video)
+        )
+        return await execute_file_update_statement(file, stmt)
+
+
 async def _create_video(
     yt_dlp_info: YtDlpInfoDict,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
     playlist: Playlist | None,
-) -> Video:
+) -> Video | None:
     video_id = yt_dlp_info["id"]
 
     async with get_autocommit_session() as db_session:
@@ -71,37 +122,18 @@ async def _create_video(
             db_video.playlists.add(playlist)
         db_session.add(db_video)
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
-            url = get_url(yt_dlp_info)
-            try:
-                download_data = download(url=url, output_dir=temp_dir)
-            except DownloadError as exc:
-                logger.error("Download attempt %s failed for %s: %s", attempt, url, exc)
-            else:
-                break
-        else:
-            raise DownloadError(f"Failed to download {url} in {DOWNLOAD_ATTEMPTS} attempts: {attempt}")
-
-        video_file = Path(download_data.filenames[download_data.info["id"]])
-
-        file = File(content_path=video_file.as_posix())
-        logger.info("Uploading file to storage")
-        file.save_to_storage(Video.file.type.upload_storage)
-        stmt = (
-            update(Video)
-            .where(Video.id == db_video.id)
-            .values(file=file, yt_dlp_info=download_data.info)
-            .returning(Video)
-        )
-        return await execute_file_update_statement(file, stmt)
+    try:
+        return await _download_video(db_video, yt_dlp_info)
+    except Exception as exc:
+        logger.exception("Failed to download video %s: %s", db_video.id, exc, exc_info=exc)
+        await delete_downloaded_video(db_video)
 
 
 async def _create_playlist(
     bot: Bot,
     yt_dlp_info: YtDlpInfoDict,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
-) -> AsyncGenerator[Video]:
+) -> AsyncGenerator[Video | None]:
     yt_dlp_info = convert_entries_generator(yt_dlp_info)
     async with get_autocommit_session() as db_session:
         playlist, created = await get_or_create(
@@ -143,7 +175,7 @@ async def _create_playlist(
 async def get_from_url(
     bot: Bot,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
-) -> AsyncGenerator[Video]:
+) -> AsyncGenerator[Video | None]:
     logger.info("Downloading video or playlist")
     yt_dlp_info = extract_info(url=video_or_playlist_for_processing.url, process=False)
     if yt_dlp_info["_type"] == YtDlpContentType.URL:
@@ -221,7 +253,7 @@ async def get_from_telegram(
 async def get_downloaded_videos(
     bot: Bot,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
-) -> AsyncGenerator[Video]:
+) -> AsyncGenerator[Video | None]:
     """
     Возвращает скачанные видео
     """
@@ -231,4 +263,15 @@ async def get_downloaded_videos(
 
         return
 
-    yield await get_from_telegram(bot, video_or_playlist_for_processing)
+    try:
+        telegram_video = await get_from_telegram(bot, video_or_playlist_for_processing)
+    except Exception as exc:
+        logger.exception(
+            "Failed to download video %s from telegram: %s",
+            (video_or_playlist_for_processing.video or video_or_playlist_for_processing.document).file_id,
+            exc,
+            exc_info=exc,
+        )
+        yield None
+    else:
+        yield telegram_video

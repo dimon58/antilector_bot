@@ -129,7 +129,7 @@ class Waitable:
             reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
         )
 
-    async def broadcast_text_for_waiters(self, bot: Bot, text: str):
+    async def broadcast_text_for_waiters(self, bot: Bot, text: str, **kwargs):
 
         chat_ids = []
         per_chat_kwargs = []
@@ -144,6 +144,7 @@ class Waitable:
             count=len(self.waiters),
             text=text,
             per_chat_kwargs=per_chat_kwargs,
+            **kwargs,
         )
 
 

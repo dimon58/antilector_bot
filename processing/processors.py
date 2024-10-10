@@ -37,6 +37,8 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
     from .tasks import process_video_task
 
     async for db_video in get_downloaded_videos(bot, video_or_playlist_for_processing):
+        if db_video is None:
+            continue
         async with get_autocommit_session() as db_session:
             if await try_send_processed(db_session, db_video.id, video_or_playlist_for_processing):
                 continue
@@ -140,6 +142,7 @@ async def process_video(db_video_id: str, video_or_playlist_for_processing: Vide
         await processed_video.broadcast_for_waiters(bot)
 
     async with get_autocommit_session() as db_session:
+        # noinspection PyTypeChecker
         await db_session.execute(
             update(ProcessedVideo)
             .where(ProcessedVideo.id == processed_video.id)
