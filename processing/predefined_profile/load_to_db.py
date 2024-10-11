@@ -71,11 +71,12 @@ async def load_audio_processing_profiles():
 
 
 async def load_unsilence_profiles():
-    unsilence_and_vad_profile = UnsilenceProfile(
-        slug="unsilence_and_vad_profile",
-        name="Поиск речи",
-        description="Хорошо подходит для лекций. Не стоит использовать для видео содержащих музыку.",
-        unsilence_action=predefined_unsilence_profiles.unsilence_and_vad_action,
+    unsilence_profile = UnsilenceProfile(
+        slug="unsilence_profile",
+        name="Поиск тишины",
+        description="Убирает немного меньше тишины, чем профиль с поиском речи,"
+        " зато хорошо работает для видео, содержащих музыку.",
+        unsilence_action=predefined_unsilence_profiles.unsilence_only_action,
     )
     # vad_profile = UnsilenceProfile(
     #     slug="vad_profile",
@@ -83,12 +84,11 @@ async def load_unsilence_profiles():
     #     description="Подходит для лекций. Не стоит использовать для видео содержащих музыку.",
     #     unsilence_action=predefined_unsilence_profiles.vad_only_action,
     # )
-    unsilence_profile = UnsilenceProfile(
-        slug="unsilence_profile",
-        name="Поиск тишины",
-        description="Убирает немного меньше тишины, чем профиль с поиском речи,"
-        " зато хорошо работает для видео, содержащих музыку.",
-        unsilence_action=predefined_unsilence_profiles.unsilence_only_action,
+    unsilence_and_vad_profile = UnsilenceProfile(
+        slug="unsilence_and_vad_profile",
+        name="Поиск речи",
+        description="Хорошо подходит для лекций. Не стоит использовать для видео содержащих музыку.",
+        unsilence_action=predefined_unsilence_profiles.unsilence_and_vad_action,
     )
 
     async with async_session_maker() as db_session:

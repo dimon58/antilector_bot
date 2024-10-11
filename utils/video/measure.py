@@ -274,7 +274,7 @@ def get_media_bit_rate_safe(filename: str | Path, media_stream_type: MediaStream
     try:
         return get_media_bit_rate(filename, media_stream_type, "stream")
     except ValueError:
-        logger.warning("Changed %s bit rate origin to format for %s", media_stream_type.name, filename)
+        logger.debug("Changed %s bit rate origin to format for %s", media_stream_type.name, filename)
         return get_media_bit_rate(filename, media_stream_type, "format")
 
 
