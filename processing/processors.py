@@ -2,7 +2,7 @@ import logging
 
 from aiogram import Bot
 from aiogram.enums import ParseMode
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -126,25 +126,48 @@ async def process_video(db_video_id: str, video_or_playlist_for_processing: Vide
         )
         db_session.add(processed_video)
 
-    async with get_tg_bot() as bot:
-        await bot.send_message(
-            text=f"Обрабатываю {yt_dlp_get_html_link(db_video.yt_dlp_info)}",
-            chat_id=video_or_playlist_for_processing.telegram_chat_id,
-            reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
-            disable_web_page_preview=True,
-            disable_notification=True,
-            parse_mode=ParseMode.HTML,
+    try:
+        async with get_tg_bot() as bot:
+            await bot.send_message(
+                text=f"Обрабатываю {yt_dlp_get_html_link(db_video.yt_dlp_info)}",
+                chat_id=video_or_playlist_for_processing.telegram_chat_id,
+                reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+                disable_web_page_preview=True,
+                disable_notification=True,
+                parse_mode=ParseMode.HTML,
+            )
+        processed_video = await run_video_pipeline(
+            audio_processing_profile, unsilence_profile, db_video, processed_video
         )
-    processed_video = await run_video_pipeline(audio_processing_profile, unsilence_profile, db_video, processed_video)
 
-    logger.info("Broadcasting video")
-    async with get_tg_bot() as bot:
-        await processed_video.broadcast_for_waiters(bot)
+        logger.info("Broadcasting video")
+        async with get_tg_bot() as bot:
+            await processed_video.broadcast_for_waiters(bot)
 
-    async with get_autocommit_session() as db_session:
-        # noinspection PyTypeChecker
-        await db_session.execute(
-            update(ProcessedVideo)
-            .where(ProcessedVideo.id == processed_video.id)
-            .values(telegram_file=processed_video.telegram_file)
-        )
+        async with get_autocommit_session() as db_session:
+            # noinspection PyTypeChecker
+            await db_session.execute(
+                update(ProcessedVideo)
+                .where(ProcessedVideo.id == processed_video.id)
+                .values(telegram_file=processed_video.telegram_file)
+            )
+    except Exception as exc:
+        logger.exception("Failed to process video %s: %s", processed_video.id, exc, exc_info=exc)
+        async with get_autocommit_session() as db_session:
+            logger.debug("Deleting not processed video %s", processed_video.id)
+            # noinspection PyTypeChecker
+            await db_session.execute(delete(ProcessedVideo).where(ProcessedVideo.id == processed_video.id))
+
+            original_video = await db_session.scalar(select(Video).where(Video.id == db_video.id))
+
+        if original_video is not None:
+            logger.error("Video %s not found", db_video.id)
+            return
+
+        async with get_tg_bot() as bot:
+            await processed_video.broadcast_text_for_waiters(
+                bot,
+                f"Ошибка обработки видео видео {yt_dlp_get_html_link(original_video.yt_dlp_info)}",
+                parse_mode=ParseMode.HTML,
+                disable_web_page_preview=True,
+            )
