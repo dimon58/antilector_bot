@@ -127,8 +127,10 @@ class NisqaModel:
             total_blocks = (frames + read_block_size - 1) // read_block_size
             logger.debug("Total blocks %s", total_blocks)
 
+            level = logging.INFO if total_blocks > 1 else logging.DEBUG
+
             for idx, block in enumerate(f.blocks(blocksize=read_block_size, frames=frames, dtype=dtype), start=1):
-                logger.info("Measuring nisqa for block %s/%s", idx, total_blocks)
+                logger.log(level, "Measuring nisqa for block %s/%s", idx, total_blocks)
                 audio = torch.as_tensor(block, device="cuda")
                 with self.cleanup_cuda():
                     res = self.measure_from_tensor(audio, f.samplerate)
