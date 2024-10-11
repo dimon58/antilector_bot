@@ -15,15 +15,28 @@ def jpg2webp(input_image: bytes) -> bytes:
 
     # https://stackoverflow.com/questions/71904568/converting-webp-to-jpg-with-a-white-background-using-pillow
     input_image_buffer = BytesIO(input_image)
-    image = Image.open(input_image_buffer)
-    background = Image.new("RGB", image.size, "white")
+    image = Image.open(input_image_buffer).convert("RGBA")
+    background = Image.new("RGBA", image.size, "white")
     background.paste(image, image)
 
     output_image_buffer = BytesIO()
-    background.save(output_image_buffer, format="JPEG")
+    background.convert("RGB").save(output_image_buffer, format="JPEG")
     output_image_buffer.seek(0)
 
     return output_image_buffer.getvalue()
+
+
+async def download_thumbnail(thumbnail_url: str) -> bytes:
+    logger.info("Downloading thumbnail %s", thumbnail_url)
+    async with (
+        aiohttp.ClientSession() as session,
+        session.get(thumbnail_url) as resp,
+    ):
+        return await resp.read()
+
+
+def is_jpeg(url: str) -> bool:
+    return urlparse(url).path.endswith(".jpg")
 
 
 async def get_best_thumbnail(info: YtDlpInfoDict) -> bytes | None:
@@ -42,15 +55,21 @@ async def get_best_thumbnail(info: YtDlpInfoDict) -> bytes | None:
             thumbnail_with_max_height = thumbnail
 
     thumbnail_url = thumbnail_with_max_height["url"]
-    logger.info("Downloading thumbnail %s", thumbnail_url)
-    async with (
-        aiohttp.ClientSession() as session,
-        session.get(thumbnail_url) as resp,
-    ):
-        image_bytes = await resp.read()
+    image_bytes = await download_thumbnail(thumbnail_url)
 
-    if urlparse(thumbnail_url).path.endswith(".jpg"):
+    if is_jpeg(thumbnail_url):
         return image_bytes
 
     # TODO: запихать в process executor
-    return jpg2webp(image_bytes)
+    try:
+        return jpg2webp(image_bytes)
+
+    except Exception as exc:
+        logger.exception("Failed to convert image to webp: %s", exc, exc_info=exc)  # noqa: TRY401
+
+    for thumbnail in thumbnails:
+        thumbnail_url = thumbnail["url"]
+        if is_jpeg(thumbnail_url):
+            return await download_thumbnail(thumbnail_url)
+
+    return None
