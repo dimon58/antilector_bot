@@ -98,7 +98,7 @@ async def _create_video(
     yt_dlp_info: YtDlpInfoDict,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
     playlist: Playlist | None,
-) -> Video | None:
+) -> tuple[bool, Video] | None:
     video_id = yt_dlp_info["id"]
 
     async with get_autocommit_session() as db_session:
@@ -119,7 +119,7 @@ async def _create_video(
                 else:
                     db_video.playlists.add(playlist)
 
-            return db_video
+            return False, db_video
 
         logger.info("Creating new video %s", video_id)
         db_video = Video(
@@ -134,17 +134,19 @@ async def _create_video(
         db_session.add(db_video)
 
     try:
-        return await _download_video(db_video, yt_dlp_info)
+        return True, await _download_video(db_video, yt_dlp_info)
     except Exception as exc:
         logger.exception("Failed to download video %s: %s", db_video.id, exc, exc_info=exc)
         await delete_downloaded_video(db_video)
+
+    return None
 
 
 async def _create_playlist(
     bot: Bot,
     yt_dlp_info: YtDlpInfoDict,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
-) -> AsyncGenerator[Video | None]:
+) -> AsyncGenerator[tuple[bool, Video] | None]:
     yt_dlp_info = convert_entries_generator(yt_dlp_info)
     async with get_autocommit_session() as db_session:
         playlist, created = await get_or_create(
@@ -186,7 +188,7 @@ async def _create_playlist(
 async def get_from_url(
     bot: Bot,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
-) -> AsyncGenerator[Video | None]:
+) -> AsyncGenerator[tuple[bool, Video] | None]:
     logger.info("Downloading video or playlist")
     yt_dlp_info = extract_info(url=video_or_playlist_for_processing.url, process=False)
     if yt_dlp_info["_type"] == YtDlpContentType.URL:
@@ -211,7 +213,7 @@ async def get_from_url(
 async def get_from_telegram(
     bot: Bot,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
-) -> Video:
+) -> tuple[bool, Video]:
     # Создаём видео в базе данных, если его нет
     # Иначе присоединяемся к ожидающим скачивание
     async with get_autocommit_session() as db_session:
@@ -222,7 +224,7 @@ async def get_from_telegram(
         if db_video is not None:
             logger.info("Using existing original video %s", video_id)
             db_video.add_if_not_in_waiters_from_task(video_or_playlist_for_processing)
-            return db_video
+            return False, db_video
 
         video = video_or_playlist_for_processing.get_tg_video()
         yt_dlp_info = video.model_dump(mode="json") | {
@@ -258,13 +260,13 @@ async def get_from_telegram(
     logger.info("Uploading file to storage")
     file.save_to_storage(Video.file.type.upload_storage)
     stmt = update(Video).where(Video.id == db_video.id).values(file=file).returning(Video)
-    return await execute_file_update_statement(file, stmt)
+    return True, await execute_file_update_statement(file, stmt)
 
 
 async def get_downloaded_videos(
     bot: Bot,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
-) -> AsyncGenerator[Video | None]:
+) -> AsyncGenerator[tuple[bool, Video] | None]:
     """
     Возвращает скачанные видео
     """

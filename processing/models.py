@@ -1,3 +1,4 @@
+import enum
 import logging
 from contextlib import suppress
 from pathlib import Path
@@ -10,7 +11,7 @@ from aiogram.enums import ChatAction, ParseMode
 from aiogram.types import Message, InputFile
 from aiogram.utils.chat_action import ChatActionSender
 from pydantic import ConfigDict
-from sqlalchemy import ForeignKey, Table, Column, UniqueConstraint
+from sqlalchemy import ForeignKey, Table, Column, UniqueConstraint, CheckConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import sqltypes
@@ -83,12 +84,14 @@ class UnsilenceProfile(ProfileBase):
 class Waiter(pydantic.BaseModel):
     model_config = ConfigDict(frozen=True)
 
+    user_id: int
     telegram_chat_id: int | str
     reply_to_message_id: int | None = None
 
     @classmethod
     def from_task(cls, video_or_playlist_for_processing: VideoOrPlaylistForProcessing) -> "Waiter":
         return cls(
+            user_id=video_or_playlist_for_processing.user_id,
             telegram_chat_id=video_or_playlist_for_processing.telegram_chat_id,
             reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
         )
@@ -111,29 +114,19 @@ class Waitable:
 
         return False
 
-    def add_if_not_in_waiters(self, telegram_chat_id: int | str, reply_to_message_id: int | None = None) -> bool:
+    def add_if_not_in_waiters_from_task(self, video_or_playlist_for_processing: VideoOrPlaylistForProcessing) -> bool:
         """
         Добавляет в список ожидающих
 
         Возвращает True, если реально добавлен, False, если пользователь уже был в списке
         """
-        if self.has_waiter(telegram_chat_id):
+
+        if self.has_waiter(video_or_playlist_for_processing.telegram_chat_id):
             return False
 
-        logger.info("New waiter %s for %s", telegram_chat_id, self)
-        self.waiters.append(
-            Waiter(
-                telegram_chat_id=telegram_chat_id,
-                reply_to_message_id=reply_to_message_id,
-            )
-        )
+        logger.info("New waiter %s for %s", video_or_playlist_for_processing.telegram_chat_id, self)
+        self.waiters.append(Waiter.from_task(video_or_playlist_for_processing))
         return True
-
-    def add_if_not_in_waiters_from_task(self, video_or_playlist_for_processing: VideoOrPlaylistForProcessing) -> bool:
-        return self.add_if_not_in_waiters(
-            telegram_chat_id=video_or_playlist_for_processing.telegram_chat_id,
-            reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
-        )
 
     async def broadcast_text_for_waiters(self, bot: Bot, text: str, **kwargs):
 
@@ -212,11 +205,22 @@ class Video(Waitable, YtDlpBase, TimeTrackableBaseModel):
     meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB())
 
 
+class ProcessedVideoStatus(enum.Enum):
+    TASK_CREATED = "task_created"
+    PROCESSING = "processing"
+    PROCESSED = "processed"
+
+
 class ProcessedVideo(Waitable, TimeTrackableBaseModel):
     __table_args__ = (
         UniqueConstraint(
             "original_video_id", "audio_processing_profile_id", "unsilence_profile_id", name="uniq_pipeline"
         ),
+        # CheckConstraint("(status = 'processed') = (file is not null)", name="check_status"),
+    )
+
+    status: Mapped[ProcessedVideoStatus] = mapped_column(
+        sqltypes.Enum(ProcessedVideoStatus), default=ProcessedVideoStatus.TASK_CREATED
     )
 
     original_video_id: Mapped[str] = mapped_column(ForeignKey(Video.id), index=True)
