@@ -45,14 +45,9 @@ logger = logging.getLogger(__name__)
 def setup_storage():
     logger.info("Setting up storages")
 
-    with suppress(RuntimeError):
-        StorageManager.add_storage(ORIGINAL_VIDEO_STORAGE, ORIGINAL_VIDEO_CONTAINER)
-
-    with suppress(RuntimeError):
-        StorageManager.add_storage(PROCESSED_VIDEO_STORAGE, PROCESSED_VIDEO_CONTAINER)
-
-    with suppress(RuntimeError):
-        StorageManager.add_storage(THUMBNAILS_STORAGE, THUMBNAILS_CONTAINER)
+    StorageManager.add_storage(ORIGINAL_VIDEO_STORAGE, ORIGINAL_VIDEO_CONTAINER)
+    StorageManager.add_storage(PROCESSED_VIDEO_STORAGE, PROCESSED_VIDEO_CONTAINER)
+    StorageManager.add_storage(THUMBNAILS_STORAGE, THUMBNAILS_CONTAINER)
 
 
 class ProfileBase(TimeTrackableBaseModel):

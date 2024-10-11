@@ -4,7 +4,7 @@ from typing import Any
 from typing import TYPE_CHECKING
 
 from djgram.utils.async_tools import run_async_in_sync
-from run_celery import app
+from celery_app import app
 from .schema import VideoOrPlaylistForProcessing
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
