@@ -117,6 +117,12 @@ FORCE_AUDIO_CODEC = "aac"
 
 PROCESSED_EXT = ".mp4"
 
+NISQA_MAX_MEMORY = 1 * 2**30  # 1 GB
+SAMPLE_RATE = 48000
+MAX_WAV_FILE_SIZE = 4 * 2**30
+# codec pcm_s16le
+MAX_AUDIO_DURATION = MAX_WAV_FILE_SIZE / SAMPLE_RATE / 2
+
 # https://docs.nvidia.com/video-technologies/video-codec-sdk/12.0/ffmpeg-with-nvidia-gpu/index.html#command-line-for-latency-tolerant-high-quality-transcoding
 NVENC_ADDITIONAL_OPTIONS = {
     "preset": "p6",

@@ -5,10 +5,11 @@ from typing import Self
 
 import pydantic
 
+from configs import NISQA_MAX_MEMORY
 from libs.nisqa.model import NisqaModel
 from tools.audio_processing.actions.ffmpeg_actions import ExtractAudioFromVideo
 from tools.audio_processing.pipeline import AudioPipeline, AudioPipelineStatistics, StepStatistics
-from utils.audio import measure_volume, read_audio
+from utils.audio import ffmpeg_transcode, measure_volume
 
 from .actions.unsilence_actions import UnsilenceAction
 
@@ -106,8 +107,10 @@ class VideoPipeline(pydantic.BaseModel):
             output_file=output_file,
         )
         if nisqa_model is not None:
+            processed_audio = tempdir / "processed_audio.wav"
+            ffmpeg_transcode(output_file, processed_audio, {"ac": 1, "ar": 48000})
             with nisqa_model.cleanup_cuda():
-                unsilence_nisqa = nisqa_model.measure_from_tensor(*read_audio(output_file))
+                unsilence_nisqa = nisqa_model.measure_from_path_chunked(processed_audio, NISQA_MAX_MEMORY)
         else:
             unsilence_nisqa = None
         unsilence_rms_db = measure_volume(output_file)

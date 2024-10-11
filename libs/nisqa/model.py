@@ -59,6 +59,7 @@ class NisqaModel:
             self.warmup()
 
     def warmup(self):
+        logger.debug("Warming up nisqa model")
         _sr = 48000
         _, _, _ = process(
             torch.zeros(self.frame * _sr, device=self.device), _sr, self.model, self.h0, self.c0, self.args
@@ -109,6 +110,59 @@ class NisqaModel:
 
         return self.measure_from_tensor(audio, sample_rate)
 
+    def measure_from_path_chunked(self, audio_file: Path, max_memory: int = 1 * 2**30) -> NisqaMetrics:
+
+        dtype = "float32"
+        block_size = max_memory // 4
+
+        start = time.perf_counter()
+        stats: list[NisqaMetrics] = []
+        with sf.SoundFile(audio_file, "r") as f:
+            frames = f._prepare_read(start=0, stop=None, frames=-1)
+            logger.debug("Frames %s", frames)
+
+            read_block_size = block_size // f.channels
+            logger.debug("Read block size %s", read_block_size)
+
+            total_blocks = (frames + read_block_size - 1) // read_block_size
+            logger.debug("Total blocks %s", total_blocks)
+
+            for idx, block in enumerate(f.blocks(blocksize=read_block_size, frames=frames, dtype=dtype), start=1):
+                logger.info("Measuring nisqa for block %s/%s", idx, total_blocks)
+                audio = torch.as_tensor(block, device="cuda")
+                with self.cleanup_cuda():
+                    res = self.measure_from_tensor(audio, f.samplerate)
+                stats.append(res)
+
+        end = time.perf_counter()
+
+        final_stats = NisqaMetrics(
+            overall_quality=0,
+            noisiness=0,
+            coloration=0,
+            discontinuity=0,
+            loudness=0,
+            length=0,
+            sr=f.samplerate,
+            time=end - start,
+        )
+
+        for stat in stats:
+            final_stats.overall_quality += stat.overall_quality * stat.length
+            final_stats.noisiness += stat.noisiness * stat.length
+            final_stats.coloration += stat.coloration * stat.length
+            final_stats.discontinuity += stat.discontinuity * stat.length
+            final_stats.loudness += stat.loudness * stat.length
+            final_stats.length += stat.length
+
+        final_stats.overall_quality /= final_stats.length
+        final_stats.noisiness /= final_stats.length
+        final_stats.coloration /= final_stats.length
+        final_stats.discontinuity /= final_stats.length
+        final_stats.loudness /= final_stats.length
+
+        return final_stats
+
     def _need_cleanup_cuda(self):
         return self.device is not None and self.device.type == "cuda"
 
@@ -119,4 +173,5 @@ class NisqaModel:
             self.warmup()
         yield
         if empty_cache and need_cleanup_cuda:
+            logger.debug("Cleaning cuda cache")
             torch.cuda.empty_cache()

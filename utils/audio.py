@@ -10,6 +10,7 @@ import soundfile
 import torch
 import torchaudio
 from ffmpeg import FFmpegError
+from ffmpeg.types import Option
 
 from configs import TORCH_DEVICE, USE_CUDA
 from utils.fixed_ffmpeg import FixedFFmpeg
@@ -18,6 +19,17 @@ from utils.progress_bar import setup_progress_for_ffmpeg
 from utils.video.measure import get_video_duration
 
 logger = logging.getLogger(__name__)
+
+
+def ffmpeg_transcode(input_file: str | Path, output_file: str | Path, options: dict[str, Option | None] | None = None):
+    ffmpeg = FixedFFmpeg().option("y").input(input_file).output(output_file, options)
+    setup_progress_for_ffmpeg(
+        ffmpeg,
+        get_video_duration(input_file),
+        f"Transforming {input_file.suffix[1:]} to {output_file.suffix[1:]}",
+    )
+    logger.debug("FFmpeg call: %s", ffmpeg.arguments)
+    ffmpeg.execute()
 
 
 def _read_audio_tensor(path: Path, sample_rate: int | None = None) -> tuple[torch.Tensor, int]:
@@ -40,10 +52,7 @@ def _read_audio_tensor(path: Path, sample_rate: int | None = None) -> tuple[torc
         opts = {"ac": 1}
         if sample_rate is not None:
             opts["ar"] = sample_rate
-        ffmpeg = FixedFFmpeg().option("y").input(path).output(output_file, **opts)
-        setup_progress_for_ffmpeg(ffmpeg, get_video_duration(path), "Transforming to wav")
-        logger.debug("FFmpeg call: %s", ffmpeg.arguments)
-        ffmpeg.execute()
+        ffmpeg_transcode(path, output_file, opts)
         e = time.perf_counter()
         logger.info("Transformation to wav done in %s sec", e - s)
 

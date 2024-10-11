@@ -6,6 +6,7 @@ from typing import Self, Union
 import pydantic
 from pydantic import ConfigDict
 
+from configs import NISQA_MAX_MEMORY
 from libs.nisqa.metrics import NisqaMetrics
 from libs.nisqa.model import NisqaModel
 from utils.audio import measure_volume
@@ -76,7 +77,7 @@ class AudioPipeline(pydantic.BaseModel):
 
         if nisqa_model is not None:
             with nisqa_model.cleanup_cuda():
-                input_stats.nisqa = nisqa_model.measure_from_path(input_file)
+                input_stats.nisqa = nisqa_model.measure_from_path_chunked(input_file, NISQA_MAX_MEMORY)
         logger.info("Input: %s", input_stats.repr_for_logging)
 
         for step, action in enumerate(self.pipeline[:-1], start=1):
@@ -99,7 +100,7 @@ class AudioPipeline(pydantic.BaseModel):
 
             if nisqa_model is not None:
                 with nisqa_model.cleanup_cuda():
-                    step_stats.nisqa = nisqa_model.measure_from_path(input_file)
+                    step_stats.nisqa = nisqa_model.measure_from_path_chunked(input_file, NISQA_MAX_MEMORY)
             logger.info("Step %s: %s done in %s", step, step_stats.repr_for_logging, end - start)
 
         logger.info(
@@ -120,7 +121,7 @@ class AudioPipeline(pydantic.BaseModel):
 
         if nisqa_model is not None:
             with nisqa_model.cleanup_cuda():
-                final_stats.nisqa = nisqa_model.measure_from_path(output_file)
+                final_stats.nisqa = nisqa_model.measure_from_path_chunked(output_file, NISQA_MAX_MEMORY)
         logger.info("Final step %s: %s done in %s sec", len(self.pipeline), final_stats.repr_for_logging, end - start)
 
         return pipeline_stats

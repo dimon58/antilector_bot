@@ -1,3 +1,4 @@
+import json
 import logging
 import shlex
 from pathlib import Path
@@ -6,9 +7,10 @@ from typing import Literal, Self
 from ffmpeg_normalize import FFmpegNormalize
 from pydantic import model_validator
 
+from configs import MAX_AUDIO_DURATION
 from utils.fixed_ffmpeg import FixedFFmpeg
 from utils.progress_bar import setup_progress_for_ffmpeg
-from utils.video.measure import get_video_duration
+from utils.video.measure import ffprobe_extract_meta, get_video_duration
 
 from .abstract import Action, ActionStatsType
 
@@ -20,15 +22,38 @@ class ExtractAudioFromVideo(Action):
 
     to_mono: bool = False
     output_config: dict[str, str | int] = {}
+    codec: str | None = None
 
     @model_validator(mode="after")
     def resolve_configs(self) -> Self:
         if self.to_mono:
             self.output_config["ac"] = 1
 
+        if self.codec is not None:
+            self.output_config["c:a"] = self.codec
+
         return self
 
+    @staticmethod
+    def ensure_compatibility(input_file: Path, output_file: Path) -> None:
+        if output_file.suffix != ".wav":
+            return
+
+        meta = ffprobe_extract_meta(input_file)
+
+        audio_streams = [stream for stream in meta["streams"] if stream["codec_type"] == "audio"]
+        if len(audio_streams) == 0:
+            raise ValueError(f"No audio streams found in {input_file}")
+
+        # total_duration = sum(float(stream["duration"]) for stream in audio_streams)
+        total_duration = float(meta["format"]["duration"]) * len(audio_streams)
+        if total_duration > MAX_AUDIO_DURATION:
+            raise ValueError("Too long audio")
+
     def run(self, input_file: Path, output_file: Path) -> ActionStatsType | None:
+
+        self.ensure_compatibility(input_file, output_file)
+
         input_file = input_file.absolute().as_posix()
         output_file = output_file.absolute().as_posix()
 
