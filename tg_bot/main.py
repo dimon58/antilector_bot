@@ -12,7 +12,7 @@ from aiogram.fsm.storage.redis import (
     RedisStorage,
 )
 from aiogram.types import ErrorEvent, Message
-from aiogram_dialog import DialogManager
+from aiogram_dialog import DialogManager, StartMode
 from aiogram_dialog.api.exceptions import UnknownIntent, UnknownState
 from redis.asyncio.client import Redis
 
@@ -36,6 +36,8 @@ from djgram.db.models import BaseModel  # noqa: F401 нужно для корр�
 from djgram.setup import setup_djgram
 from system_init import system_init
 from tg_bot.apps.lectures import router as lectures_router
+from tg_bot.apps.menu import router as menu_router
+from tg_bot.apps.menu.dialogs import MenuStates
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
@@ -43,12 +45,12 @@ main_router = Router()
 
 
 @main_router.message(CommandStart())
-async def start_handler(message: Message):
+async def start_handler(message: Message, dialog_manager: DialogManager):
     """
     Обработчик команды /start
     """
 
-    await message.answer("Стартовое сообщение\n\nВведите команду /help для получения помощи")
+    await dialog_manager.start(MenuStates.main_menu, mode=StartMode.RESET_STACK)
 
 
 @main_router.message(Command("help"))
@@ -57,18 +59,16 @@ async def help_handler(message: Message):
     Обработчик команды /help
     """
 
-    await message.answer(
-        "Тестовый эхо бот. Пока умеет только пересылать вам ваши сообщения.\n\n/help - помощь\n/start - запустить бота"
-    )
+    await message.answer("/menu - открыть меню")
 
 
 @main_router.message()
-async def echo_handler(message: Message):
+async def no_state_handler(message: Message, dialog_manager: DialogManager):
     """
-    Эхо
+    Запуск главного меню
     """
 
-    await message.copy_to(message.chat.id)
+    await dialog_manager.start(MenuStates.main_menu, mode=StartMode.RESET_STACK)
 
 
 def setup_routers(dp: Dispatcher) -> None:
@@ -76,6 +76,7 @@ def setup_routers(dp: Dispatcher) -> None:
     Установка роутеров
     """
     dp.include_router(lectures_router)
+    dp.include_router(menu_router)
     dp.include_router(main_router)
 
     logger.info("Routers setup")
@@ -83,11 +84,13 @@ def setup_routers(dp: Dispatcher) -> None:
 
 async def on_unknown_intent(event: ErrorEvent, dialog_manager: DialogManager):
     logging.error("Error in dialog: %s", event.exception)
+    await dialog_manager.start(MenuStates.main_menu, mode=StartMode.RESET_STACK)
 
 
 async def on_unknown_state(event: ErrorEvent, dialog_manager: DialogManager):
     # Example of handling UnknownState Error and starting new dialog.
     logging.error("Error in dialog: %s", event.exception)
+    await dialog_manager.start(MenuStates.main_menu, mode=StartMode.RESET_STACK)
 
 
 async def main() -> None:

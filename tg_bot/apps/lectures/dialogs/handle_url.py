@@ -92,12 +92,12 @@ async def try_get_info(url: str, message: Message) -> YtDlpInfoDict | None:
 async def handle_url(message: Message, manager: DialogManager) -> YtDlpContentType | None:
     user: User = manager.middleware_data["user"]
 
+    await message.answer("Скачиваю информацию")
     async with ChatActionSender(
         bot=message.bot,
         chat_id=message.chat.id,
         action=ChatAction.TYPING,
     ):
-        await message.answer("Скачиваю информацию")
         info = await try_get_info(message.text, message)
         if info is None:
             return None

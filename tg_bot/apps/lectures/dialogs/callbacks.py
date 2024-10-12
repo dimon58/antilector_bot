@@ -7,7 +7,7 @@ import logging
 from aiogram.enums import ChatAction
 from aiogram.types import CallbackQuery, Message
 from aiogram.utils.chat_action import ChatActionSender
-from aiogram_dialog import DialogManager
+from aiogram_dialog import DialogManager, ShowMode
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Button, Select
 
@@ -130,3 +130,5 @@ async def start_processing(
             chat_id=task.telegram_chat_id,
             reply_to_message_id=task.telegram_message_id,
         )
+
+    await manager.done(show_mode=ShowMode.SEND)

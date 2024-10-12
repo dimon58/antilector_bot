@@ -9,7 +9,7 @@ import os
 from aiogram.enums import ParseMode
 from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.kbd import Back, Button, Cancel, Select, SwitchTo
+from aiogram_dialog.widgets.kbd import Back, Button, Cancel, Column, Select, SwitchTo
 from aiogram_dialog.widgets.text import Const, Format
 
 from djgram.configs import DIALOG_DIAGRAMS_DIR, ENABLE_DIALOG_DIAGRAMS_GENERATION
@@ -57,12 +57,14 @@ lecture_processing_dialog = Dialog(
     ),
     Window(
         Const("Выберите профиль звука"),
-        Select(
-            Format("{item[1]}"),
-            id=getters.AUDIO_PROCESSING_PROFILE_KEY,
-            item_id_getter=operator.itemgetter(0),
-            items=getters.AUDIO_PROCESSING_PROFILES_KEY,
-            on_click=callbacks.select_audio_processing_profile,
+        Column(
+            Select(
+                Format("{item[1]}"),
+                id=getters.AUDIO_PROCESSING_PROFILE_KEY,
+                item_id_getter=operator.itemgetter(0),
+                items=getters.AUDIO_PROCESSING_PROFILES_KEY,
+                on_click=callbacks.select_audio_processing_profile,
+            ),
         ),
         SwitchTo(
             Const("ℹ Описание профилей"),
@@ -86,12 +88,14 @@ lecture_processing_dialog = Dialog(
     ),
     Window(
         Const("Выберите метод поиска тишины"),
-        Select(
-            Format("{item[1]}"),
-            id=getters.UNSILENCE_PROFILE_KEY,
-            item_id_getter=operator.itemgetter(0),
-            items=getters.UNSILENCE_PROFILES_KEY,
-            on_click=callbacks.select_unsilence_profile,
+        Column(
+            Select(
+                Format("{item[1]}"),
+                id=getters.UNSILENCE_PROFILE_KEY,
+                item_id_getter=operator.itemgetter(0),
+                items=getters.UNSILENCE_PROFILES_KEY,
+                on_click=callbacks.select_unsilence_profile,
+            ),
         ),
         SwitchTo(
             Const("ℹ Описание профилей"),
