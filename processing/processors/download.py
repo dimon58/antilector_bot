@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from configs import TELEGRAM_BOT_TOKEN
 from djgram.db.base import get_autocommit_session
 from utils.get_bot import get_tg_bot
+from .error_texts import get_silence_only_error_text
 from ..download_file import get_downloaded_videos
 from ..models import ProcessedVideo, AudioProcessingProfile, UnsilenceProfile, Video, Waiter, ProcessedVideoStatus
 from ..schema import VideoOrPlaylistForProcessing
@@ -74,6 +75,21 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                     # Отправляем обработанное видео
                     async with get_tg_bot() as bot:
                         await processed_video.broadcast_for_waiters(bot)
+                    continue
+
+                case ProcessedVideoStatus.IMPOSSIBLE:
+                    logger.warning(
+                        "User %s tried to process video that %s is impossible (%s)",
+                        video_or_playlist_for_processing.user_id,
+                        processed_video.id,
+                        processed_video.impossible_reason,
+                    )
+
+                    async with get_tg_bot() as bot:
+                        await processed_video.broadcast_text_for_waiters(
+                            bot,
+                            get_silence_only_error_text(processed_video),
+                        )
                     continue
 
                 case _:

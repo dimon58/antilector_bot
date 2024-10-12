@@ -1,6 +1,5 @@
 import enum
 import logging
-from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +10,7 @@ from aiogram.enums import ChatAction, ParseMode
 from aiogram.types import Message, InputFile
 from aiogram.utils.chat_action import ChatActionSender
 from pydantic import ConfigDict
-from sqlalchemy import ForeignKey, Table, Column, UniqueConstraint, CheckConstraint
+from sqlalchemy import ForeignKey, Table, Column, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import sqltypes
@@ -123,7 +122,14 @@ class Waitable:
         self.waiters.append(Waiter.from_task(video_or_playlist_for_processing))
         return True
 
-    async def broadcast_text_for_waiters(self, bot: Bot, text: str, **kwargs):
+    async def broadcast_text_for_waiters(
+        self,
+        bot: Bot,
+        text: str,
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview: bool = True,
+        **kwargs,
+    ):
 
         chat_ids = []
         per_chat_kwargs = []
@@ -138,6 +144,8 @@ class Waitable:
             count=len(self.waiters),
             text=text,
             per_chat_kwargs=per_chat_kwargs,
+            parse_mode=parse_mode,
+            disable_web_page_preview=disable_web_page_preview,
             **kwargs,
         )
 
@@ -204,6 +212,7 @@ class ProcessedVideoStatus(enum.Enum):
     TASK_CREATED = "task_created"
     PROCESSING = "processing"
     PROCESSED = "processed"
+    IMPOSSIBLE = "impossible"
 
 
 class ProcessedVideo(Waitable, TimeTrackableBaseModel):
@@ -212,11 +221,13 @@ class ProcessedVideo(Waitable, TimeTrackableBaseModel):
             "original_video_id", "audio_processing_profile_id", "unsilence_profile_id", name="uniq_pipeline"
         ),
         # CheckConstraint("(status = 'processed') = (file is not null)", name="check_status"),
+        # CheckConstraint("(status = 'impossible') = (impossible_reason is not null)", name="check_impossible_status"),
     )
 
     status: Mapped[ProcessedVideoStatus] = mapped_column(
         sqltypes.Enum(ProcessedVideoStatus), default=ProcessedVideoStatus.TASK_CREATED
     )
+    impossible_reason: Mapped[str | None]
 
     original_video_id: Mapped[str] = mapped_column(ForeignKey(Video.id), index=True)
     original_video: Mapped[Video] = relationship(Video)

@@ -10,7 +10,7 @@ from configs import TQDM_LOGGING_INTERVAL, VAD_MODEL
 from libs.unsilence.pretty_time_estimate import pretty_time_estimate
 from libs.unsilence.render_media.options import RenderOptions
 from libs.unsilence_fast import unsilence
-from tools.audio_processing.actions.abstract import Action, ActionStatsType
+from tools.audio_processing.actions.abstract import Action, ActionStatsType, ProcessingImpossibleError
 from tools.video_processing.vad.calculate_time_savings import calculate_time_savings
 from tools.video_processing.vad.vad_unsilence import Vad
 from utils.misc import find_subclass
@@ -25,6 +25,12 @@ INTERVAL_LIST_WITHOUT_BREAKS_KEY = "interval_list_without_breaks"
 INTERVAL_GROUPS_KEY = "interval_groups"
 
 logger = logging.getLogger(__name__)
+
+
+class SilenceOnlyError(ProcessingImpossibleError):
+    """
+    Только тишина в видео
+    """
 
 
 class UnsilenceAction(Action):
@@ -111,6 +117,9 @@ class UnsilenceAction(Action):
 
         # ----------------- Rendering ----------------- #
         logger.info("Rendering %s intervals", len(intervals.intervals))
+        if len(intervals.intervals) == 1 and intervals.intervals[0].is_silent:
+            raise SilenceOnlyError("Only silence in video")
+
         render_progress = ProgressBar("Rendering intervals", mininterval=TQDM_LOGGING_INTERVAL)
         concat_progress = ProgressBar("Concatenating intervals", mininterval=TQDM_LOGGING_INTERVAL)
 

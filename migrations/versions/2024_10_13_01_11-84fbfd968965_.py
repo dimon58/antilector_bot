@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 279661f97b65
+Revision ID: 84fbfd968965
 Revises: 3d29382bcd16
-Create Date: 2024-10-12 00:12:10.914972
+Create Date: 2024-10-13 01:11:58.966684
 
 """
 
@@ -18,7 +18,7 @@ import tools.video_processing.actions.unsilence_actions
 import tools.video_processing.pipeline
 
 # revision identifiers, used by Alembic.
-revision = "279661f97b65"
+revision = "84fbfd968965"
 down_revision = "3d29382bcd16"
 branch_labels = None
 depends_on = None
@@ -104,8 +104,11 @@ def upgrade() -> None:
     op.create_table(
         "processedvideo",
         sa.Column(
-            "status", sa.Enum("TASK_CREATED", "PROCESSING", "PROCESSED", name="processedvideostatus"), nullable=False
+            "status",
+            sa.Enum("TASK_CREATED", "PROCESSING", "PROCESSED", "IMPOSSIBLE", name="processedvideostatus"),
+            nullable=False,
         ),
+        sa.Column("impossible_reason", sa.String(), nullable=True),
         sa.Column("original_video_id", sa.String(), nullable=False),
         sa.Column("audio_processing_profile_id", sa.BigInteger(), nullable=False),
         sa.Column("unsilence_profile_id", sa.BigInteger(), nullable=False),

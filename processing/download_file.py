@@ -48,8 +48,6 @@ async def delete_downloaded_video(db_video: Video):
         await db_video.broadcast_text_for_waiters(
             bot,
             f"Ошибка скачивания видео {yt_dlp_get_html_link(db_video.yt_dlp_info)}",
-            parse_mode=ParseMode.HTML,
-            disable_web_page_preview=True,
         )
 
 
