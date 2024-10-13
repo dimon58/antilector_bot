@@ -158,8 +158,8 @@ CPU_ADDITIONAL_OPTIONS = copy.deepcopy(NVENC_ADDITIONAL_OPTIONS) | {
     "temporal-aq": "1",
 }
 
-USE_NISQA = True
-MEASURE_RMS = True
+USE_NISQA = bool(int(os.environ["USE_NISQA"]))
+MEASURE_RMS = bool(int(os.environ["MEASURE_RMS"]))
 
 VAD_MODEL = silero_vad.load_silero_vad(onnx=True)
 SILERO_VAD_SAMPLE_RATE = 16000
