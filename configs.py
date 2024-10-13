@@ -100,6 +100,7 @@ PROCESSED_VIDEO_CONTAINER = get_container_safe(S3_DRIVER, PROCESSED_VIDEO_STORAG
 
 VIDEO_DOWNLOAD_QUEUE = os.environ["VIDEO_DOWNLOAD_QUEUE"]
 VIDEO_PROCESS_QUEUE = os.environ["VIDEO_PROCESS_QUEUE"]
+VIDEO_UPLOAD_QUEUE = os.environ["VIDEO_UPLOAD_QUEUE"]
 
 # ---------- Настройка логики обработки ---------- #
 

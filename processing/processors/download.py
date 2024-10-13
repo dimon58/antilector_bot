@@ -49,7 +49,7 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
         disable_web_page_preview=True,
     )
 
-    from ..tasks import process_video_task
+    from ..tasks import process_video_task, upload_video_task
 
     async for db_video_repr in get_downloaded_videos(bot, video_or_playlist_for_processing):
 
@@ -89,8 +89,11 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                             )
                         )
                     # Отправляем обработанное видео
-                    async with get_tg_bot() as bot:
-                        await processed_video.broadcast_for_waiters(bot)
+                    if processed_video.telegram_file is not None:
+                        async with get_tg_bot() as bot:
+                            await processed_video.broadcast_for_waiters(bot)
+                    else:
+                        upload_video_task.delay(processed_video.id)
                     continue
 
                 case ProcessedVideoStatus.IMPOSSIBLE:

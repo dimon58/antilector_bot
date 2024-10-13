@@ -151,6 +151,13 @@ services:
     profiles:
       - production
 
+  celery-upload-video:
+    extends:
+      service: bot
+    command: celery -A run_celery worker -Q ${VIDEO_UPLOAD_QUEUE} --loglevel=INFO --pool=solo
+    profiles:
+      - production
+
   init_db:
     extends:
       service: bot

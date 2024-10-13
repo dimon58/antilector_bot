@@ -77,18 +77,6 @@ async def run_video_processing(processed_video: ProcessedVideo, user_id: int) ->
             )
         )
 
-    logger.info("Broadcasting processed video")
-    async with get_tg_bot() as bot:
-        await processed_video.broadcast_for_waiters(bot)
-
-    async with get_autocommit_session() as db_session:
-        # noinspection PyTypeChecker
-        await db_session.execute(
-            update(ProcessedVideo)
-            .where(ProcessedVideo.id == processed_video.id)
-            .values(telegram_file=processed_video.telegram_file)
-        )
-
 
 async def mark_processing_impossible(processed_video: ProcessedVideo, exc: ProcessingImpossibleError) -> None:
     text_gen = get_silence_only_error_text if isinstance(exc, SilenceOnlyError) else get_unable_to_process_text
@@ -139,3 +127,7 @@ async def process_video(processed_video_id: int, user_id: int) -> None:
     except Exception as exc:
         logger.exception("Failed to process video %s: %s", processed_video.id, exc, exc_info=exc)
         await cleanup_failed_processing(processed_video)
+
+    from ..tasks import upload_video_task
+
+    upload_video_task.delay(processed_video.id)
