@@ -84,7 +84,7 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                                 VideoProcessingResourceUsage(
                                     user_id=video_or_playlist_for_processing.user_id,
                                     processed_video_id=processed_video.id,
-                                    real_processed=True,
+                                    real_processed=False,
                                 )
                             )
                         # Отправляем обработанное видео
