@@ -104,6 +104,10 @@ VIDEO_UPLOAD_QUEUE = os.environ["VIDEO_UPLOAD_QUEUE"]
 
 # ---------- Настройка логики обработки ---------- #
 
+# Нужно ли отправлять сообщения пользователям при скачивании видео
+LOG_EACH_VIDEO_DOWNLOAD = False
+
+
 # Настройка устройств для
 USE_CUDA = torch.cuda.is_available()
 TORCH_DEVICE = torch.device("cuda:0" if USE_CUDA else "cpu")

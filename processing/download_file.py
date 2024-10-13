@@ -11,14 +11,13 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy_file import File
 
-from configs import VIDEO_DOWNLOAD_TIMEOUT
+from configs import VIDEO_DOWNLOAD_TIMEOUT, LOG_EACH_VIDEO_DOWNLOAD
 from djgram.db.base import get_autocommit_session
 from djgram.db.utils import get_or_create
 from djgram.utils.download import download_file
 from tools.yt_dlp_downloader.misc import convert_entries_generator, yt_dlp_jsonify, yt_dlp_get_html_link
 from tools.yt_dlp_downloader.yt_dlp_download_videos import (
     YtDlpInfoDict,
-    extract_info,
     download,
     get_url,
     YtDlpContentType,
@@ -26,6 +25,7 @@ from tools.yt_dlp_downloader.yt_dlp_download_videos import (
 from utils.get_bot import get_tg_bot
 from utils.thumbnail import get_best_thumbnail
 from utils.video.measure import ffprobe_extract_meta
+from utils.yt_dlp_cached import extract_info_async_cached
 from .misc import execute_file_update_statement
 from .models import Playlist, Video, Waiter
 from .schema import VideoOrPlaylistForProcessing, FILE_TYPE
@@ -166,20 +166,21 @@ async def _create_playlist(
     logging_message: Message | None = None
     playlist_count = yt_dlp_info["playlist_count"]
     for idx, video in enumerate(yt_dlp_info["entries"], start=1):
-        text = f"Скачиваю {idx}/{playlist_count} {yt_dlp_get_html_link(video)}"
-        if logging_message is None:
-            logging_message = await bot.send_message(
-                text=text,
-                chat_id=video_or_playlist_for_processing.telegram_chat_id,
-                reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
-                parse_mode=ParseMode.HTML,
-                disable_web_page_preview=True,
-                disable_notification=True,
-            )
-        else:
-            await logging_message.edit_text(text=text, disable_web_page_preview=True, parse_mode=ParseMode.HTML)
+        if LOG_EACH_VIDEO_DOWNLOAD:
+            text = f"Скачиваю {idx}/{playlist_count} {yt_dlp_get_html_link(video)}"
+            if logging_message is None:
+                logging_message = await bot.send_message(
+                    text=text,
+                    chat_id=video_or_playlist_for_processing.telegram_chat_id,
+                    reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+                    parse_mode=ParseMode.HTML,
+                    disable_web_page_preview=True,
+                    disable_notification=True,
+                )
+            else:
+                await logging_message.edit_text(text=text, disable_web_page_preview=True, parse_mode=ParseMode.HTML)
 
-        video = extract_info(url=get_url(video), process=False)
+        video = await extract_info_async_cached(url=get_url(video), process=False)
         yield await _create_video(video, video_or_playlist_for_processing, playlist)
 
 
@@ -188,23 +189,24 @@ async def get_from_url(
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
 ) -> AsyncGenerator[tuple[bool, Video] | None]:
     logger.info("Downloading video or playlist")
-    yt_dlp_info = extract_info(url=video_or_playlist_for_processing.url, process=False)
+    yt_dlp_info = await extract_info_async_cached(url=video_or_playlist_for_processing.url, process=False)
     if yt_dlp_info["_type"] == YtDlpContentType.URL:
         logger.info('Resolving url with type "url": %s', video_or_playlist_for_processing.url)
-        yt_dlp_info = extract_info(url=yt_dlp_info["url"], process=False)
+        yt_dlp_info = await extract_info_async_cached(url=yt_dlp_info["url"], process=False)
 
     if yt_dlp_info.get("entries") is not None:
         async for video in _create_playlist(bot, yt_dlp_info, video_or_playlist_for_processing):
             yield video
         return
 
-    await bot.send_message(
-        text="Скачиваю",
-        chat_id=video_or_playlist_for_processing.telegram_chat_id,
-        reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
-        disable_web_page_preview=True,
-        disable_notification=True,
-    )
+    if LOG_EACH_VIDEO_DOWNLOAD:
+        await bot.send_message(
+            text="Скачиваю",
+            chat_id=video_or_playlist_for_processing.telegram_chat_id,
+            reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+            disable_web_page_preview=True,
+            disable_notification=True,
+        )
     yield await _create_video(yt_dlp_info, video_or_playlist_for_processing, None)
 
 
@@ -242,11 +244,12 @@ async def get_from_telegram(
         db_session.add(db_video)
 
     logger.info("Downloading video %s from telegram", video.file_id)
-    await bot.send_message(
-        text="Скачиваю",
-        chat_id=video_or_playlist_for_processing.telegram_chat_id,
-        reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
-    )
+    if LOG_EACH_VIDEO_DOWNLOAD:
+        await bot.send_message(
+            text="Скачиваю",
+            chat_id=video_or_playlist_for_processing.telegram_chat_id,
+            reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+        )
 
     # TODO: можно заливать файл напрямую в хранилище через container.upload_object_via_stream
     buffer = await download_file(bot, video.file_id, video.file_size, timeout=VIDEO_DOWNLOAD_TIMEOUT)

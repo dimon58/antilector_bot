@@ -1,11 +1,10 @@
 import logging
 
-from aiogram import Bot
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from configs import TELEGRAM_BOT_TOKEN
+from configs import LOG_EACH_VIDEO_DOWNLOAD
 from djgram.db.base import get_autocommit_session
 from utils.get_bot import get_tg_bot
 from .error_texts import get_silence_only_error_text
@@ -34,100 +33,98 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
 
     Если не скачано, то скачивает и создаёт задачи на обработку
     """
-    bot = Bot(TELEGRAM_BOT_TOKEN)
 
-    start_text = "Начинаю обработку"
+    if LOG_EACH_VIDEO_DOWNLOAD:
+        async with get_tg_bot() as bot:
+            start_text = "Начинаю обработку"
 
-    if video_or_playlist_for_processing.is_playlist:
-        start_text = f"{start_text}. Видео из плейлиста будут отправлены по мере готовности."
+            if video_or_playlist_for_processing.is_playlist:
+                start_text = f"{start_text}. Видео из плейлиста будут отправлены по мере готовности."
 
-    await bot.send_message(
-        text=start_text,
-        chat_id=video_or_playlist_for_processing.telegram_chat_id,
-        reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
-        disable_notification=True,
-        disable_web_page_preview=True,
-    )
-
-    from ..tasks import process_video_task, upload_video_task
-
-    async for db_video_repr in get_downloaded_videos(bot, video_or_playlist_for_processing):
-
-        # Проблемы с загрузкой, логируется в get_downloaded_videos
-        if db_video_repr is None:
-            continue
-
-        downloaded_here, db_video = db_video_repr
-
-        # Реально скачивается в другой задаче
-        if not downloaded_here:
-            suffix = "ing" if db_video.file is None else "ed"
-            logger.info("Video %s download%s in other task", db_video.id, suffix)
-            processed_video = await create_processed_video_initial(
-                db_video.id,
-                video_or_playlist_for_processing,
-                select_with_original_video=True,
+            await bot.send_message(
+                text=start_text,
+                chat_id=video_or_playlist_for_processing.telegram_chat_id,
+                reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+                disable_notification=True,
+                disable_web_page_preview=True,
             )
 
-            match processed_video.status:
-                case ProcessedVideoStatus.TASK_CREATED:
-                    # Создаём таску для работы. Если она будет дублироваться, то отсеиваем её в process_video_task
-                    logger.warning("Video %s created, but not processed", processed_video.id)
+    async with get_tg_bot() as bot:
+        async for db_video_repr in get_downloaded_videos(bot, video_or_playlist_for_processing):
 
-                case ProcessedVideoStatus.PROCESSING:
-                    # Не обработано, значит пользователь в очереди на рассылку
-                    if processed_video.status != ProcessedVideoStatus.PROCESSED:
+            # Проблемы с загрузкой, логируется в get_downloaded_videos
+            if db_video_repr is None:
+                continue
+
+            downloaded_here, db_video = db_video_repr
+
+            # Реально скачивается в другой задаче
+            if not downloaded_here:
+                suffix = "ing" if db_video.file is None else "ed"
+                logger.info("Video %s download%s in other task", db_video.id, suffix)
+                processed_video = await create_processed_video_initial(
+                    db_video.id,
+                    video_or_playlist_for_processing,
+                    select_with_original_video=True,
+                )
+
+                match processed_video.status:
+                    case ProcessedVideoStatus.TASK_CREATED:
+                        # Создаём таску для работы. Если она будет дублироваться, то отсеиваем её в process_video_task
+                        logger.warning("Video %s created, but not processed", processed_video.id)
+
+                    case ProcessedVideoStatus.PROCESSING:
+                        # Не обработано, значит пользователь в очереди на рассылку
+                        if processed_video.status != ProcessedVideoStatus.PROCESSED:
+                            continue
+
+                    case ProcessedVideoStatus.PROCESSED:
+                        async with get_autocommit_session() as db_session:
+                            db_session.add(
+                                VideoProcessingResourceUsage(
+                                    user_id=video_or_playlist_for_processing.user_id,
+                                    processed_video_id=processed_video.id,
+                                    real_processed=True,
+                                )
+                            )
+                        # Отправляем обработанное видео
+                        if processed_video.telegram_file is not None:
+                            await processed_video.broadcast_for_waiters(bot)
+                        else:
+                            from ..tasks import upload_video_task
+                            upload_video_task.delay(processed_video.id)
                         continue
 
-                case ProcessedVideoStatus.PROCESSED:
-                    async with get_autocommit_session() as db_session:
-                        db_session.add(
-                            VideoProcessingResourceUsage(
-                                user_id=video_or_playlist_for_processing.user_id,
-                                processed_video_id=processed_video.id,
-                                real_processed=True,
-                            )
+                    case ProcessedVideoStatus.IMPOSSIBLE:
+                        logger.warning(
+                            "User %s tried to process video that %s is impossible (%s)",
+                            video_or_playlist_for_processing.user_id,
+                            processed_video.id,
+                            processed_video.impossible_reason,
                         )
-                    # Отправляем обработанное видео
-                    if processed_video.telegram_file is not None:
-                        async with get_tg_bot() as bot:
-                            await processed_video.broadcast_for_waiters(bot)
-                    else:
-                        upload_video_task.delay(processed_video.id)
-                    continue
 
-                case ProcessedVideoStatus.IMPOSSIBLE:
-                    logger.warning(
-                        "User %s tried to process video that %s is impossible (%s)",
-                        video_or_playlist_for_processing.user_id,
-                        processed_video.id,
-                        processed_video.impossible_reason,
-                    )
-
-                    async with get_tg_bot() as bot:
                         await processed_video.broadcast_text_for_waiters(
                             bot,
                             get_silence_only_error_text(processed_video),
                         )
-                    continue
+                        continue
 
-                case _:
-                    logger.error("Unknown status %s for processed video %s", processed_video.status, processed_video.id)
-                    continue
+                    case _:
+                        logger.error("Unknown status %s for processed video %s", processed_video.status, processed_video.id)
+                        continue
 
-        # Реально скачивается в этой задаче -> создаём задачу для обработки здесь
-        logger.info(
-            "Send video %s (audio profile %s, unsilence profile %s) to processing",
-            db_video,
-            video_or_playlist_for_processing.audio_processing_profile_id,
-            video_or_playlist_for_processing.unsilence_profile_id,
-        )
-        processed_video = await create_processed_video_initial(db_video.id, video_or_playlist_for_processing)
-        process_video_task.delay(processed_video.id, video_or_playlist_for_processing.user_id)
+            from ..tasks import process_video_task
+            # Реально скачивается в этой задаче -> создаём задачу для обработки здесь
+            logger.info(
+                "Send video %s (audio profile %s, unsilence profile %s) to processing",
+                db_video,
+                video_or_playlist_for_processing.audio_processing_profile_id,
+                video_or_playlist_for_processing.unsilence_profile_id,
+            )
+            processed_video = await create_processed_video_initial(db_video.id, video_or_playlist_for_processing)
+            process_video_task.delay(processed_video.id, video_or_playlist_for_processing.user_id)
 
     # TODO: Добавить retry
-
-    await bot.session.close()
 
 
 async def ensure_video_and_profiles_exist(
