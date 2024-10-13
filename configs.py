@@ -159,6 +159,7 @@ CPU_ADDITIONAL_OPTIONS = copy.deepcopy(NVENC_ADDITIONAL_OPTIONS) | {
 }
 
 USE_NISQA = True
+MEASURE_RMS = True
 
 VAD_MODEL = silero_vad.load_silero_vad(onnx=True)
 SILERO_VAD_SAMPLE_RATE = 16000

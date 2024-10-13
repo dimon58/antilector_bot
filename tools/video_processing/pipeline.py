@@ -9,7 +9,7 @@ from configs import NISQA_MAX_MEMORY
 from libs.nisqa.model import NisqaModel
 from tools.audio_processing.actions.ffmpeg_actions import ExtractAudioFromVideo
 from tools.audio_processing.pipeline import AudioPipeline, AudioPipelineStatistics, StepStatistics
-from utils.audio import ffmpeg_transcode, measure_volume
+from utils.audio import ffmpeg_transcode, measure_volume_if_enabled
 
 from .actions.unsilence_actions import UnsilenceAction
 
@@ -113,7 +113,7 @@ class VideoPipeline(pydantic.BaseModel):
                 unsilence_nisqa = nisqa_model.measure_from_path_chunked(processed_audio, NISQA_MAX_MEMORY)
         else:
             unsilence_nisqa = None
-        unsilence_rms_db = measure_volume(output_file)
+        unsilence_rms_db = measure_volume_if_enabled(output_file)
         unsilence_end = time.perf_counter()
         unsilence_stats = StepStatistics(
             step=self.audio_pipeline.get_steps_count(),

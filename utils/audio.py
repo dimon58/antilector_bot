@@ -12,7 +12,7 @@ import torchaudio
 from ffmpeg import FFmpegError
 from ffmpeg.types import Option
 
-from configs import TORCH_DEVICE, USE_CUDA
+from configs import MEASURE_RMS, TORCH_DEVICE, USE_CUDA
 from utils.fixed_ffmpeg import FixedFFmpeg
 from utils.pathtools import PathType
 from utils.progress_bar import setup_progress_for_ffmpeg
@@ -128,3 +128,10 @@ def measure_volume(filename: PathType) -> float:
         raise ValueError(f"Failed to get volume from ffrobe output: {err_str}")
 
     return float(rms_match.group(1))
+
+
+def measure_volume_if_enabled(filename: PathType) -> float | None:
+    if not MEASURE_RMS:
+        return None
+
+    return measure_volume(filename)

@@ -9,7 +9,7 @@ from pydantic import ConfigDict
 from configs import NISQA_MAX_MEMORY
 from libs.nisqa.metrics import NisqaMetrics
 from libs.nisqa.model import NisqaModel
-from utils.audio import measure_volume
+from utils.audio import measure_volume_if_enabled
 from utils.misc import get_all_subclasses
 
 from .actions.abstract import Action, ActionStatsType
@@ -23,14 +23,23 @@ class StepStatistics(pydantic.BaseModel):
     time: float
     action_stats: ActionStatsType | None = None
     nisqa: NisqaMetrics | None = None
-    rms_db: float
+    rms_db: float | None
 
     @property
     def repr_for_logging(self) -> str:
-        if self.nisqa is not None:
-            return f"{self.nisqa.short_desc()} | RMS {self.rms_db:.2f} dB"
 
-        return f"RMS {self.rms_db:.2f} dB"
+        info = []
+
+        if self.nisqa is not None:
+            info.append(self.nisqa.short_desc())
+
+        if self.rms_db is not None:
+            info.append(f"RMS {self.rms_db:.2f} dB")
+
+        if len(info) == 0:
+            return ""
+
+        return " | ".join(info)
 
 
 class AudioPipelineStatistics(pydantic.BaseModel):
@@ -72,7 +81,7 @@ class AudioPipeline(pydantic.BaseModel):
         if len(self.pipeline) == 0:
             raise ValueError("No actions defined")
 
-        input_stats = StepStatistics(step=0, step_name="input", time=0, rms_db=measure_volume(input_file))
+        input_stats = StepStatistics(step=0, step_name="input", time=0, rms_db=measure_volume_if_enabled(input_file))
         pipeline_stats = [input_stats]
 
         if nisqa_model is not None:
@@ -94,7 +103,7 @@ class AudioPipeline(pydantic.BaseModel):
                 step_name=action.__class__.__name__,
                 time=end - start,
                 action_stats=action_stats,
-                rms_db=measure_volume(input_file),
+                rms_db=measure_volume_if_enabled(input_file),
             )
             pipeline_stats.append(step_stats)
 
@@ -115,7 +124,7 @@ class AudioPipeline(pydantic.BaseModel):
             step_name=self.pipeline[-1].__class__.__name__,
             time=end - start,
             action_stats=action_stats,
-            rms_db=measure_volume(output_file),
+            rms_db=measure_volume_if_enabled(output_file),
         )
         pipeline_stats.append(final_stats)
 
