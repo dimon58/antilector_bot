@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 1f38ebcac993
+Revision ID: 3b181e92c408
 Revises: 3d29382bcd16
-Create Date: 2024-10-13 01:33:12.803109
+Create Date: 2024-10-13 22:17:12.738483
 
 """
 
@@ -13,12 +13,13 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy_file import FileField
 import aiogram.types.video
 import processing.models.common
+import sqlalchemy.sql.sqltypes
 import tools.audio_processing.pipeline
 import tools.video_processing.actions.unsilence_actions
 import tools.video_processing.pipeline
 
 # revision identifiers, used by Alembic.
-revision = "1f38ebcac993"
+revision = "3b181e92c408"
 down_revision = "3d29382bcd16"
 branch_labels = None
 depends_on = None
@@ -30,7 +31,9 @@ def upgrade() -> None:
         "audioprocessingprofile",
         sa.Column(
             "audio_pipeline",
-            ImmutablePydanticField(tools.audio_processing.pipeline.AudioPipeline, should_frozen=False),
+            ImmutablePydanticField(
+                tools.audio_processing.pipeline.AudioPipeline, sqlalchemy.sql.sqltypes.JSON(), should_frozen=False
+            ),
             nullable=False,
         ),
         sa.Column("slug", sa.String(), nullable=False),
@@ -56,7 +59,9 @@ def upgrade() -> None:
         sa.Column(
             "unsilence_action",
             ImmutablePydanticField(
-                tools.video_processing.actions.unsilence_actions.UnsilenceAction, should_frozen=False
+                tools.video_processing.actions.unsilence_actions.UnsilenceAction,
+                sqlalchemy.sql.sqltypes.JSON(),
+                should_frozen=False,
             ),
             nullable=False,
         ),
@@ -77,7 +82,11 @@ def upgrade() -> None:
         sa.Column("meta", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column(
             "waiters",
-            sa.ARRAY(ImmutablePydanticField(processing.models.common.Waiter, should_frozen=True)),
+            sa.ARRAY(
+                ImmutablePydanticField(
+                    processing.models.common.Waiter, sqlalchemy.sql.sqltypes.JSON(), should_frozen=True
+                )
+            ),
             server_default="{}",
             nullable=False,
         ),
@@ -111,20 +120,46 @@ def upgrade() -> None:
         sa.Column("impossible_reason", sa.String(), nullable=True),
         sa.Column("original_video_id", sa.String(), nullable=False),
         sa.Column("audio_processing_profile_id", sa.BigInteger(), nullable=False),
+        sa.Column(
+            "audio_pipeline_json",
+            ImmutablePydanticField(
+                tools.audio_processing.pipeline.AudioPipeline, sqlalchemy.sql.sqltypes.JSON(), should_frozen=False
+            ),
+            nullable=False,
+        ),
         sa.Column("unsilence_profile_id", sa.BigInteger(), nullable=False),
         sa.Column(
+            "unsilence_action_json",
+            ImmutablePydanticField(
+                tools.video_processing.actions.unsilence_actions.UnsilenceAction,
+                sqlalchemy.sql.sqltypes.JSON(),
+                should_frozen=False,
+            ),
+            nullable=False,
+        ),
+        sa.Column(
             "processing_stats",
-            ImmutablePydanticField(tools.video_processing.pipeline.VideoPipelineStatistics, should_frozen=False),
+            ImmutablePydanticField(
+                tools.video_processing.pipeline.VideoPipelineStatistics,
+                sqlalchemy.sql.sqltypes.JSON(),
+                should_frozen=False,
+            ),
             nullable=True,
         ),
         sa.Column("file", FileField(), nullable=True),
         sa.Column("meta", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column(
-            "telegram_file", ImmutablePydanticField(aiogram.types.video.Video, should_frozen=True), nullable=True
+            "telegram_file",
+            ImmutablePydanticField(aiogram.types.video.Video, sqlalchemy.sql.sqltypes.JSON(), should_frozen=True),
+            nullable=True,
         ),
         sa.Column(
             "waiters",
-            sa.ARRAY(ImmutablePydanticField(processing.models.common.Waiter, should_frozen=True)),
+            sa.ARRAY(
+                ImmutablePydanticField(
+                    processing.models.common.Waiter, sqlalchemy.sql.sqltypes.JSON(), should_frozen=True
+                )
+            ),
             server_default="{}",
             nullable=False,
         ),

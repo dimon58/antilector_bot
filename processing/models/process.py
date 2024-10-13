@@ -20,7 +20,8 @@ from djgram.db.models import TimeTrackableBaseModel
 from djgram.db.pydantic_field import ImmutablePydanticField
 from djgram.utils.input_file_ext import S3FileInput
 from djgram.utils.upload import LoggingInputFile
-from tools.video_processing.actions.unsilence_actions import TIME_SAVINGS_REAL_KEY
+from tools.audio_processing.pipeline import AudioPipeline
+from tools.video_processing.actions.unsilence_actions import TIME_SAVINGS_REAL_KEY, UnsilenceAction
 from tools.video_processing.pipeline import VideoPipelineStatistics
 from tools.yt_dlp_downloader.yt_dlp_download_videos import get_url
 from .common import Waitable
@@ -57,9 +58,17 @@ class ProcessedVideo(Waitable, TimeTrackableBaseModel):
 
     audio_processing_profile_id: Mapped[int] = mapped_column(ForeignKey(AudioProcessingProfile.id), index=True)
     audio_processing_profile: Mapped[AudioProcessingProfile] = relationship(AudioProcessingProfile)
+    audio_pipeline_json: Mapped[AudioPipeline] = mapped_column(
+        ImmutablePydanticField(AudioPipeline, should_frozen=False),
+        doc="Профиль обработки аудио, который реально был применён к этому видео",
+    )
 
     unsilence_profile_id: Mapped[int] = mapped_column(ForeignKey(UnsilenceProfile.id), index=True)
     unsilence_profile: Mapped[UnsilenceProfile] = relationship(UnsilenceProfile)
+    unsilence_action_json: Mapped[UnsilenceAction] = mapped_column(
+        ImmutablePydanticField(UnsilenceAction, should_frozen=False),
+        doc="Профиль поиска тишины, который реально был применён к этому видео",
+    )
 
     processing_stats: Mapped[VideoPipelineStatistics | None] = mapped_column(
         ImmutablePydanticField(VideoPipelineStatistics, should_frozen=False)

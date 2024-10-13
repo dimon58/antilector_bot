@@ -12,7 +12,7 @@ from tools.video_processing.pipeline import VideoPipeline
 from utils.get_bot import get_tg_bot
 from utils.video.measure import ffprobe_extract_meta
 from .misc import execute_file_update_statement
-from .models import ProcessedVideo, Video, AudioProcessingProfile, UnsilenceProfile, ProcessedVideoStatus
+from .models import ProcessedVideo, ProcessedVideoStatus
 from .schema import VideoOrPlaylistForProcessing
 
 logger = logging.getLogger(__name__)
@@ -101,7 +101,14 @@ async def run_video_pipeline(processed_video: ProcessedVideo) -> ProcessedVideo:
     stmt = (
         update(ProcessedVideo)
         .where(ProcessedVideo.id == processed_video.id)
-        .values(file=file, processing_stats=processing_stats, meta=meta, status=ProcessedVideoStatus.PROCESSED)
+        .values(
+            file=file,
+            processing_stats=processing_stats,
+            meta=meta,
+            status=ProcessedVideoStatus.PROCESSED,
+            audio_pipeline_json=processed_video.audio_processing_profile.audio_pipeline,
+            unsilence_action_json=processed_video.unsilence_profile.unsilence_action,
+        )
         .returning(ProcessedVideo)
         .options(selectinload(ProcessedVideo.original_video))
     )
