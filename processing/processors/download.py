@@ -71,12 +71,11 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                 match processed_video.status:
                     case ProcessedVideoStatus.TASK_CREATED:
                         # Создаём таску для работы. Если она будет дублироваться, то отсеиваем её в process_video_task
-                        logger.warning("Video %s created, but not processed", processed_video.id)
+                        logger.info("Video %s created, but not processed", processed_video.id)
 
                     case ProcessedVideoStatus.PROCESSING:
                         # Не обработано, значит пользователь в очереди на рассылку
-                        if processed_video.status != ProcessedVideoStatus.PROCESSED:
-                            continue
+                        logger.info("Video %s is processing", processed_video.id)
 
                     case ProcessedVideoStatus.PROCESSED:
                         async with get_autocommit_session() as db_session:
@@ -89,11 +88,18 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                             )
                         # Отправляем обработанное видео
                         if processed_video.telegram_file is not None:
-                            await processed_video.broadcast_for_waiters(bot)
+                            await processed_video.send(
+                                bot=bot,
+                                chat_id=video_or_playlist_for_processing.telegram_chat_id,
+                                reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+                            )
                         else:
                             from ..tasks import upload_video_task
 
-                            upload_video_task.delay(processed_video.id)
+                            upload_video_task.delay(
+                                processed_video.id,
+                                Waiter.from_task(video_or_playlist_for_processing).model_dump_json(),
+                            )
                         continue
 
                     case ProcessedVideoStatus.IMPOSSIBLE:
@@ -126,7 +132,10 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                 video_or_playlist_for_processing.unsilence_profile_id,
             )
             processed_video = await create_processed_video_initial(db_video.id, video_or_playlist_for_processing)
-            process_video_task.delay(processed_video.id, video_or_playlist_for_processing.user_id)
+            process_video_task.delay(
+                processed_video.id,
+                Waiter.from_task(video_or_playlist_for_processing).model_dump(mode="json"),
+            )
 
     # TODO: Добавить retry
 
@@ -170,7 +179,6 @@ async def create_processed_video_initial(
     select_with_original_video: bool = False,
 ) -> ProcessedVideo:
     async with get_autocommit_session() as db_session:
-        # Если обработанное видео уже существует, то
         # noinspection PyTypeChecker
         stmt = (
             select(ProcessedVideo)

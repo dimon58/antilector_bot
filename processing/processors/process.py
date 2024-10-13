@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
@@ -9,13 +10,13 @@ from tools.video_processing.actions.unsilence_actions import SilenceOnlyError
 from tools.yt_dlp_downloader.misc import yt_dlp_get_html_link
 from utils.get_bot import get_tg_bot
 from .error_texts import get_silence_only_error_text, get_generic_error_text, get_unable_to_process_text
-from ..models import ProcessedVideo, ProcessedVideoStatus, VideoProcessingResourceUsage
+from ..models import ProcessedVideo, ProcessedVideoStatus, VideoProcessingResourceUsage, Waiter
 from ..processing_file import run_video_pipeline
 
 logger = logging.getLogger(__name__)
 
 
-async def get_video_for_processing(processed_video_id: int) -> ProcessedVideo | None:
+async def get_video_for_processing(processed_video_id: int, waiter: Waiter) -> ProcessedVideo | None:
     async with get_autocommit_session() as db_session:
         # noinspection PyTypeChecker
         processed_video: ProcessedVideo | None = await db_session.scalar(
@@ -33,14 +34,28 @@ async def get_video_for_processing(processed_video_id: int) -> ProcessedVideo | 
             case ProcessedVideoStatus.TASK_CREATED:
                 logger.info("Start processing %s", processed_video.id)
                 processed_video.status = ProcessedVideoStatus.PROCESSING
+                processed_video.add_if_not_in_waiters(waiter)
                 return processed_video
 
             case ProcessedVideoStatus.PROCESSING:
                 logger.warning("Video %s processing in other task", processed_video.id)
+                processed_video.add_if_not_in_waiters(waiter)
                 return None
 
             case ProcessedVideoStatus.PROCESSED:
                 logger.warning("Video %s already processed", processed_video.id)
+                processed_video.add_if_not_in_waiters(waiter)
+                if processed_video.telegram_file is not None:
+                    async with get_tg_bot() as bot:
+                        await processed_video.send(
+                            bot=bot,
+                            chat_id=waiter.telegram_chat_id,
+                            reply_to_message_id=waiter.reply_to_message_id,
+                        )
+                else:
+                    from ..tasks import upload_video_task
+
+                    upload_video_task.delay(processed_video.id, waiter.model_dump_json())
                 return None
 
             case ProcessedVideoStatus.IMPOSSIBLE:
@@ -49,9 +64,12 @@ async def get_video_for_processing(processed_video_id: int) -> ProcessedVideo | 
                     processed_video.id,
                     processed_video.impossible_reason,
                 )
+                processed_video.add_if_not_in_waiters(waiter)
 
                 async with get_tg_bot() as bot:
                     await processed_video.broadcast_text_for_waiters(bot, get_silence_only_error_text(processed_video))
+
+                processed_video.waiters = []
                 return None
 
             case _:
@@ -59,7 +77,7 @@ async def get_video_for_processing(processed_video_id: int) -> ProcessedVideo | 
                 return None
 
 
-async def run_video_processing(processed_video: ProcessedVideo, user_id: int) -> None:
+async def run_video_processing(processed_video: ProcessedVideo, waiter: Waiter) -> None:
     async with get_tg_bot() as bot:
         await processed_video.broadcast_text_for_waiters(
             bot=bot,
@@ -71,7 +89,7 @@ async def run_video_processing(processed_video: ProcessedVideo, user_id: int) ->
     async with get_autocommit_session() as db_session:
         db_session.add(
             VideoProcessingResourceUsage(
-                user_id=user_id,
+                user_id=waiter.user_id,
                 processed_video_id=processed_video.id,
                 real_processed=True,
             )
@@ -103,7 +121,7 @@ async def cleanup_failed_processing(processed_video: ProcessedVideo) -> None:
         await processed_video.broadcast_text_for_waiters(bot, get_generic_error_text(processed_video))
 
 
-async def process_video(processed_video_id: int, user_id: int) -> None:
+async def process_video(processed_video_id: int, waiter_dict: dict[str, Any]) -> None:
     """
     Обрабатывает видео, согласно выбранным профилям
 
@@ -112,13 +130,15 @@ async def process_video(processed_video_id: int, user_id: int) -> None:
     2) Функция вызывается в первый раз для данного видео и профиля обработки, если статус TASK_CREATED
     """
 
-    processed_video = await get_video_for_processing(processed_video_id)
+    waiter = Waiter.model_validate(waiter_dict)
+
+    processed_video = await get_video_for_processing(processed_video_id, waiter)
 
     if processed_video is None:
         return
 
     try:
-        await run_video_processing(processed_video, user_id)
+        await run_video_processing(processed_video, waiter)
 
     except ProcessingImpossibleError as exc:
         logger.error("Impossible to process video %s", processed_video)

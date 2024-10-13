@@ -66,19 +66,22 @@ class Waitable:
 
         return False
 
-    def add_if_not_in_waiters_from_task(self, video_or_playlist_for_processing: VideoOrPlaylistForProcessing) -> bool:
+    def add_if_not_in_waiters(self, waiter: Waiter) -> bool:
         """
         Добавляет в список ожидающих
 
         Возвращает True, если реально добавлен, False, если пользователь уже был в списке
         """
 
-        if self.has_waiter(video_or_playlist_for_processing.telegram_chat_id):
+        if self.has_waiter(waiter.telegram_chat_id):
             return False
 
-        logger.info("New waiter %s for %s", video_or_playlist_for_processing.telegram_chat_id, self)
-        self.waiters.append(Waiter.from_task(video_or_playlist_for_processing))
+        logger.info("New waiter %s for %s", waiter.telegram_chat_id, self)
+        self.waiters.append(waiter)
         return True
+
+    def add_if_not_in_waiters_from_task(self, video_or_playlist_for_processing: VideoOrPlaylistForProcessing) -> bool:
+        return self.add_if_not_in_waiters(Waiter.from_task(video_or_playlist_for_processing))
 
     async def broadcast_text_for_waiters(
         self,

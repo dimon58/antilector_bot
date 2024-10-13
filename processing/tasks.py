@@ -38,14 +38,14 @@ def process_video_or_playlist(video_or_playlist_for_processing: dict[str, Any]):
 
 
 @app.task(queue=VIDEO_PROCESS_QUEUE)
-def process_video_task(process_video_id: int, user_id: int):
+def process_video_task(process_video_id: int, waiter_dict: dict[str, Any]):
     ensure_processors()
 
-    run_async_in_sync(processors.process_video(process_video_id, user_id))
+    run_async_in_sync(processors.process_video(process_video_id, waiter_dict))
 
 
 @app.task(queue=VIDEO_UPLOAD_QUEUE)
-def upload_video_task(processed_video_id: int):
+def upload_video_task(processed_video_id: int, waiter_dict: dict[str, Any] | None = None):
     ensure_processors()
 
-    run_async_in_sync(processors.upload_to_telegram(processed_video_id))
+    run_async_in_sync(processors.upload_to_telegram(processed_video_id, waiter_dict))
