@@ -164,3 +164,6 @@ fabric.properties
 !example.env
 dev
 tmp
+temp
+.tmp
+logs
