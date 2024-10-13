@@ -9,7 +9,7 @@ from tools.video_processing.actions.unsilence_actions import SilenceOnlyError
 from tools.yt_dlp_downloader.misc import yt_dlp_get_html_link
 from utils.get_bot import get_tg_bot
 from .error_texts import get_silence_only_error_text, get_generic_error_text, get_unable_to_process_text
-from ..models import ProcessedVideo, ProcessedVideoStatus
+from ..models import ProcessedVideo, ProcessedVideoStatus, VideoProcessingResourceUsage
 from ..processing_file import run_video_pipeline
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ async def get_video_for_processing(processed_video_id: int) -> ProcessedVideo | 
                 return None
 
 
-async def run_video_processing(processed_video: ProcessedVideo) -> None:
+async def run_video_processing(processed_video: ProcessedVideo, user_id: int) -> None:
     async with get_tg_bot() as bot:
         await processed_video.broadcast_text_for_waiters(
             bot=bot,
@@ -68,6 +68,14 @@ async def run_video_processing(processed_video: ProcessedVideo) -> None:
         )
 
     processed_video = await run_video_pipeline(processed_video)
+    async with get_autocommit_session() as db_session:
+        db_session.add(
+            VideoProcessingResourceUsage(
+                user_id=user_id,
+                processed_video_id=processed_video.id,
+                real_processed=True,
+            )
+        )
 
     logger.info("Broadcasting processed video")
     async with get_tg_bot() as bot:
@@ -107,7 +115,7 @@ async def cleanup_failed_processing(processed_video: ProcessedVideo) -> None:
         await processed_video.broadcast_text_for_waiters(bot, get_generic_error_text(processed_video))
 
 
-async def process_video(processed_video_id: int) -> None:
+async def process_video(processed_video_id: int, user_id: int) -> None:
     """
     Обрабатывает видео, согласно выбранным профилям
 
@@ -119,7 +127,7 @@ async def process_video(processed_video_id: int) -> None:
     processed_video = await get_video_for_processing(processed_video_id)
 
     try:
-        await run_video_processing(processed_video)
+        await run_video_processing(processed_video, user_id)
 
     except ProcessingImpossibleError as exc:
         logger.error("Impossible to process video %s", processed_video)

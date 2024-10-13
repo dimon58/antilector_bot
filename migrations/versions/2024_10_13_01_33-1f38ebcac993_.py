@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 84fbfd968965
+Revision ID: 1f38ebcac993
 Revises: 3d29382bcd16
-Create Date: 2024-10-13 01:11:58.966684
+Create Date: 2024-10-13 01:33:12.803109
 
 """
 
@@ -12,13 +12,13 @@ from djgram.db.pydantic_field import ImmutablePydanticField
 from sqlalchemy.dialects import postgresql
 from sqlalchemy_file import FileField
 import aiogram.types.video
-import processing.models
+import processing.models.common
 import tools.audio_processing.pipeline
 import tools.video_processing.actions.unsilence_actions
 import tools.video_processing.pipeline
 
 # revision identifiers, used by Alembic.
-revision = "84fbfd968965"
+revision = "1f38ebcac993"
 down_revision = "3d29382bcd16"
 branch_labels = None
 depends_on = None
@@ -77,7 +77,7 @@ def upgrade() -> None:
         sa.Column("meta", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column(
             "waiters",
-            sa.ARRAY(ImmutablePydanticField(processing.models.Waiter, should_frozen=True)),
+            sa.ARRAY(ImmutablePydanticField(processing.models.common.Waiter, should_frozen=True)),
             server_default="{}",
             nullable=False,
         ),
@@ -124,7 +124,7 @@ def upgrade() -> None:
         ),
         sa.Column(
             "waiters",
-            sa.ARRAY(ImmutablePydanticField(processing.models.Waiter, should_frozen=True)),
+            sa.ARRAY(ImmutablePydanticField(processing.models.common.Waiter, should_frozen=True)),
             server_default="{}",
             nullable=False,
         ),
@@ -158,6 +158,19 @@ def upgrade() -> None:
     op.create_index(
         op.f("ix_processedvideo_unsilence_profile_id"), "processedvideo", ["unsilence_profile_id"], unique=False
     )
+    op.create_table(
+        "videoprocessingresourceusage",
+        sa.Column("user_id", sa.BigInteger(), nullable=False),
+        sa.Column("processed_video_id", sa.BigInteger(), nullable=False),
+        sa.Column("total_cpu_time", sa.Float(), nullable=False),
+        sa.Column("real_processed", sa.Boolean(), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.ForeignKeyConstraint(["processed_video_id"], ["processedvideo.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["user_id"], ["user.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
+    )
     op.create_unique_constraint(None, "telegramchat", ["id"])
     op.create_unique_constraint(None, "telegramchatfullinfo", ["id"])
     op.create_unique_constraint(None, "telegramuser", ["id"])
@@ -169,6 +182,7 @@ def downgrade() -> None:
     op.drop_constraint(None, "telegramuser", type_="unique")
     op.drop_constraint(None, "telegramchatfullinfo", type_="unique")
     op.drop_constraint(None, "telegramchat", type_="unique")
+    op.drop_table("videoprocessingresourceusage")
     op.drop_index(op.f("ix_processedvideo_unsilence_profile_id"), table_name="processedvideo")
     op.drop_index(op.f("ix_processedvideo_original_video_id"), table_name="processedvideo")
     op.drop_index(op.f("ix_processedvideo_audio_processing_profile_id"), table_name="processedvideo")

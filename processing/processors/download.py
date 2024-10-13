@@ -10,7 +10,15 @@ from djgram.db.base import get_autocommit_session
 from utils.get_bot import get_tg_bot
 from .error_texts import get_silence_only_error_text
 from ..download_file import get_downloaded_videos
-from ..models import ProcessedVideo, AudioProcessingProfile, UnsilenceProfile, Video, Waiter, ProcessedVideoStatus
+from ..models import (
+    ProcessedVideo,
+    AudioProcessingProfile,
+    UnsilenceProfile,
+    Video,
+    Waiter,
+    ProcessedVideoStatus,
+    VideoProcessingResourceUsage,
+)
 from ..schema import VideoOrPlaylistForProcessing
 
 logger = logging.getLogger(__name__)
@@ -72,6 +80,14 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                         continue
 
                 case ProcessedVideoStatus.PROCESSED:
+                    async with get_autocommit_session() as db_session:
+                        db_session.add(
+                            VideoProcessingResourceUsage(
+                                user_id=video_or_playlist_for_processing.user_id,
+                                processed_video_id=processed_video.id,
+                                real_processed=True,
+                            )
+                        )
                     # Отправляем обработанное видео
                     async with get_tg_bot() as bot:
                         await processed_video.broadcast_for_waiters(bot)
@@ -104,7 +120,7 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
             video_or_playlist_for_processing.unsilence_profile_id,
         )
         processed_video = await create_processed_video_initial(db_video.id, video_or_playlist_for_processing)
-        process_video_task.delay(processed_video.id)
+        process_video_task.delay(processed_video.id, video_or_playlist_for_processing.user_id)
 
     # TODO: Добавить retry
 

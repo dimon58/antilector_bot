@@ -12,7 +12,7 @@ from aiogram.utils.chat_action import ChatActionSender
 from djgram.contrib.admin import AppAdmin, ModelAdmin
 from djgram.contrib.admin.action_buttons import AbstractObjectActionButton
 from djgram.contrib.admin.rendering import OneLineTextRenderer
-from processing.models import Playlist, ProcessedVideo, Video, YtDlpBase
+from processing.models import Playlist, ProcessedVideo, Video, VideoProcessingResourceUsage, YtDlpBase
 
 app = AppAdmin(verbose_name="Обработка лекций")
 
@@ -59,3 +59,10 @@ class ProcessedVideoAdmin(ModelAdmin):
     model = ProcessedVideo
     name = "Обработанные видео"
     list_display = ("id",)
+
+
+@app.register
+class VideoProcessingResourceUsageAdmin(ModelAdmin):
+    model = VideoProcessingResourceUsage
+    name = "Обработки"
+    list_display = ("user_id", "processed_video_id")

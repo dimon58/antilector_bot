@@ -37,7 +37,7 @@ def process_video_or_playlist(video_or_playlist_for_processing: dict[str, Any]):
 
 
 @app.task
-def process_video_task(process_video_id: int):
+def process_video_task(process_video_id: int, user_id: int):
     ensure_processors()
 
-    run_async_in_sync(processors.process_video(process_video_id))
+    run_async_in_sync(processors.process_video(process_video_id, user_id))
