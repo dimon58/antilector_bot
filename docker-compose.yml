@@ -41,7 +41,7 @@ services:
       - "9009:9009"
     volumes:
       - clickhouse-data:/var/lib/clickhouse
-      - ./docker/clickhouse/config.d:/etc/clickhouse-server/config.d
+      - ./docker/clickhouse/config.d:/etc/clickhouse-server/config.d:ro
       - ./logs/clickhouse:/var/log/clickhouse-server
     ulimits:
       nproc: 65535
