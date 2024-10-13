@@ -1,5 +1,6 @@
 import copy
 import os
+from datetime import timedelta
 from pathlib import Path
 
 import silero_vad
@@ -71,6 +72,7 @@ REDIS_PASSWORD: str | None = os.environ.get("REDIS_PASSWORD")
 
 #: Номер базы данных для хранилища машины конченых состояний
 REDIS_STORAGE_DB: int = int(os.environ.get("REDIS_STORAGE_DB", 0))  # pyright: ignore [reportArgumentType]
+REDIS_YT_DLP_CACHE_DB: int = int(os.environ.get("REDIS_YT_DLP_CACHE_DB", 0))  # pyright: ignore [reportArgumentType]
 
 RABBITMQ_HOST: str = os.environ.get("RABBITMQ_HOST", "localhost")
 RABBITMQ_PORT: int = int(os.environ.get("RABBITMQ_PORT", 5672))
@@ -170,6 +172,8 @@ VIDEO_DOWNLOAD_TIMEOUT = 1200  # 100 mbit/sec -> 15 GB
 VIDEO_UPLOAD_TIMEOUT = 1200  # 100 mbit/sec -> 15 GB
 
 # ---------- yt-dlp ---------- #
+
+YT_DLP_EXTRACT_INFO_CACHE_TTL = timedelta(minutes=5)
 
 # YT_DLP_HTTP_CHUNK_SIZE = 10485760  # 10 MB
 YT_DLP_HTTP_CHUNK_SIZE = None

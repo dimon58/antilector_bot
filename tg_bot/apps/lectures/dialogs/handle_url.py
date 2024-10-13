@@ -1,6 +1,4 @@
 import logging
-from concurrent.futures import ThreadPoolExecutor
-from datetime import timedelta
 from typing import TYPE_CHECKING
 
 import yt_dlp
@@ -9,12 +7,11 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import BufferedInputFile, InputFile, Message
 from aiogram.utils.chat_action import ChatActionSender
 from aiogram_dialog import DialogManager
-from cashews import Cache
 from yt_dlp.utils import YoutubeDLError
 
-from djgram.utils.async_tools import run_async_wrapper
-from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpContentType, YtDlpInfoDict, extract_info
+from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpContentType, YtDlpInfoDict
 from utils.thumbnail import get_best_thumbnail
+from utils.yt_dlp_cached import extract_info_async_cached
 
 from ..formating import format_as_playlist_html, format_as_video_html
 from .states import LectureProcessingStates
@@ -25,12 +22,6 @@ if TYPE_CHECKING:
 URL_KEY = "url"
 
 logger = logging.getLogger(__name__)
-
-thread_executor = ThreadPoolExecutor()
-
-cache = Cache()
-cache.setup("mem://")
-extract_info_async = cache(ttl=timedelta(minutes=5))(run_async_wrapper(extract_info, thread_executor))
 
 
 async def send_preview(message: Message, msg: str, thumbnail: InputFile, parse_mode: ParseMode | None = None) -> None:
@@ -76,7 +67,7 @@ async def is_user_error(message: Message, exc: YoutubeDLError) -> bool:
 async def try_get_info(url: str, message: Message) -> YtDlpInfoDict | None:
     try:
         # TODO: почему-то это блокирует event loop
-        return await extract_info_async(url, process=False, convert_entries_to_list=True)
+        return await extract_info_async_cached(url, process=False, convert_entries_to_list=True)
     except yt_dlp.utils.UnsupportedError as exc:
         await handle_unsupported_url(exc, message)
         return None

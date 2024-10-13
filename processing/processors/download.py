@@ -92,6 +92,7 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                             await processed_video.broadcast_for_waiters(bot)
                         else:
                             from ..tasks import upload_video_task
+
                             upload_video_task.delay(processed_video.id)
                         continue
 
@@ -110,10 +111,13 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                         continue
 
                     case _:
-                        logger.error("Unknown status %s for processed video %s", processed_video.status, processed_video.id)
+                        logger.error(
+                            "Unknown status %s for processed video %s", processed_video.status, processed_video.id
+                        )
                         continue
 
             from ..tasks import process_video_task
+
             # Реально скачивается в этой задаче -> создаём задачу для обработки здесь
             logger.info(
                 "Send video %s (audio profile %s, unsilence profile %s) to processing",
