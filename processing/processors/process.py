@@ -126,6 +126,9 @@ async def process_video(processed_video_id: int, user_id: int) -> None:
 
     processed_video = await get_video_for_processing(processed_video_id)
 
+    if processed_video is None:
+        return
+
     try:
         await run_video_processing(processed_video, user_id)
 
