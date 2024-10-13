@@ -3,8 +3,9 @@ from pathlib import Path
 from typing import Any
 from typing import TYPE_CHECKING
 
-from djgram.utils.async_tools import run_async_in_sync
 from celery_app import app
+from configs import VIDEO_DOWNLOAD_QUEUE, VIDEO_PROCESS_QUEUE
+from djgram.utils.async_tools import run_async_in_sync
 from .schema import VideoOrPlaylistForProcessing
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -23,7 +24,7 @@ def ensure_processors():
         globals()["processors"] = _processors
 
 
-@app.task
+@app.task(queue=VIDEO_DOWNLOAD_QUEUE)
 def process_video_or_playlist(video_or_playlist_for_processing: dict[str, Any]):
     # TODO: начало обработки здесь
 
@@ -36,7 +37,7 @@ def process_video_or_playlist(video_or_playlist_for_processing: dict[str, Any]):
     )
 
 
-@app.task
+@app.task(queue=VIDEO_PROCESS_QUEUE)
 def process_video_task(process_video_id: int, user_id: int):
     ensure_processors()
 

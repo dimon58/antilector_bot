@@ -98,6 +98,9 @@ ORIGINAL_VIDEO_CONTAINER = get_container_safe(S3_DRIVER, ORIGINAL_VIDEO_STORAGE)
 THUMBNAILS_CONTAINER = get_container_safe(S3_DRIVER, THUMBNAILS_STORAGE)
 PROCESSED_VIDEO_CONTAINER = get_container_safe(S3_DRIVER, PROCESSED_VIDEO_STORAGE)
 
+VIDEO_DOWNLOAD_QUEUE = os.environ["VIDEO_DOWNLOAD_QUEUE"]
+VIDEO_PROCESS_QUEUE = os.environ["VIDEO_PROCESS_QUEUE"]
+
 # ---------- Настройка логики обработки ---------- #
 
 # Настройка устройств для

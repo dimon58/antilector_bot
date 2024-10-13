@@ -133,7 +133,23 @@ services:
     extends:
       service: bot
     # Внутри и так используется многопоточность, поэтому нет смысла в нескольких воркерах
-    command: celery -A run_celery worker --loglevel=INFO --pool=solo
+    command: celery -A run_celery worker -Q --loglevel=INFO --pool=solo
+    profiles:
+      - production
+
+  celery-download-video:
+    extends:
+      service: bot
+    command: celery -A run_celery worker -Q ${VIDEO_DOWNLOAD_QUEUE} --loglevel=INFO --pool=solo
+    profiles:
+      - production
+
+  celery-process-video:
+    extends:
+      service: bot
+    command: celery -A run_celery worker -Q ${VIDEO_PROCESS_QUEUE} --loglevel=INFO --pool=solo
+    profiles:
+      - production
 
   init_db:
     extends:

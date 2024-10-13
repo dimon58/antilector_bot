@@ -182,5 +182,8 @@ tests
 tests_audio
 tests_video
 tg_bot
+temp
 tmp
+.tmp
 dialog_diagrams
+scripts
