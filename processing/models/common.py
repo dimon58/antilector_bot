@@ -14,13 +14,12 @@ from sqlalchemy_file.storage import StorageManager
 from configs import (
     ORIGINAL_VIDEO_STORAGE,
     PROCESSED_VIDEO_STORAGE,
-    PROCESSED_VIDEO_CONTAINER,
-    ORIGINAL_VIDEO_CONTAINER,
-    THUMBNAILS_CONTAINER,
     THUMBNAILS_STORAGE,
+    S3_DRIVER,
 )
 from djgram.contrib.communication.broadcast import broadcast
 from djgram.db.pydantic_field import ImmutablePydanticField
+from utils.minio_utils import get_container_safe
 from ..schema import VideoOrPlaylistForProcessing
 
 logger = logging.getLogger(__name__)
@@ -29,9 +28,9 @@ logger = logging.getLogger(__name__)
 def setup_storage():
     logger.info("Setting up storages")
 
-    StorageManager.add_storage(ORIGINAL_VIDEO_STORAGE, ORIGINAL_VIDEO_CONTAINER)
-    StorageManager.add_storage(PROCESSED_VIDEO_STORAGE, PROCESSED_VIDEO_CONTAINER)
-    StorageManager.add_storage(THUMBNAILS_STORAGE, THUMBNAILS_CONTAINER)
+    StorageManager.add_storage(ORIGINAL_VIDEO_STORAGE, get_container_safe(S3_DRIVER, ORIGINAL_VIDEO_STORAGE))
+    StorageManager.add_storage(THUMBNAILS_STORAGE, get_container_safe(S3_DRIVER, THUMBNAILS_STORAGE))
+    StorageManager.add_storage(PROCESSED_VIDEO_STORAGE, get_container_safe(S3_DRIVER, PROCESSED_VIDEO_STORAGE))
 
 
 class Waiter(pydantic.BaseModel):
