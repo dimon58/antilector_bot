@@ -87,6 +87,7 @@ async def run_video_processing(processed_video: ProcessedVideo, waiter: Waiter) 
             bot=bot,
             text=f"Обрабатываю {yt_dlp_get_html_link(processed_video.original_video.yt_dlp_info)}",
             disable_notification=True,
+            disable_web_page_preview=True,
         )
 
     processed_video = await run_video_pipeline(processed_video)
