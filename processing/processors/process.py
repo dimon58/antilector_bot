@@ -108,6 +108,8 @@ async def two_step_broadcast_text(processed_video: ProcessedVideo, text: str) ->
             actual_processed_video: ProcessedVideo = await db_session.scalar(
                 select(ProcessedVideo).where(ProcessedVideo.id == processed_video.id)
             )
+            if actual_processed_video is None:
+                return
             waiters = [waiter for waiter in actual_processed_video.waiters if waiter not in processed_video.waiters]
             actual_processed_video.waiters = []
 
