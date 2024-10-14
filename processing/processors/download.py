@@ -1,5 +1,6 @@
 import logging
 
+from aiogram.enums import ParseMode
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -86,6 +87,7 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                                     chat_id=video_or_playlist_for_processing.telegram_chat_id,
                                     reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
                                     disable_notification=True,
+                                    parse_mode=ParseMode.HTML,
                                 )
 
                         case ProcessedVideoStatus.PROCESSED:
