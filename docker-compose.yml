@@ -74,23 +74,40 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: [ "python", "main.py" ]
+    command: [ "python", "run_tg_bot.py" ]
     restart: always
     volumes:
       - ./:/app
     env_file:
       - .env
     environment:
+      # for nvenc
+      # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html#driver-capabilities
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,video
+      - NVIDIA_VISIBLE_DEVICES=all
       - POSTGRES_HOST=postgres
       - REDIS_HOST=redis
       - CLICKHOUSE_HOST=clickhouse
       - RABBITMQ_HOST=rabbitmq
       - MINIO_HOST=minio
+      - TELEGRAM_LOCAL_SERVER_URL=http://nginx:8083
+      - TELEGRAM_LOCAL_SERVER_STATS_URL=http://telegram-bot-api:8082
+      - TELEGRAM_LOCAL_SERVER_FILES_URL=http://nginx:8083
     depends_on:
       - redis
       - clickhouse
       - postgres
       - rabbitmq
+      - minio
+      - telegram-bot-api
+      - nginx
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     profiles:
       - production
 
@@ -133,28 +150,33 @@ services:
     extends:
       service: bot
     # Внутри и так используется многопоточность, поэтому нет смысла в нескольких воркерах
-    command: celery -A run_celery worker -Q --loglevel=INFO --pool=solo
+    command: celery -A run_celery worker -n worker.common --loglevel=INFO --pool=solo
+    depends_on:
+      - redis
+      - postgres
+      - rabbitmq
+      - minio
     profiles:
       - production
 
   celery-download-video:
     extends:
-      service: bot
-    command: celery -A run_celery worker -Q ${VIDEO_DOWNLOAD_QUEUE} --loglevel=INFO --pool=solo
+      service: celery
+    command: celery -A run_celery worker -n "worker.${VIDEO_DOWNLOAD_QUEUE}" -Q ${VIDEO_DOWNLOAD_QUEUE} --loglevel=INFO --pool=solo
     profiles:
       - production
 
   celery-process-video:
     extends:
-      service: bot
-    command: celery -A run_celery worker -Q ${VIDEO_PROCESS_QUEUE} --loglevel=INFO --pool=solo
+      service: celery
+    command: celery -A run_celery worker -n "worker.${VIDEO_PROCESS_QUEUE}" -Q ${VIDEO_PROCESS_QUEUE} --loglevel=INFO --pool=solo
     profiles:
       - production
 
   celery-upload-video:
     extends:
-      service: bot
-    command: celery -A run_celery worker -Q ${VIDEO_UPLOAD_QUEUE} --loglevel=INFO --pool=solo
+      service: celery
+    command: celery -A run_celery worker -n "worker.${VIDEO_UPLOAD_QUEUE}" -Q ${VIDEO_UPLOAD_QUEUE} --loglevel=INFO --pool=solo
     profiles:
       - production
 
