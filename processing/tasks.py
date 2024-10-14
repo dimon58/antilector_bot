@@ -45,7 +45,7 @@ def process_video_task(process_video_id: int, waiter_dict: dict[str, Any]):
 
 
 @app.task(queue=VIDEO_UPLOAD_QUEUE)
-def upload_video_task(processed_video_id: int, waiter_dict: dict[str, Any] | None = None):
+def upload_video_task(processed_video_id: int):
     ensure_processors()
 
-    run_async_in_sync(processors.upload_to_telegram(processed_video_id, waiter_dict))
+    run_async_in_sync(processors.upload_to_telegram(processed_video_id))

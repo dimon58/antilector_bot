@@ -34,17 +34,17 @@ async def get_video_for_processing(processed_video_id: int, waiter: Waiter) -> P
             case ProcessedVideoStatus.TASK_CREATED:
                 logger.info("Start processing %s", processed_video.id)
                 processed_video.status = ProcessedVideoStatus.PROCESSING
-                processed_video.add_if_not_in_waiters(waiter)
+                await processed_video.add_if_not_in_waiters(db_session, waiter)
                 return processed_video
 
             case ProcessedVideoStatus.PROCESSING:
                 logger.warning("Video %s processing in other task", processed_video.id)
-                processed_video.add_if_not_in_waiters(waiter)
+                await processed_video.add_if_not_in_waiters(db_session, waiter)
                 return None
 
             case ProcessedVideoStatus.PROCESSED:
                 logger.warning("Video %s already processed", processed_video.id)
-                processed_video.add_if_not_in_waiters(waiter)
+                await processed_video.add_if_not_in_waiters(db_session, waiter)
                 if processed_video.telegram_file is not None:
                     async with get_tg_bot() as bot:
                         await processed_video.send(
@@ -53,9 +53,7 @@ async def get_video_for_processing(processed_video_id: int, waiter: Waiter) -> P
                             reply_to_message_id=waiter.reply_to_message_id,
                         )
                 else:
-                    from ..tasks import upload_video_task
-
-                    upload_video_task.delay(processed_video.id, waiter.model_dump_json())
+                    await processed_video.add_if_not_in_waiters(db_session, waiter)
                 return None
 
             case ProcessedVideoStatus.IMPOSSIBLE:
@@ -64,7 +62,7 @@ async def get_video_for_processing(processed_video_id: int, waiter: Waiter) -> P
                     processed_video.id,
                     processed_video.impossible_reason,
                 )
-                processed_video.add_if_not_in_waiters(waiter)
+                await processed_video.add_if_not_in_waiters(db_session, waiter)
 
                 async with get_tg_bot() as bot:
                     await processed_video.broadcast_text_for_waiters(bot, get_silence_only_error_text(processed_video))
@@ -74,6 +72,12 @@ async def get_video_for_processing(processed_video_id: int, waiter: Waiter) -> P
 
             case _:
                 logger.error("Unknown status %s for processed video %s", processed_video.status, processed_video.id)
+                async with get_tg_bot() as bot:
+                    await bot.send_message(
+                        chat_id=waiter.telegram_chat_id,
+                        text="Ошибка обработки",
+                        reply_to_message_id=waiter.reply_to_message_id,
+                    )
                 return None
 
 
@@ -96,6 +100,24 @@ async def run_video_processing(processed_video: ProcessedVideo, waiter: Waiter) 
         )
 
 
+async def two_step_broadcast_text(processed_video: ProcessedVideo, text: str) -> None:
+    async with get_tg_bot() as bot:
+        await processed_video.broadcast_text_for_waiters(bot, text)
+        async with get_autocommit_session() as db_session:
+            # noinspection PyTypeChecker
+            actual_processed_video: ProcessedVideo = await db_session.scalar(
+                select(ProcessedVideo).where(ProcessedVideo.id == processed_video.id)
+            )
+            waiters = [waiter for waiter in actual_processed_video.waiters if waiter not in processed_video.waiters]
+            actual_processed_video.waiters = []
+
+        if len(waiters) == 0:
+            return
+
+        processed_video.waiters = waiters
+        await processed_video.broadcast_text_for_waiters(bot, text)
+
+
 async def mark_processing_impossible(processed_video: ProcessedVideo, exc: ProcessingImpossibleError) -> None:
     text_gen = get_silence_only_error_text if isinstance(exc, SilenceOnlyError) else get_unable_to_process_text
     async with get_tg_bot() as bot:
@@ -110,6 +132,8 @@ async def mark_processing_impossible(processed_video: ProcessedVideo, exc: Proce
             .values(status=ProcessedVideoStatus.IMPOSSIBLE, impossible_reason=exc.text)
         )
 
+    await two_step_broadcast_text(processed_video, get_generic_error_text(processed_video))
+
 
 async def cleanup_failed_processing(processed_video: ProcessedVideo) -> None:
     async with get_autocommit_session() as db_session:
@@ -117,8 +141,7 @@ async def cleanup_failed_processing(processed_video: ProcessedVideo) -> None:
         # noinspection PyTypeChecker
         await db_session.execute(delete(ProcessedVideo).where(ProcessedVideo.id == processed_video.id))
 
-    async with get_tg_bot() as bot:
-        await processed_video.broadcast_text_for_waiters(bot, get_generic_error_text(processed_video))
+    await two_step_broadcast_text(processed_video, get_generic_error_text(processed_video))
 
 
 async def process_video(processed_video_id: int, waiter_dict: dict[str, Any]) -> None:

@@ -1,10 +1,12 @@
 import logging
+from typing import Any
 
 import pydantic
 from aiogram import Bot
 from aiogram.enums import ParseMode
 from pydantic import ConfigDict
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import update
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import sqltypes
 from sqlalchemy_file.storage import StorageManager
@@ -19,7 +21,6 @@ from configs import (
 )
 from djgram.contrib.communication.broadcast import broadcast
 from djgram.db.pydantic_field import ImmutablePydanticField
-from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpInfoDict
 from ..schema import VideoOrPlaylistForProcessing
 
 logger = logging.getLogger(__name__)
@@ -50,6 +51,8 @@ class Waiter(pydantic.BaseModel):
 
 
 class Waitable:
+    id: Any
+
     waiters: Mapped[list[Waiter]] = mapped_column(
         sqltypes.ARRAY(ImmutablePydanticField(Waiter)),
         default=[],
@@ -66,7 +69,7 @@ class Waitable:
 
         return False
 
-    def add_if_not_in_waiters(self, waiter: Waiter) -> bool:
+    async def add_if_not_in_waiters(self, db_session: AsyncSession, waiter: Waiter) -> bool:
         """
         Добавляет в список ожидающих
 
@@ -78,10 +81,20 @@ class Waitable:
 
         logger.info("New waiter %s for %s", waiter.telegram_chat_id, self)
         self.waiters.append(waiter)
+
+        # noinspection PyTypeChecker
+        await db_session.execute(
+            update(self.__class__).where(self.__class__.id == self.id).values(waiters=self.waiters)
+        )
+
         return True
 
-    def add_if_not_in_waiters_from_task(self, video_or_playlist_for_processing: VideoOrPlaylistForProcessing) -> bool:
-        return self.add_if_not_in_waiters(Waiter.from_task(video_or_playlist_for_processing))
+    async def add_if_not_in_waiters_from_task(
+        self,
+        db_session: AsyncSession,
+        video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
+    ) -> bool:
+        return await self.add_if_not_in_waiters(db_session, Waiter.from_task(video_or_playlist_for_processing))
 
     async def broadcast_text_for_waiters(
         self,

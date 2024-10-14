@@ -105,7 +105,7 @@ async def _create_video(
 
         if db_video is not None:
             logger.info("Using existing original video %s", video_id)
-            db_video.add_if_not_in_waiters_from_task(video_or_playlist_for_processing)
+            await db_video.add_if_not_in_waiters_from_task(db_session, video_or_playlist_for_processing)
 
             if playlist is not None:
                 # Неправильный результат
@@ -218,12 +218,13 @@ async def get_from_telegram(
     # Иначе присоединяемся к ожидающим скачивание
     async with get_autocommit_session() as db_session:
         video_id = video_or_playlist_for_processing.make_id_from_telegram()
+        # noinspection PyTypeChecker
         stmt = select(Video).with_for_update().where(Video.id == video_id)
         db_video: Video | None = await db_session.scalar(stmt)
 
         if db_video is not None:
             logger.info("Using existing original video %s", video_id)
-            db_video.add_if_not_in_waiters_from_task(video_or_playlist_for_processing)
+            await db_video.add_if_not_in_waiters_from_task(db_session, video_or_playlist_for_processing)
             return False, db_video
 
         video = video_or_playlist_for_processing.get_tg_video()

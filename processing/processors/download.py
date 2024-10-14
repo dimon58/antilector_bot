@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from configs import LOG_EACH_VIDEO_DOWNLOAD
 from djgram.db.base import get_autocommit_session
+from tools.yt_dlp_downloader.misc import yt_dlp_get_html_link
 from utils.get_bot import get_tg_bot
 from .error_texts import get_silence_only_error_text
 from ..download_file import get_downloaded_videos
@@ -62,23 +63,32 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
             if not downloaded_here:
                 suffix = "ing" if db_video.file is None else "ed"
                 logger.info("Video %s download%s in other task", db_video.id, suffix)
-                processed_video = await create_processed_video_initial(
-                    db_video.id,
-                    video_or_playlist_for_processing,
-                    select_with_original_video=True,
-                )
+                async with get_autocommit_session() as db_session:
+                    processed_video = await create_processed_video_initial_and_add_waiter(
+                        db_session,
+                        db_video.id,
+                        video_or_playlist_for_processing,
+                        select_with_original_video=True,
+                    )
 
-                match processed_video.status:
-                    case ProcessedVideoStatus.TASK_CREATED:
-                        # Создаём таску для работы. Если она будет дублироваться, то отсеиваем её в process_video_task
-                        logger.info("Video %s created, but not processed", processed_video.id)
+                    match processed_video.status:
+                        case ProcessedVideoStatus.TASK_CREATED:
+                            # Создаём таску для работы.
+                            # Если она будет дублироваться, то отсеиваем её в process_video_task
+                            logger.info("Video %s created, but not processed", processed_video.id)
 
-                    case ProcessedVideoStatus.PROCESSING:
-                        # Не обработано, значит пользователь в очереди на рассылку
-                        logger.info("Video %s is processing", processed_video.id)
+                        case ProcessedVideoStatus.PROCESSING:
+                            # Не обработано, значит пользователь в очереди на рассылку
+                            logger.info("Video %s is processing", processed_video.id)
+                            async with get_tg_bot() as bot:
+                                await bot.send_message(
+                                    text=f"Обрабатываю {yt_dlp_get_html_link(processed_video.original_video.yt_dlp_info)}",
+                                    chat_id=video_or_playlist_for_processing.telegram_chat_id,
+                                    reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+                                    disable_notification=True,
+                                )
 
-                    case ProcessedVideoStatus.PROCESSED:
-                        async with get_autocommit_session() as db_session:
+                        case ProcessedVideoStatus.PROCESSED:
                             db_session.add(
                                 VideoProcessingResourceUsage(
                                     user_id=video_or_playlist_for_processing.user_id,
@@ -86,41 +96,48 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                                     real_processed=False,
                                 )
                             )
-                        # Отправляем обработанное видео
-                        if processed_video.telegram_file is not None:
-                            await processed_video.send(
-                                bot=bot,
+
+                            # Отправляем обработанное видео
+                            if processed_video.telegram_file is not None:
+                                logger.info("Sending video %s", processed_video.id)
+                                await processed_video.send(
+                                    bot=bot,
+                                    chat_id=video_or_playlist_for_processing.telegram_chat_id,
+                                    reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+                                )
+                            # Если тг файла ещё нет, то отправляем в список ожидающих
+                            else:
+                                await processed_video.add_if_not_in_waiters_from_task(
+                                    db_session=db_session,
+                                    video_or_playlist_for_processing=video_or_playlist_for_processing,
+                                )
+                            continue
+
+                        case ProcessedVideoStatus.IMPOSSIBLE:
+                            logger.warning(
+                                "User %s tried to process video that %s is impossible (%s)",
+                                video_or_playlist_for_processing.user_id,
+                                processed_video.id,
+                                processed_video.impossible_reason,
+                            )
+
+                            await bot.send_message(
                                 chat_id=video_or_playlist_for_processing.telegram_chat_id,
+                                text=get_silence_only_error_text(processed_video),
                                 reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
                             )
-                        else:
-                            from ..tasks import upload_video_task
+                            continue
 
-                            upload_video_task.delay(
-                                processed_video.id,
-                                Waiter.from_task(video_or_playlist_for_processing).model_dump_json(),
+                        case _:
+                            logger.error(
+                                "Unknown status %s for processed video %s", processed_video.status, processed_video.id
                             )
-                        continue
-
-                    case ProcessedVideoStatus.IMPOSSIBLE:
-                        logger.warning(
-                            "User %s tried to process video that %s is impossible (%s)",
-                            video_or_playlist_for_processing.user_id,
-                            processed_video.id,
-                            processed_video.impossible_reason,
-                        )
-
-                        await processed_video.broadcast_text_for_waiters(
-                            bot,
-                            get_silence_only_error_text(processed_video),
-                        )
-                        continue
-
-                    case _:
-                        logger.error(
-                            "Unknown status %s for processed video %s", processed_video.status, processed_video.id
-                        )
-                        continue
+                            await bot.send_message(
+                                chat_id=video_or_playlist_for_processing.telegram_chat_id,
+                                text="Ошибка скачивания",
+                                reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+                            )
+                            continue
 
             from ..tasks import process_video_task
 
@@ -131,7 +148,12 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                 video_or_playlist_for_processing.audio_processing_profile_id,
                 video_or_playlist_for_processing.unsilence_profile_id,
             )
-            processed_video = await create_processed_video_initial(db_video.id, video_or_playlist_for_processing)
+            async with get_autocommit_session() as db_session:
+                processed_video = await create_processed_video_initial_and_add_waiter(
+                    db_session=db_session,
+                    db_video_id=db_video.id,
+                    video_or_playlist_for_processing=video_or_playlist_for_processing,
+                )
             process_video_task.delay(
                 processed_video.id,
                 Waiter.from_task(video_or_playlist_for_processing).model_dump(mode="json"),
@@ -172,45 +194,45 @@ async def ensure_video_and_profiles_exist(
         raise ValueError(msg)
 
 
-async def create_processed_video_initial(
+async def create_processed_video_initial_and_add_waiter(
+    db_session: AsyncSession,
     db_video_id: str,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
     *,
     select_with_original_video: bool = False,
 ) -> ProcessedVideo:
-    async with get_autocommit_session() as db_session:
-        # noinspection PyTypeChecker
-        stmt = (
-            select(ProcessedVideo)
-            .with_for_update()
-            .where(
-                ProcessedVideo.original_video_id == db_video_id,
-                ProcessedVideo.audio_processing_profile_id
-                == video_or_playlist_for_processing.audio_processing_profile_id,
-                ProcessedVideo.unsilence_profile_id == video_or_playlist_for_processing.unsilence_profile_id,
-            )
+    # noinspection PyTypeChecker
+    stmt = (
+        select(ProcessedVideo)
+        .with_for_update()
+        .where(
+            ProcessedVideo.original_video_id == db_video_id,
+            ProcessedVideo.audio_processing_profile_id == video_or_playlist_for_processing.audio_processing_profile_id,
+            ProcessedVideo.unsilence_profile_id == video_or_playlist_for_processing.unsilence_profile_id,
         )
-        if select_with_original_video:
-            stmt = stmt.options(selectinload(ProcessedVideo.original_video))
-        processed_video: ProcessedVideo | None = await db_session.scalar(stmt)
+    )
+    if select_with_original_video:
+        stmt = stmt.options(selectinload(ProcessedVideo.original_video))
+    processed_video: ProcessedVideo | None = await db_session.scalar(stmt)
 
-        if processed_video is not None:
-            if processed_video.status != ProcessedVideoStatus.PROCESSED:
-                processed_video.add_if_not_in_waiters_from_task(video_or_playlist_for_processing)
-            return processed_video
+    if processed_video is not None:
+        if processed_video.status != ProcessedVideoStatus.PROCESSED:
+            await processed_video.add_if_not_in_waiters_from_task(db_session, video_or_playlist_for_processing)
+        return processed_video
 
-        await ensure_video_and_profiles_exist(
-            db_session=db_session,
-            db_video_id=db_video_id,
-            video_or_playlist_for_processing=video_or_playlist_for_processing,
-        )
+    await ensure_video_and_profiles_exist(
+        db_session=db_session,
+        db_video_id=db_video_id,
+        video_or_playlist_for_processing=video_or_playlist_for_processing,
+    )
 
-        processed_video = ProcessedVideo(
-            original_video_id=db_video_id,
-            audio_processing_profile_id=video_or_playlist_for_processing.audio_processing_profile_id,
-            unsilence_profile_id=video_or_playlist_for_processing.unsilence_profile_id,
-            waiters=[Waiter.from_task(video_or_playlist_for_processing)],
-        )
-        db_session.add(processed_video)
+    processed_video = ProcessedVideo(
+        original_video_id=db_video_id,
+        audio_processing_profile_id=video_or_playlist_for_processing.audio_processing_profile_id,
+        unsilence_profile_id=video_or_playlist_for_processing.unsilence_profile_id,
+        waiters=[Waiter.from_task(video_or_playlist_for_processing)],
+        status=ProcessedVideoStatus.TASK_CREATED,
+    )
+    db_session.add(processed_video)
 
     return processed_video
