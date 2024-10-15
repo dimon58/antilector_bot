@@ -111,7 +111,7 @@ services:
     image: quay.io/minio/minio:RELEASE.2024-10-02T17-50-41Z
     hostname: minio
     restart: always
-    entrypoint: server --address ":19000" --console-address ":19001" /data
+    command: server --address ":19000" --console-address ":19001" /data
     ports:
       - "19000:19000"
       - "19001:19001"
