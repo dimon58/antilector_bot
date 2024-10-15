@@ -74,7 +74,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: [ "python", "run_tg_bot.py" ]
+    entrypoint: [ "python", "run_tg_bot.py" ]
     restart: always
     volumes:
       - ./:/app
@@ -111,7 +111,7 @@ services:
     image: quay.io/minio/minio:RELEASE.2024-10-02T17-50-41Z
     hostname: minio
     restart: always
-    command: server --address ":19000" --console-address ":19001" /data
+    entrypoint: server --address ":19000" --console-address ":19001" /data
     ports:
       - "19000:19000"
       - "19001:19001"
@@ -146,7 +146,7 @@ services:
     extends:
       service: bot
     # Внутри и так используется многопоточность, поэтому нет смысла в нескольких воркерах
-    command: celery -A run_celery worker -n worker.common --loglevel=INFO --pool=solo
+    entrypoint: celery -A run_celery worker -n worker.common --loglevel=INFO --pool=solo
     depends_on:
       - redis
       - postgres
@@ -158,21 +158,21 @@ services:
   celery-download-video:
     extends:
       service: celery
-    command: celery -A run_celery worker -n "worker.${VIDEO_DOWNLOAD_QUEUE}" -Q ${VIDEO_DOWNLOAD_QUEUE} --loglevel=INFO --pool=solo
+    entrypoint: celery -A run_celery worker -n "worker.${VIDEO_DOWNLOAD_QUEUE}" -Q ${VIDEO_DOWNLOAD_QUEUE} --loglevel=INFO --pool=solo
     profiles:
       - production
 
   celery-process-video:
     extends:
       service: celery
-    command: celery -A run_celery worker -n "worker.${VIDEO_PROCESS_QUEUE}" -Q ${VIDEO_PROCESS_QUEUE} --loglevel=INFO --pool=solo
+    entrypoint: celery -A run_celery worker -n "worker.${VIDEO_PROCESS_QUEUE}" -Q ${VIDEO_PROCESS_QUEUE} --loglevel=INFO --pool=solo
     profiles:
       - production
 
   celery-upload-video:
     extends:
       service: celery
-    command: celery -A run_celery worker -n "worker.${VIDEO_UPLOAD_QUEUE}" -Q ${VIDEO_UPLOAD_QUEUE} --loglevel=INFO --pool=solo
+    entrypoint: celery -A run_celery worker -n "worker.${VIDEO_UPLOAD_QUEUE}" -Q ${VIDEO_UPLOAD_QUEUE} --loglevel=INFO --pool=solo
     profiles:
       - production
 
