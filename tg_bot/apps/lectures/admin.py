@@ -10,7 +10,7 @@ from aiogram.types import BufferedInputFile, CallbackQuery
 from aiogram.utils.chat_action import ChatActionSender
 
 from djgram.contrib.admin import AppAdmin, ModelAdmin
-from djgram.contrib.admin.action_buttons import AbstractObjectActionButton
+from djgram.contrib.admin.action_buttons import AbstractObjectActionButton, DownloadJsonActionButton
 from djgram.contrib.admin.rendering import OneLineTextRenderer
 from processing.models import Playlist, ProcessedVideo, Video, VideoProcessingResourceUsage, YtDlpBase
 
@@ -38,9 +38,21 @@ class VideoAdmin(ModelAdmin):
     model = Video
     name = "Видео"
     list_display = ("call:get_title_for_admin",)
-    exclude_fields = ("yt_dlp_info",)
+    exclude_fields = (
+        "yt_dlp_info",
+        "meta",
+    )
     object_action_buttons = (
-        DownloadYtDlpInfoButton(button_id="download_yt_dlp_info", title="📥 Получить дополнительную информация"),
+        DownloadJsonActionButton(
+            button_id="download_yt_dlp_info",
+            title="📥 Получить дополнительную информация",
+            json_field="yt_dlp_info",
+        ),
+        DownloadJsonActionButton(
+            button_id="download_processing_stats",
+            title="📥 Скачать метаинформацию о видео",
+            json_field="meta",
+        ),
     )
     widgets_override = {
         "id": OneLineTextRenderer,
@@ -58,7 +70,35 @@ class PlaylistAdmin(VideoAdmin):
 class ProcessedVideoAdmin(ModelAdmin):
     model = ProcessedVideo
     name = "Обработанные видео"
-    list_display = ("id",)
+    list_display = ("original_video_id", "audio_processing_profile_id", "unsilence_profile_id")
+    exclude_fields = (
+        "audio_pipeline_json",
+        "unsilence_action_json",
+        "processing_stats",
+        "meta",
+    )
+    object_action_buttons = (
+        DownloadJsonActionButton(
+            button_id="download_audio_pipeline_json",
+            title="📥 Скачать профиль обработки аудио",
+            json_field="audio_pipeline_json",
+        ),
+        DownloadJsonActionButton(
+            button_id="download_unsilence_action_json",
+            title="📥 Скачать профиль поиска тишины",
+            json_field="unsilence_action_json",
+        ),
+        DownloadJsonActionButton(
+            button_id="download_processing_stats",
+            title="📥 Скачать статистику обработки",
+            json_field="processing_stats",
+        ),
+        DownloadJsonActionButton(
+            button_id="download_meta",
+            title="📥 Скачать метаинформацию о видео",
+            json_field="meta",
+        ),
+    )
 
 
 @app.register
