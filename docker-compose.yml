@@ -81,10 +81,6 @@ services:
     env_file:
       - .env
     environment:
-      # for nvenc
-      # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html#driver-capabilities
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,video
-      - NVIDIA_VISIBLE_DEVICES=all
       - POSTGRES_HOST=postgres
       - REDIS_HOST=redis
       - CLICKHOUSE_HOST=clickhouse

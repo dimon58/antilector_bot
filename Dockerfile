@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.6.1-cudnn-runtime-ubuntu24.04 AS build-deps
+FROM jrottenberg/ffmpeg:7.1-nvidia2204 AS build-deps
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -10,7 +10,11 @@ ARG PHANTOMJS_VERSION="phantomjs-2.1.1"
 
 # Install python and build-essential
 # build-essential нужен для сборки deepfilternet и работы PhantomJS
+# https://zomro.com/rus/blog/faq/475-how-to-install-python-312-on-ubuntu-2204
 RUN apt-get update \
+    && apt-get install -y --no-install-recommends software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update \
     && apt-get install -y --no-install-recommends \
       wget build-essential python${PYTHON_VERSION}-full python${PYTHON_VERSION}-dev \
     && ln -sf python${PYTHON_VERSION} /usr/bin/python \
@@ -34,13 +38,6 @@ ENV CARGO_HOME=/root/.cargo/bin PATH=/root/.cargo/bin:$PATH
 
 
 # ------------- Установка зависимостей для запуска ------------- #
-
-# git для работы deepfilternet
-# ffmpeg для работы с аудио и видео
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends git ffmpeg \
-    && apt-get clean \
-    && rm -rf /var/[log,tmp]/* /tmp/* /var/lib/apt/lists/*
 
 # Install PhantomJS
 RUN apt-get update \
