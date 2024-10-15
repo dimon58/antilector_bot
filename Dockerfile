@@ -1,4 +1,4 @@
-FROM jrottenberg/ffmpeg:7.1-nvidia2204 AS build-deps
+FROM jrottenberg/ffmpeg:6.1-nvidia2204 AS build-deps
 
 ENV DEBIAN_FRONTEND=noninteractive
 
