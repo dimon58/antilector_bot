@@ -40,17 +40,15 @@ ENV CARGO_HOME=/root/.cargo/bin PATH=/root/.cargo/bin:$PATH
 # ------------- Установка зависимостей для запуска ------------- #
 
 # Install PhantomJS
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        bzip2 \
-        libfontconfig \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
+# git нужен для работы DeepFilterNet
+# https://github.com/wernight/docker-phantomjs/blob/master/latest/Dockerfile
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
+        ca-certificates \
+        bzip2 \
+        libfontconfig \
+        git \
     && mkdir /tmp/phantomjs \
     && curl -L https://bitbucket.org/ariya/phantomjs/downloads/${PHANTOMJS_VERSION}-linux-x86_64.tar.bz2 \
             | tar -xj --strip-components=1 -C /tmp/phantomjs \
@@ -65,7 +63,7 @@ RUN apt-get update \
 # https://stackoverflow.com/questions/73004195/phantomjs-wont-install-autoconfiguration-error
 # Можно еще закомметрировать строчку "providers = provider_sect" в /etc/ssl/openssl.cnf
 # Так как переменная OPENSSL_CONF не опредлена, то установим её в надеже на отсутсвие сайдэффектов
-ENV OPENSSL_CONF=/dev/null
+ENV OPENSSL_CONF=/opt/openssl.cnf
 
 
 # ------------- Установка зависимостей для python ------------- #
