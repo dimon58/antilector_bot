@@ -179,7 +179,7 @@ services:
   init_db:
     extends:
       service: bot
-    command: [ "python", "run_init.py" ]
+    entrypoint: [ "python", "run_init.py" ]
     # Ждём, пока бд запустится окончательно
     restart: on-failure
     profiles:
@@ -188,7 +188,7 @@ services:
   migrate:
     extends:
       service: bot
-    command: [ "alembic", "upgrade", "head" ]
+    entrypoint: [ "alembic", "upgrade", "head" ]
     # Ждём, пока бд запустится окончательно
     restart: on-failure
     profiles:
