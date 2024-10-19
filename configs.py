@@ -94,6 +94,7 @@ S3_DRIVER = MinIOStorageDriver(
 ORIGINAL_VIDEO_STORAGE = "original-video"
 THUMBNAILS_STORAGE = "thumbnails"
 PROCESSED_VIDEO_STORAGE = "processed-video"
+LECTURES_SUMMARY_STORAGE = "lectures-summary"
 
 VIDEO_DOWNLOAD_QUEUE = os.environ["VIDEO_DOWNLOAD_QUEUE"]
 VIDEO_PROCESS_QUEUE = os.environ["VIDEO_PROCESS_QUEUE"]
@@ -103,7 +104,6 @@ VIDEO_UPLOAD_QUEUE = os.environ["VIDEO_UPLOAD_QUEUE"]
 
 # Нужно ли отправлять сообщения пользователям при скачивании видео
 LOG_EACH_VIDEO_DOWNLOAD = False
-
 
 # Настройка устройств для
 USE_CUDA = torch.cuda.is_available()
@@ -182,6 +182,29 @@ YT_DLP_YOUTUBE_FORMATS_DASHY = False
 # Лекции чётче 1080p не имеют смысла
 YT_DLP_VIDEO_MAX_HEIGHT = 1080
 YT_DLP_VIDEO_MAX_WIDTH = 1920 * 2  # формат 32x9 подходит
+
+# ---------- Конспектирование ---------- #
+
+# WHISPER_MODEL_SIZE = "large-v3"
+WHISPER_MODEL_SIZE = "tiny"
+WHISPER_COMPUTE_TYPE = "float32"
+WHISPER_DOWNLOAD_ROOT = ".whisper"
+WHISPER_MIN_SILENCE_DURATION_MS = 500
+
+OPENAI_MODEL = os.environ["OPENAI_MODEL"]
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+OPENAI_BASE_URL = os.environ["OPENAI_BASE_URL"]
+
+REQUIRED_LATEX_PACKAGES = (
+    r"\usepackage{cmap}",
+    r"\usepackage[utf8]{inputenc}",
+    r"\usepackage[T2A]{fontenc}",
+    r"\usepackage[russian]{babel}",
+    r"\usepackage{hyperref}",
+)
+PDFLATEX_EXECUTABLE = "pdflatex"
+
+PDF_UPLOAD_TIMEOUT = 60  # 100 mbit/sec -> 750 MB
 
 # ---------- Логирование ---------- #
 

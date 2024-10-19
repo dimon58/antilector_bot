@@ -8,6 +8,7 @@ pyaudiotoolslib==0.0.2
 soundfile==0.12.1
 deepfilternet==0.5.6
 silero-vad==5.1
+faster-whisper==1.0.3
 
 --find-links https://download.pytorch.org/whl/torch/
 --find-links https://download.pytorch.org/whl/torchaudio/
@@ -26,6 +27,9 @@ orjson==3.10.7
 yt-dlp==2024.10.7
 cashews==7.3.2
 pillow==10.4.0
+openai==1.52.0
+markdown-it-py==3.0.0
+lazy-object-proxy==1.10.0
 
 # -------- Telegram bot -------- #
 -r djgram/requirements.txt
