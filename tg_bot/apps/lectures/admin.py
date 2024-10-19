@@ -46,12 +46,12 @@ class VideoAdmin(ModelAdmin):
         DownloadJsonActionButton(
             button_id="download_yt_dlp_info",
             title="📥 Получить дополнительную информация",
-            json_field_name="yt_dlp_info",
+            field_name="yt_dlp_info",
         ),
         DownloadJsonActionButton(
             button_id="download_processing_stats",
             title="📥 Скачать метаинформацию о видео",
-            json_field_name="meta",
+            field_name="meta",
         ),
     )
     widgets_override = {
@@ -81,22 +81,22 @@ class ProcessedVideoAdmin(ModelAdmin):
         DownloadJsonActionButton(
             button_id="download_audio_pipeline_json",
             title="📥 Скачать профиль обработки аудио",
-            json_field_name="audio_pipeline_json",
+            field_name="audio_pipeline_json",
         ),
         DownloadJsonActionButton(
             button_id="download_unsilence_action_json",
             title="📥 Скачать профиль поиска тишины",
-            json_field_name="unsilence_action_json",
+            field_name="unsilence_action_json",
         ),
         DownloadJsonActionButton(
             button_id="download_processing_stats",
-            title="📥 Скачать статистику обработки",
-            json_field_name="processing_stats",
+            title="📊 Скачать статистику обработки",
+            field_name="processing_stats",
         ),
         DownloadJsonActionButton(
             button_id="download_meta",
             title="📥 Скачать метаинформацию о видео",
-            json_field_name="meta",
+            field_name="meta",
         ),
     )
 
