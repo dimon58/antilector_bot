@@ -136,6 +136,7 @@ services:
       - .env
     volumes:
       - ./docker/minio/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./.whisper:/app/.whisper
     depends_on:
       - minio
     profiles:
