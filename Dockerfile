@@ -76,7 +76,7 @@ FROM build-deps AS python-deps
 
 # Устанавливаем самые тяжелые зависимости отдельно для удобства разработки
 RUN pip install --break-system-packages --no-cache-dir uv
-RUN uv pip install --break-system-packages --no-cache-dir \
+RUN uv pip install --system --no-cache-dir \
     torch==2.4.1+cu124 torchaudio==2.4.1+cu124 --index-url https://download.pytorch.org/whl/cu124
 
 # Python requirements
