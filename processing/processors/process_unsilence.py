@@ -66,6 +66,7 @@ async def process_unsilence(video_download_event: VideoDownloadEvent) -> None:
                             chat_id=video_or_playlist_for_processing.telegram_chat_id,
                             reply_to_message_id=video_or_playlist_for_processing.reply_to_message_id,
                             disable_notification=True,
+                            disable_web_page_preview=True,
                             parse_mode=ParseMode.HTML,
                         )
 
@@ -295,7 +296,6 @@ async def run_video_processing(processed_video: ProcessedVideo, waiter: Waiter) 
             bot=bot,
             text=f"Обрабатываю {yt_dlp_get_html_link(processed_video.original_video.yt_dlp_info)}",
             disable_notification=True,
-            disable_web_page_preview=True,
         )
 
     processed_video = await run_video_pipeline(processed_video)
