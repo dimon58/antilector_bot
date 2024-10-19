@@ -4,7 +4,7 @@ from typing import Any
 from typing import TYPE_CHECKING
 
 from celery_app import app
-from configs import VIDEO_DOWNLOAD_QUEUE, VIDEO_PROCESS_QUEUE, VIDEO_UPLOAD_QUEUE
+from configs import VIDEO_DOWNLOAD_QUEUE, VIDEO_PROCESS_QUEUE, VIDEO_UPLOAD_QUEUE, LECTURES_SUMMARIZE_QUEUE
 from djgram.utils.async_tools import run_async_in_sync
 from .schema import VideoOrPlaylistForProcessing
 
@@ -49,3 +49,15 @@ def upload_video_task(processed_video_id: int):
     ensure_processors()
 
     run_async_in_sync(processors.upload_to_telegram(processed_video_id))
+
+
+# @app.task(queue=LECTURES_SUMMARIZE_QUEUE)
+@app.task(queue=VIDEO_PROCESS_QUEUE)
+def summarize_lecture_task(downloaded_video_id: str, video_or_playlist_for_processing: dict[str, Any]):
+    ensure_processors()
+
+    run_async_in_sync(
+        processors.summarize_lecture(
+            downloaded_video_id, VideoOrPlaylistForProcessing.model_validate(video_or_playlist_for_processing)
+        )
+    )

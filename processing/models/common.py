@@ -7,7 +7,7 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message
 from pydantic import ConfigDict
-from sqlalchemy import update, Select
+from sqlalchemy import update, Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, selectinload
 from sqlalchemy.sql import sqltypes
@@ -157,7 +157,7 @@ class Waitable:
         )
 
     @abstractmethod
-    def _get_stmt(self, id_: Any) -> Select["Waitable"]:
+    def _get_stmt(self) -> Select["Waitable"]:
         raise NotImplementedError
 
     async def broadcast_two_step(self, bot: Bot) -> "Waitable":
@@ -167,7 +167,7 @@ class Waitable:
         old_waiters = set(self.waiters)
         async with get_autocommit_session() as db_session:
             # noinspection PyTypeChecker
-            new_waitable = await db_session.scalar(self._get_stmt(self.id))
+            new_waitable = await db_session.scalar(self._get_stmt())
             waiters = new_waitable.waiters
             # noinspection PyTypeChecker
             await db_session.execute(
@@ -192,7 +192,7 @@ class HasTelegramFileAndOriginalVideo(Waitable):
     telegram_file: Any
     original_video: Any
 
-    def _get_stmt(self, id_: Any) -> Select["HasTelegramFileAndOriginalVideo"]:
+    def _get_stmt(self) -> Select["HasTelegramFileAndOriginalVideo"]:
         # noinspection PyTypeChecker
         return (
             update(self.__class__)
@@ -201,3 +201,17 @@ class HasTelegramFileAndOriginalVideo(Waitable):
             .returning(self.__class__)
             .options(selectinload(self.__class__.original_video))
         )
+
+    async def pop_waiters(self, db_session: AsyncSession) -> list[Waiter]:
+        # noinspection PyTypeChecker
+        obj: HasTelegramFileAndOriginalVideo | None = await db_session.scalar(
+            select(self.__class__)
+            .options(selectinload(self.__class__.original_video))
+            .with_for_update()
+            .where(self.__class__.id == self.id)
+        )
+        waiters = obj.waiters
+        # noinspection PyTypeChecker
+        await db_session.execute(update(self.__class__).where(self.__class__.id == self.id).values(waiters=[]))
+
+        return waiters

@@ -22,7 +22,7 @@ class DownloadObserver:
     def __init__(self):
         self.subscribers: list[tuple[Callable[[VideoDownloadEvent], Awaitable[None]], int]] = []
 
-    def subscribe(self, *, retries: int):
+    def subscribe(self, *, retries: int = 1):
         def inner_appender(callback: Callable[[VideoDownloadEvent], Awaitable[None]]):
             self.subscribers.append((callback, retries))
 

@@ -49,4 +49,5 @@ class VideoOrPlaylistForProcessing(pydantic.BaseModel):
 
     download_data: DownloadData
 
-    unsilence_data: UnsilenceData
+    unsilence_data: UnsilenceData | None = None
+    for_summary: bool = False
