@@ -4,7 +4,7 @@ from typing import Any
 from typing import TYPE_CHECKING
 
 from celery_app import app
-from configs import VIDEO_DOWNLOAD_QUEUE, VIDEO_PROCESS_QUEUE, VIDEO_UPLOAD_QUEUE, LECTURES_SUMMARIZE_QUEUE
+from configs import VIDEO_DOWNLOAD_QUEUE, VIDEO_PROCESS_QUEUE, VIDEO_UPLOAD_QUEUE
 from djgram.utils.async_tools import run_async_in_sync
 from .schema import VideoOrPlaylistForProcessing
 
