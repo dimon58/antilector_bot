@@ -172,7 +172,7 @@ async def _create_playlist(
                 logging_message = await bot.send_message(
                     text=text,
                     chat_id=video_or_playlist_for_processing.telegram_chat_id,
-                    reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+                    reply_to_message_id=video_or_playlist_for_processing.reply_to_message_id,
                     parse_mode=ParseMode.HTML,
                     disable_web_page_preview=True,
                     disable_notification=True,
@@ -189,9 +189,9 @@ async def get_from_url(
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
 ) -> AsyncGenerator[tuple[bool, Video] | None]:
     logger.info("Downloading video or playlist")
-    yt_dlp_info = await extract_info_async_cached(url=video_or_playlist_for_processing.url, process=False)
+    yt_dlp_info = await extract_info_async_cached(url=video_or_playlist_for_processing.download_data.url, process=False)
     if yt_dlp_info["_type"] == YtDlpContentType.URL:
-        logger.info('Resolving url with type "url": %s', video_or_playlist_for_processing.url)
+        logger.info('Resolving url with type "url": %s', video_or_playlist_for_processing.download_data.url)
         yt_dlp_info = await extract_info_async_cached(url=yt_dlp_info["url"], process=False)
 
     if yt_dlp_info.get("entries") is not None:
@@ -203,7 +203,7 @@ async def get_from_url(
         await bot.send_message(
             text="Скачиваю",
             chat_id=video_or_playlist_for_processing.telegram_chat_id,
-            reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+            reply_to_message_id=video_or_playlist_for_processing.reply_to_message_id,
             disable_web_page_preview=True,
             disable_notification=True,
         )
@@ -217,7 +217,7 @@ async def get_from_telegram(
     # Создаём видео в базе данных, если его нет
     # Иначе присоединяемся к ожидающим скачивание
     async with get_autocommit_session() as db_session:
-        video_id = video_or_playlist_for_processing.make_id_from_telegram()
+        video_id = video_or_playlist_for_processing.download_data.make_id_from_telegram()
         # noinspection PyTypeChecker
         stmt = select(Video).with_for_update().where(Video.id == video_id)
         db_video: Video | None = await db_session.scalar(stmt)
@@ -227,7 +227,7 @@ async def get_from_telegram(
             await db_video.add_if_not_in_waiters_from_task(db_session, video_or_playlist_for_processing)
             return False, db_video
 
-        video = video_or_playlist_for_processing.get_tg_video()
+        video = video_or_playlist_for_processing.download_data.get_tg_video()
         yt_dlp_info = video.model_dump(mode="json") | {
             "id": video_id,
             "title": video.file_name,
@@ -249,7 +249,7 @@ async def get_from_telegram(
         await bot.send_message(
             text="Скачиваю",
             chat_id=video_or_playlist_for_processing.telegram_chat_id,
-            reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+            reply_to_message_id=video_or_playlist_for_processing.reply_to_message_id,
         )
 
     # TODO: можно заливать файл напрямую в хранилище через container.upload_object_via_stream
@@ -272,7 +272,7 @@ async def get_downloaded_videos(
     """
     Возвращает скачанные видео
     """
-    if video_or_playlist_for_processing.url is not None:
+    if video_or_playlist_for_processing.download_data.url is not None:
         async for video in get_from_url(bot, video_or_playlist_for_processing):
             yield video
 
@@ -283,7 +283,7 @@ async def get_downloaded_videos(
     except Exception as exc:
         logger.exception(
             "Failed to download video %s from telegram: %s",
-            (video_or_playlist_for_processing.video or video_or_playlist_for_processing.document).file_id,
+            video_or_playlist_for_processing.download_data.get_tg_video().file_id,
             exc,
             exc_info=exc,
         )

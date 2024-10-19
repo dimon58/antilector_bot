@@ -12,7 +12,7 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import Button, Select
 
 from djgram.system_configs import MIDDLEWARE_AUTH_USER_KEY
-from processing.schema import VideoOrPlaylistForProcessing
+from processing.schema import DownloadData, UnsilenceData, VideoOrPlaylistForProcessing
 from processing.tasks import process_video_or_playlist
 from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpContentType
 
@@ -110,15 +110,19 @@ async def start_processing(
         action=ChatAction.TYPING,
     ):
         task = VideoOrPlaylistForProcessing(
-            url=manager.dialog_data.get(URL_KEY),
-            video=manager.dialog_data.get(VIDEO_KEY),
-            document=manager.dialog_data.get(DOCUMENT_KEY),
             user_id=manager.middleware_data[MIDDLEWARE_AUTH_USER_KEY].id,
             telegram_chat_id=callback.message.chat.id,
-            telegram_message_id=manager.dialog_data[MESSAGE_ID_KEY],
-            audio_processing_profile_id=manager.dialog_data[AUDIO_PROCESSING_PROFILE_ID_KEY],
-            unsilence_profile_id=manager.dialog_data[UNSILENCE_PROFILE_ID_KEY],
-            is_playlist=manager.dialog_data.get(IS_PLAYLIST_KEY, False),
+            reply_to_message_id=manager.dialog_data[MESSAGE_ID_KEY],
+            download_data=DownloadData(
+                url=manager.dialog_data.get(URL_KEY),
+                video=manager.dialog_data.get(VIDEO_KEY),
+                document=manager.dialog_data.get(DOCUMENT_KEY),
+                is_playlist=manager.dialog_data.get(IS_PLAYLIST_KEY, False),
+            ),
+            unsilence_data=UnsilenceData(
+                audio_processing_profile_id=manager.dialog_data[AUDIO_PROCESSING_PROFILE_ID_KEY],
+                unsilence_profile_id=manager.dialog_data[UNSILENCE_PROFILE_ID_KEY],
+            ),
         )
 
         task_id = process_video_or_playlist.delay(task.model_dump(mode="json"))
@@ -128,7 +132,7 @@ async def start_processing(
         await callback.bot.send_message(
             text="Добавлено в очередь на обработку",
             chat_id=task.telegram_chat_id,
-            reply_to_message_id=task.telegram_message_id,
+            reply_to_message_id=task.reply_to_message_id,
         )
 
     await manager.done(show_mode=ShowMode.SEND)

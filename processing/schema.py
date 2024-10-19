@@ -5,18 +5,11 @@ from pydantic import model_validator
 FILE_TYPE = "file"
 
 
-class VideoOrPlaylistForProcessing(pydantic.BaseModel):
+class DownloadData(pydantic.BaseModel):
     url: str | None = None
     video: aiogram.types.Video | None = None
     document: aiogram.types.Document | None = None
     is_playlist: bool = False
-
-    user_id: int
-    telegram_chat_id: int | str
-    telegram_message_id: int
-
-    audio_processing_profile_id: int
-    unsilence_profile_id: int
 
     @model_validator(mode="after")
     def validate_content(self, _info):
@@ -37,9 +30,23 @@ class VideoOrPlaylistForProcessing(pydantic.BaseModel):
         return self.video or self.document
 
     def make_id_from_telegram(self) -> str:
-
         video = self.get_tg_video()
         if video is None:
             raise ValueError("There is not telegram video")
 
         return f"{FILE_TYPE}_{video.file_id}"
+
+
+class UnsilenceData(pydantic.BaseModel):
+    audio_processing_profile_id: int
+    unsilence_profile_id: int
+
+
+class VideoOrPlaylistForProcessing(pydantic.BaseModel):
+    user_id: int
+    telegram_chat_id: int | str
+    reply_to_message_id: int
+
+    download_data: DownloadData
+
+    unsilence_data: UnsilenceData

@@ -45,7 +45,7 @@ class Waiter(pydantic.BaseModel):
         return cls(
             user_id=video_or_playlist_for_processing.user_id,
             telegram_chat_id=video_or_playlist_for_processing.telegram_chat_id,
-            reply_to_message_id=video_or_playlist_for_processing.telegram_message_id,
+            reply_to_message_id=video_or_playlist_for_processing.reply_to_message_id,
         )
 
 
