@@ -18,6 +18,7 @@ from configs import (
     PROCESSED_VIDEO_STORAGE,
     THUMBNAILS_STORAGE,
     S3_DRIVER,
+    LECTURES_SUMMARY_STORAGE,
 )
 from djgram.contrib.communication.broadcast import broadcast
 from djgram.db.base import get_autocommit_session
@@ -34,6 +35,7 @@ def setup_storage():
     StorageManager.add_storage(ORIGINAL_VIDEO_STORAGE, get_container_safe(S3_DRIVER, ORIGINAL_VIDEO_STORAGE))
     StorageManager.add_storage(THUMBNAILS_STORAGE, get_container_safe(S3_DRIVER, THUMBNAILS_STORAGE))
     StorageManager.add_storage(PROCESSED_VIDEO_STORAGE, get_container_safe(S3_DRIVER, PROCESSED_VIDEO_STORAGE))
+    StorageManager.add_storage(LECTURES_SUMMARY_STORAGE, get_container_safe(S3_DRIVER, LECTURES_SUMMARY_STORAGE))
 
 
 class Waiter(pydantic.BaseModel):
@@ -155,7 +157,7 @@ class Waitable:
         )
 
     @abstractmethod
-    async def _get_stmt(self, id_: Any) -> Select["Waitable"]:
+    def _get_stmt(self, id_: Any) -> Select["Waitable"]:
         raise NotImplementedError
 
     async def broadcast_two_step(self, bot: Bot) -> "Waitable":
@@ -190,7 +192,7 @@ class HasTelegramFileAndOriginalVideo(Waitable):
     telegram_file: Any
     original_video: Any
 
-    async def _get_stmt(self, id_: Any) -> Select["HasTelegramFileAndOriginalVideo"]:
+    def _get_stmt(self, id_: Any) -> Select["HasTelegramFileAndOriginalVideo"]:
         # noinspection PyTypeChecker
         return (
             update(self.__class__)
