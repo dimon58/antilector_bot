@@ -10,7 +10,7 @@ from configs import USE_NVENC, FORCE_VIDEO_CODEC, FORCE_AUDIO_CODEC, PROCESSED_E
 from libs.nisqa.model import NisqaModel
 from tools.video_processing.pipeline import VideoPipeline
 from utils.video.measure import ffprobe_extract_meta
-from .misc import execute_file_update_statement
+from .misc import execute_file_update_statement, download_file_from_s3
 from .models import ProcessedVideo, ProcessedVideoStatus
 
 logger = logging.getLogger(__name__)
@@ -28,11 +28,9 @@ async def run_video_pipeline(processed_video: ProcessedVideo) -> ProcessedVideo:
         temp_dir = Path(temp_dir)
 
         logger.info("Downloading video %s from storage to temporary directory", processed_video.original_video_id)
-        file = processed_video.original_video.file.file
-        input_file = temp_dir / file.filename
-        with open(input_file, "wb") as f:
-            for chunk in file.object.as_stream():
-                f.write(chunk)
+        file = processed_video.original_video.file
+        input_file = temp_dir / file.file.filename
+        download_file_from_s3(file, input_file)
 
         logger.info("Start processing")
         video_pipeline = VideoPipeline(

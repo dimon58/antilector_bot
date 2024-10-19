@@ -15,7 +15,6 @@ from sqlalchemy.sql import sqltypes
 from sqlalchemy_file import FileField, File
 
 from configs import PROCESSED_VIDEO_STORAGE, VIDEO_UPLOAD_TIMEOUT
-from djgram.contrib.communication.broadcast import broadcast
 from djgram.db.models import TimeTrackableBaseModel
 from djgram.db.pydantic_field import ImmutablePydanticField
 from djgram.utils.input_file_ext import S3FileInput
@@ -24,7 +23,7 @@ from tools.audio_processing.pipeline import AudioPipeline
 from tools.video_processing.actions.unsilence_actions import TIME_SAVINGS_REAL_KEY, UnsilenceAction
 from tools.video_processing.pipeline import VideoPipelineStatistics
 from tools.yt_dlp_downloader.yt_dlp_download_videos import get_url
-from .common import Waitable
+from .common import HasTelegramFileAndOriginalVideo
 from .download import Video
 from .profiles import AudioProcessingProfile, UnsilenceProfile
 from ..representation import silence_remove_done_report
@@ -39,7 +38,7 @@ class ProcessedVideoStatus(enum.Enum):
     IMPOSSIBLE = "impossible"
 
 
-class ProcessedVideo(Waitable, TimeTrackableBaseModel):
+class ProcessedVideo(HasTelegramFileAndOriginalVideo, TimeTrackableBaseModel):
     __table_args__ = (
         UniqueConstraint(
             "original_video_id", "audio_processing_profile_id", "unsilence_profile_id", name="uniq_pipeline"
@@ -165,22 +164,3 @@ class ProcessedVideo(Waitable, TimeTrackableBaseModel):
                 self.telegram_file = message.video
 
             return message
-
-    async def broadcast_for_waiters(self, bot: Bot):
-
-        chat_ids = []
-        per_chat_kwargs = []
-
-        for waiter in self.waiters:
-            chat_ids.append(waiter.telegram_chat_id)
-            per_chat_kwargs.append({"reply_to_message_id": waiter.reply_to_message_id})
-
-        async def send_method(chat_id: int | str, reply_to_message_id: int | None = None) -> None:
-            await self.send(bot=bot, chat_id=chat_id, reply_to_message_id=reply_to_message_id)
-
-        await broadcast(
-            send_method=send_method,
-            chat_ids=chat_ids,
-            count=len(chat_ids),
-            per_chat_kwargs=per_chat_kwargs,
-        )

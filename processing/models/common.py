@@ -1,13 +1,15 @@
 import logging
+from abc import abstractmethod
 from typing import Any
 
 import pydantic
 from aiogram import Bot
 from aiogram.enums import ParseMode
+from aiogram.types import Message
 from pydantic import ConfigDict
-from sqlalchemy import update
+from sqlalchemy import update, Select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, selectinload
 from sqlalchemy.sql import sqltypes
 from sqlalchemy_file.storage import StorageManager
 
@@ -18,6 +20,7 @@ from configs import (
     S3_DRIVER,
 )
 from djgram.contrib.communication.broadcast import broadcast
+from djgram.db.base import get_autocommit_session
 from djgram.db.pydantic_field import ImmutablePydanticField
 from utils.minio_utils import get_container_safe
 from ..schema import VideoOrPlaylistForProcessing
@@ -120,4 +123,79 @@ class Waitable:
             parse_mode=parse_mode,
             disable_web_page_preview=disable_web_page_preview,
             **kwargs,
+        )
+
+    @abstractmethod
+    async def send(self, bot: Bot, chat_id: int | str, reply_to_message_id: int | None = None) -> Message:
+        """
+        Отправляет содержимое в чат с id = chat_id
+        """
+        raise NotImplementedError
+
+    async def broadcast_for_waiters(self, bot: Bot):
+        """
+        Рассылает содержимое все ожидающим
+        """
+
+        chat_ids = []
+        per_chat_kwargs = []
+
+        for waiter in self.waiters:
+            chat_ids.append(waiter.telegram_chat_id)
+            per_chat_kwargs.append({"reply_to_message_id": waiter.reply_to_message_id})
+
+        async def send_method(chat_id: int | str, reply_to_message_id: int | None = None) -> None:
+            await self.send(bot=bot, chat_id=chat_id, reply_to_message_id=reply_to_message_id)
+
+        await broadcast(
+            send_method=send_method,
+            chat_ids=chat_ids,
+            count=len(chat_ids),
+            per_chat_kwargs=per_chat_kwargs,
+        )
+
+    @abstractmethod
+    async def _get_stmt(self, id_: Any) -> Select["Waitable"]:
+        raise NotImplementedError
+
+    async def broadcast_two_step(self, bot: Bot) -> "Waitable":
+        logger.info("Broadcasting processed video")
+        await self.broadcast_for_waiters(bot)
+
+        old_waiters = set(self.waiters)
+        async with get_autocommit_session() as db_session:
+            # noinspection PyTypeChecker
+            new_waitable = await db_session.scalar(self._get_stmt(self.id))
+            waiters = new_waitable.waiters
+            # noinspection PyTypeChecker
+            await db_session.execute(
+                update(self.__class__).where(self.__class__.id == new_waitable.id).values(waiters=[])
+            )
+
+        rest_waiters = [waiter for waiter in waiters if waiter not in old_waiters]
+
+        if len(rest_waiters) == 0:
+            return new_waitable
+
+        logger.info("Broadcasting for rest waiters")
+        new_waitable.waiters = rest_waiters
+        await new_waitable.broadcast_for_waiters(bot)
+        new_waitable.waiters = []
+
+        return new_waitable
+
+
+# noinspection PyAbstractClass
+class HasTelegramFileAndOriginalVideo(Waitable):
+    telegram_file: Any
+    original_video: Any
+
+    async def _get_stmt(self, id_: Any) -> Select["HasTelegramFileAndOriginalVideo"]:
+        # noinspection PyTypeChecker
+        return (
+            update(self.__class__)
+            .where(self.__class__.id == self.id)
+            .values(telegram_file=self.telegram_file)
+            .returning(self.__class__)
+            .options(selectinload(self.__class__.original_video))
         )

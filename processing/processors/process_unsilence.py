@@ -31,6 +31,11 @@ logger = logging.getLogger(__name__)
 @download_observer.subscribe(retries=3)
 async def process_unsilence(video_download_event: VideoDownloadEvent) -> None:
     video_or_playlist_for_processing = video_download_event.video_or_playlist_for_processing
+
+    if video_or_playlist_for_processing.unsilence_data is None:
+        logger.debug("Task not for this processor")
+        return
+
     downloaded_here = video_download_event.downloaded_here
     db_video = video_download_event.db_video
 
