@@ -38,6 +38,7 @@ from system_init import system_init
 from tg_bot.apps.lectures import router as lectures_router
 from tg_bot.apps.menu import router as menu_router
 from tg_bot.apps.menu.dialogs import MenuStates
+from tg_bot.apps.summary import router as summary_router
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)
@@ -76,6 +77,7 @@ def setup_routers(dp: Dispatcher) -> None:
     Установка роутеров
     """
     dp.include_router(lectures_router)
+    dp.include_router(summary_router)
     dp.include_router(menu_router)
     dp.include_router(main_router)
 

@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 async def handle_video(message: Message, manager: DialogManager):
     manager.dialog_data[VIDEO_KEY] = message.video.model_dump(mode="json")
 
-    await manager.switch_to(LectureProcessingStates.confirm)
+    await manager.switch_to(manager.current_context().state.group.confirm)
 
 
 async def handle_document(message: Message, manager: DialogManager):
@@ -43,7 +43,7 @@ async def handle_document(message: Message, manager: DialogManager):
 
     manager.dialog_data[DOCUMENT_KEY] = message.document.model_dump(mode="json")
 
-    await manager.switch_to(LectureProcessingStates.confirm)
+    await manager.switch_to(manager.current_context().state.group.confirm)
 
 
 async def add_video(message: Message, message_input: MessageInput, manager: DialogManager):

@@ -14,7 +14,6 @@ from utils.thumbnail import get_best_thumbnail
 from utils.yt_dlp_cached import extract_info_async_cached
 
 from ..formating import format_as_playlist_html, format_as_video_html
-from .states import LectureProcessingStates
 
 if TYPE_CHECKING:
     from djgram.contrib.auth.models import User
@@ -141,6 +140,6 @@ async def handle_url(message: Message, manager: DialogManager) -> YtDlpContentTy
                 await message.reply(f"Работа с типом <i>{_type}</i> не поддерживается", parse_mode=ParseMode.HTML)
                 return None
 
-        await manager.switch_to(LectureProcessingStates.confirm)
+        await manager.switch_to(manager.current_context().state.group.confirm)
 
         return _type

@@ -12,6 +12,7 @@ from aiogram_dialog.widgets.text import Const
 from djgram.configs import DIALOG_DIAGRAMS_DIR, ENABLE_DIALOG_DIAGRAMS_GENERATION
 from djgram.utils.diagrams import render_transitions_safe
 from tg_bot.apps.lectures.dialogs.states import LectureProcessingStates
+from tg_bot.apps.summary.dialogs.states import LectureSummarizationStates
 
 from .states import MenuStates
 
@@ -21,6 +22,7 @@ menu_dialog = Dialog(
     Window(
         Const("Главное меню"),
         Start(Const("Сократить лекцию"), id="shorten_lecture", state=LectureProcessingStates.link_or_file),
+        Start(Const("Конспектировать лекцию"), id="summarize_lecture", state=LectureSummarizationStates.link_or_file),
         state=MenuStates.main_menu,
     ),
 )
