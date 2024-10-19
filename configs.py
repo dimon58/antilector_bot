@@ -185,9 +185,8 @@ YT_DLP_VIDEO_MAX_WIDTH = 1920 * 2  # формат 32x9 подходит
 
 # ---------- Конспектирование ---------- #
 
-# WHISPER_MODEL_SIZE = "large-v3"
-WHISPER_MODEL_SIZE = "tiny"
-WHISPER_COMPUTE_TYPE = "float32"
+WHISPER_MODEL_SIZE = os.environ["WHISPER_MODEL_SIZE"]
+WHISPER_COMPUTE_TYPE = os.environ["WHISPER_COMPUTE_TYPE"]
 WHISPER_DOWNLOAD_ROOT = ".whisper"
 WHISPER_MIN_SILENCE_DURATION_MS = 500
 
