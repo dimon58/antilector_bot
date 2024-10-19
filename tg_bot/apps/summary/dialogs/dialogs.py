@@ -8,7 +8,7 @@ import os
 from aiogram.enums import ParseMode
 from aiogram_dialog import Dialog, Window
 from aiogram_dialog.widgets.input import MessageInput
-from aiogram_dialog.widgets.kbd import Button, SwitchTo
+from aiogram_dialog.widgets.kbd import Button, SwitchTo, Cancel
 from aiogram_dialog.widgets.text import Const
 
 from djgram.configs import DIALOG_DIAGRAMS_DIR, ENABLE_DIALOG_DIAGRAMS_GENERATION
@@ -25,6 +25,7 @@ lecture_summarization_dialog = Dialog(
     Window(
         Const("Чтобы получить конспект отправьте ссылку или видеофайл"),
         MessageInput(add_video),
+        Cancel(Const(BACK_TEXT)),
         state=LectureSummarizationStates.link_or_file,
     ),
     Window(
