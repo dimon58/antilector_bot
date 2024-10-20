@@ -11,20 +11,32 @@ ARG PHANTOMJS_VERSION="phantomjs-2.1.1"
 # Install python and build-essential
 # build-essential нужен для сборки deepfilternet и работы PhantomJS
 # libcudnn8 и libcudnn8-dev нужны для работы faster-whisper
-# texlive-full нужен для рендеринга latex
 # https://zomro.com/rus/blog/faq/475-how-to-install-python-312-on-ubuntu-2204
 RUN apt-get update \
     && apt-get install -y --no-install-recommends software-properties-common \
     && add-apt-repository ppa:deadsnakes/ppa \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-        wget build-essential libcudnn8 libcudnn8-dev texlive-full \
+        wget build-essential libcudnn8 libcudnn8-dev \
         python${PYTHON_VERSION}-full python${PYTHON_VERSION}-dev \
     && ln -sf python${PYTHON_VERSION} /usr/bin/python \
     && wget https://bootstrap.pypa.io/get-pip.py \
     && python${PYTHON_VERSION} get-pip.py --break-system-packages \
     && rm get-pip.py \
     && apt-get purge --auto-remove -y wget \
+    && apt-get clean \
+    && rm -rf /var/[log,tmp]/* /tmp/* /var/lib/apt/lists/*
+
+# texlive-full нужен для рендеринга latex
+# Можно уменьшить рамер образа, если ставить пакеты texlive отдельно. См. apt search texlive
+# В этой команде будут установлены, как минимум, лишние пакеты с документацией
+# https://stackoverflow.com/questions/53343241/dependency-problems-leaving-unconfigured
+# https://github.com/jrottenberg/ffmpeg/issues/316
+RUN apt-get update \
+    && (apt-get install fontconfig -y || true) \
+    && dpkg --configure -a \
+    && apt-get -f install \
+    && apt-get install -y --no-install-recommends texlive-full \
     && apt-get clean \
     && rm -rf /var/[log,tmp]/* /tmp/* /var/lib/apt/lists/*
 
