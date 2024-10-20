@@ -1,11 +1,13 @@
+import httpx
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
 
-from configs import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL
+from configs import OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_MODEL, OPENAI_PROXY_URL
 
 client = OpenAI(
     api_key=OPENAI_API_KEY,
     base_url=OPENAI_BASE_URL,
+    http_client=httpx.Client(proxy=OPENAI_PROXY_URL or None),
 )
 
 prompt_template = r"""Представь себя профессиональным составителем конспектов.
