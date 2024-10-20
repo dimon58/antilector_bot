@@ -11,15 +11,14 @@ ARG PHANTOMJS_VERSION="phantomjs-2.1.1"
 # Install python and build-essential
 # build-essential нужен для сборки deepfilternet и работы PhantomJS
 # libcudnn8 и libcudnn8-dev нужны для работы faster-whisper
-# texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra нужны для рендеринга latex
+# texlive-full нужен для рендеринга latex
 # https://zomro.com/rus/blog/faq/475-how-to-install-python-312-on-ubuntu-2204
 RUN apt-get update \
     && apt-get install -y --no-install-recommends software-properties-common \
     && add-apt-repository ppa:deadsnakes/ppa \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-        wget build-essential libcudnn8 libcudnn8-dev \
-        texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra \
+        wget build-essential libcudnn8 libcudnn8-dev texlive-full \
         python${PYTHON_VERSION}-full python${PYTHON_VERSION}-dev \
     && ln -sf python${PYTHON_VERSION} /usr/bin/python \
     && wget https://bootstrap.pypa.io/get-pip.py \
