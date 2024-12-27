@@ -19,7 +19,7 @@ def yt_dlp_get_html_link(info: YtDlpInfoDict) -> str:
     return f'<a href="{url}">{html.escape(title)}</a>'
 
 
-def convert_entries_generator(info: YtDlpInfoDict):
+def convert_entries_generator(info: YtDlpInfoDict) -> YtDlpInfoDict:
     info["entries"] = list(info["entries"])
     return info
 

@@ -21,7 +21,11 @@ from utils.video.measure import get_video_duration
 logger = logging.getLogger(__name__)
 
 
-def ffmpeg_transcode(input_file: str | Path, output_file: str | Path, options: dict[str, Option | None] | None = None):
+def ffmpeg_transcode(
+    input_file: str | Path,
+    output_file: str | Path,
+    options: dict[str, Option | None] | None = None,
+) -> None:
     ffmpeg = FixedFFmpeg().option("y").input(input_file).output(output_file, options)
     setup_progress_for_ffmpeg(
         ffmpeg,

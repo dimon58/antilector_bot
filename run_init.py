@@ -5,7 +5,7 @@ from configs import LOGGING_CONFIG, USE_CUDA, USE_NVENC
 from processing.predefined_profile.load_to_db import main as load_to_db_main
 
 
-async def main():
+async def main() -> None:
     logging.info("USE_CUDA: %s", USE_CUDA)
     logging.info("USE_NVENC: %s", USE_NVENC)
     await load_to_db_main()

@@ -38,7 +38,7 @@ config.set_main_option(
 # ... etc.
 
 
-def render_item(type_: str, obj: Any, autogen_context: AutogenContext):
+def render_item(type_: str, obj: Any, autogen_context: AutogenContext) -> str | bool:  # noqa: ANN401
     """Apply custom rendering for selected items."""
 
     if type_ == "type" and isinstance(obj, FileField):

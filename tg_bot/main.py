@@ -46,7 +46,7 @@ main_router = Router()
 
 
 @main_router.message(CommandStart())
-async def start_handler(message: Message, dialog_manager: DialogManager):  # noqa: ARG001
+async def start_handler(message: Message, dialog_manager: DialogManager) -> None:  # noqa: ARG001
     """
     Обработчик команды /start
     """
@@ -55,7 +55,7 @@ async def start_handler(message: Message, dialog_manager: DialogManager):  # noq
 
 
 @main_router.message(Command("help"))
-async def help_handler(message: Message):
+async def help_handler(message: Message) -> None:
     """
     Обработчик команды /help
     """
@@ -64,7 +64,7 @@ async def help_handler(message: Message):
 
 
 @main_router.message()
-async def no_state_handler(message: Message, dialog_manager: DialogManager):  # noqa: ARG001
+async def no_state_handler(message: Message, dialog_manager: DialogManager) -> None:  # noqa: ARG001
     """
     Запуск главного меню
     """
@@ -84,12 +84,12 @@ def setup_routers(dp: Dispatcher) -> None:
     logger.info("Routers setup")
 
 
-async def on_unknown_intent(event: ErrorEvent, dialog_manager: DialogManager):
+async def on_unknown_intent(event: ErrorEvent, dialog_manager: DialogManager) -> None:
     logging.error("Error in dialog: %s", event.exception)
     await dialog_manager.start(MenuStates.main_menu, mode=StartMode.RESET_STACK)
 
 
-async def on_unknown_state(event: ErrorEvent, dialog_manager: DialogManager):
+async def on_unknown_state(event: ErrorEvent, dialog_manager: DialogManager) -> None:
     # Example of handling UnknownState Error and starting new dialog.
     logging.error("Error in dialog: %s", event.exception)
     await dialog_manager.start(MenuStates.main_menu, mode=StartMode.RESET_STACK)

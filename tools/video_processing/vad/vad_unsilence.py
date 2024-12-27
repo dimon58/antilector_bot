@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Callable
 from pathlib import Path
 
 import silero_vad
@@ -13,7 +14,7 @@ from utils.audio import read_audio
 logger = logging.getLogger(__name__)
 
 
-def silent_detect_progress_update_proxy(callback: UpdateCallbackType, duration: float):
+def silent_detect_progress_update_proxy(callback: UpdateCallbackType, duration: float) -> Callable[[float], None]:
     def inner(current: float) -> None:
         callback(current * duration / 100, duration)
 
