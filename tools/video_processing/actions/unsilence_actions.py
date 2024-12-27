@@ -47,14 +47,18 @@ class UnsilenceAction(Action):
 
     @pydantic.field_serializer("unsilence_class")
     def serialize_unsilence_class(
-        self, unsilence_class: type[unsilence.Unsilence], _info: pydantic.SerializationInfo
+        self,
+        unsilence_class: type[unsilence.Unsilence],
+        _info: pydantic.SerializationInfo,
     ) -> str:
         return unsilence_class.__name__
 
     @pydantic.field_validator("unsilence_class", mode="wrap")
     @classmethod
     def validate_unsilence_class(
-        cls, unsilence_class: unsilence.Unsilence | str, _info: pydantic.SerializationInfo
+        cls,
+        unsilence_class: unsilence.Unsilence | str,
+        _info: pydantic.SerializationInfo,
     ) -> type[unsilence.Unsilence]:
 
         if isinstance(unsilence_class, type):

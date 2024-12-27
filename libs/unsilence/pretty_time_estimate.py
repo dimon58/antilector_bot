@@ -41,7 +41,7 @@ def pretty_time_estimate(time_data: TimeData) -> PrettyTable:
             reorderer_time_data["all"]["before"],
             reorderer_time_data["all"]["after"],
             reorderer_time_data["all"]["delta"],
-        )
+        ),
     )
 
     table.add_row(
@@ -50,7 +50,7 @@ def pretty_time_estimate(time_data: TimeData) -> PrettyTable:
             reorderer_time_data["audible"]["before"],
             reorderer_time_data["audible"]["after"],
             reorderer_time_data["audible"]["delta"],
-        )
+        ),
     )
 
     table.add_row(
@@ -59,7 +59,7 @@ def pretty_time_estimate(time_data: TimeData) -> PrettyTable:
             reorderer_time_data["silent"]["before"],
             reorderer_time_data["silent"]["after"],
             reorderer_time_data["silent"]["delta"],
-        )
+        ),
     )
 
     return table

@@ -81,7 +81,7 @@ ignore = [
     "RUF001", "RUF002", "RUF003", "FIX", "TD",
     # FIXME: Специфичное для проекта
     "ANN201", "ANN401", "ARG001", "ARG002",
-    "COM812", "D101", "D102", "D103",
+    "D101", "D102", "D103",
 ]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.

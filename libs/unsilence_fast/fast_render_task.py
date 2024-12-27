@@ -179,7 +179,7 @@ class IntervalGroupRenderTask:
                     f"trim=start={task.interval.start - start_timestamp:.4f}"
                     f":end={task.interval.end - start_timestamp:.4f}"
                     f",setpts=PTS-STARTPTS{video_filter}"
-                    f"[vf{idx}]"
+                    f"[vf{idx}]",
                 )
 
             audio_filter = f",{task.audio_filter}" if task.audio_filter is not None else ""
@@ -188,7 +188,7 @@ class IntervalGroupRenderTask:
                 f"atrim=start={task.interval.start - start_timestamp:.4f}"
                 f":end={task.interval.end - start_timestamp:.4f}"
                 f",asetpts=PTS-STARTPTS{audio_filter}"
-                f"[af{idx}]"
+                f"[af{idx}]",
             )
 
         concat_input = "".join(f"[vf{idx}][af{idx}]" for idx in range(len(self.interval_render_tasks)))

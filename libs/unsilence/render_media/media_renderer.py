@@ -69,7 +69,8 @@ class MediaRenderer:
         # original_codec: str | None  # noqa: ERA001
 
         intervals = intervals.remove_short_intervals_from_start(
-            render_options.audible_speed, render_options.silent_speed
+            render_options.audible_speed,
+            render_options.silent_speed,
         )
 
         video_temp_path = self._temp_path / str(uuid.uuid4())
@@ -108,7 +109,12 @@ class MediaRenderer:
         logger.info("Spawning %s threads for rendering intervals", render_options.threads)
         for i in range(render_options.threads):
             thread = RenderIntervalThread(
-                i, input_file, render_options, task_queue, thread_lock, on_task_completed=handle_thread_completed_task
+                i,
+                input_file,
+                render_options,
+                task_queue,
+                thread_lock,
+                on_task_completed=handle_thread_completed_task,
             )
             thread.start()
             thread_list.append(thread)
@@ -153,7 +159,10 @@ class MediaRenderer:
 
     @staticmethod
     def _concat_intervals(
-        file_list: list[Path], concat_file: Path, output_file: Path, update_concat_progress: UpdateCallbackType | None
+        file_list: list[Path],
+        concat_file: Path,
+        output_file: Path,
+        update_concat_progress: UpdateCallbackType | None,
     ) -> None:
         """
         Concatenates all interval files to create a finished file

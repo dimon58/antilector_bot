@@ -138,7 +138,7 @@ class RenderIntervalThread(threading.Thread):
                     )
                 else:
                     raise OSError(
-                        f"Input file is corrupted between {interval.start} and {interval.end} (in seconds)"
+                        f"Input file is corrupted between {interval.start} and {interval.end} (in seconds)",
                     ) from exc
 
             if "Error initializing complex filter" in exc.message:
@@ -260,7 +260,10 @@ class RenderIntervalThread(threading.Thread):
             output_options["c:v"] = self._render_options.force_video_codec
 
         logger.debug(
-            "Rendering interval {%s, %s} using codec %s", interval.start, interval.end, output_options.get("c:v")
+            "Rendering interval {%s, %s} using codec %s",
+            interval.start,
+            interval.end,
+            output_options.get("c:v"),
         )
 
         return ffmpeg.output(interval_output_file, output_options)

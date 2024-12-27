@@ -113,7 +113,10 @@ class AudioPipeline(pydantic.BaseModel):
             logger.info("Step %s: %s done in %s", step, step_stats.repr_for_logging, end - start)
 
         logger.info(
-            "Running step %s/%s - %s", len(self.pipeline), len(self.pipeline), self.pipeline[-1].__class__.__name__
+            "Running step %s/%s - %s",
+            len(self.pipeline),
+            len(self.pipeline),
+            self.pipeline[-1].__class__.__name__,
         )
         start = time.perf_counter()
         action_stats = self.pipeline[-1].run(input_file, output_file)

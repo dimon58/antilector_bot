@@ -56,7 +56,7 @@ async def is_user_error(message: Message, exc: YoutubeDLError) -> bool:
         await message.reply(
             "Доступ запрещён. "
             "Возможно вы скопировали ссылку на видео с доступом по ссылке не полностью. "
-            "Ссылка должна иметь вид https://vk.com/video123456789_123456789?list=ln-j094ku3j0ku5m034d3"
+            "Ссылка должна иметь вид https://vk.com/video123456789_123456789?list=ln-j094ku3j0ku5m034d3",
         )
         return True
 

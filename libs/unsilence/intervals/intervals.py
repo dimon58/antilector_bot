@@ -110,7 +110,9 @@ class Intervals:
         logger.debug("Enlarging intervals")
         for i, interval in enumerate(self._interval_list):
             interval.enlarge_audible_interval(
-                stretch_time, is_start_interval=(i == 0), is_end_interval=(i == len(self._interval_list) - 1)
+                stretch_time,
+                is_start_interval=(i == 0),
+                is_end_interval=(i == len(self._interval_list) - 1),
             )
 
     def __remove_breaks(self, silence_upper_threshold: float | None) -> None:

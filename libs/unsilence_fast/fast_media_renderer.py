@@ -91,7 +91,10 @@ class FastMediaRenderer(MediaRenderer):
         return ram_bytes / raw_byte_rate
 
     def _create_tasks(
-        self, input_file: Path, intervals: Intervals, render_options: RenderOptions
+        self,
+        input_file: Path,
+        intervals: Intervals,
+        render_options: RenderOptions,
     ) -> list[IntervalGroupRenderTask]:
 
         max_seconds_buffer = self.get_max_seconds_buffer(
@@ -232,7 +235,10 @@ class FastMediaRenderer(MediaRenderer):
         return [task.output_file for task in sorted(completed_tasks, key=lambda x: x.task_id)]
 
     def _concat_rendered_files(
-        self, completed_file_list: list[Path], on_concat_progress_update: UpdateCallbackType | None, output_file: Path
+        self,
+        completed_file_list: list[Path],
+        on_concat_progress_update: UpdateCallbackType | None,
+        output_file: Path,
     ) -> Path:
 
         logger.info("Concatenating files")

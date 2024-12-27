@@ -43,7 +43,7 @@ def get_fade_filter(
             f"afade=t=out"
             f":st={total_duration - interval_out_fade_duration:.4f}"
             f":d={interval_out_fade_duration:.4f}"
-            f":curve={fade_curve}"
+            f":curve={fade_curve}",
         )
 
     return ",".join(res)

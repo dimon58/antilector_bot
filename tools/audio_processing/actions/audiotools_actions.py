@@ -52,7 +52,7 @@ class AudiotoolsAction(Action):
             AudiotoolsSubAction(
                 func=WavFile.normalize,
                 args={"peak_level": peak_level, "remove_dc": remove_dc, "stereo_independent": stereo_independent},
-            )
+            ),
         )
         return self
 
@@ -63,8 +63,9 @@ class AudiotoolsAction(Action):
     def remove_clicks(self, threshold_level: int = 200, click_width: int = 20) -> Self:
         self.subactions.append(
             AudiotoolsSubAction(
-                func=WavFile.remove_clicks, args={"threshold_level": threshold_level, "click_width": click_width}
-            )
+                func=WavFile.remove_clicks,
+                args={"threshold_level": threshold_level, "click_width": click_width},
+            ),
         )
         return self
 

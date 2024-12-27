@@ -143,7 +143,7 @@ class RenderIntervalThread(threading.Thread):
                 raise OSError(
                     f"Input file is corrupted between "
                     f"{task.interval_group_render_task.start_timestamp} and "
-                    f"{task.interval_group_render_task.end_timestamp} (in seconds)"
+                    f"{task.interval_group_render_task.end_timestamp} (in seconds)",
                 ) from exc
 
             if "Error initializing complex filter" in exc.message:

@@ -64,7 +64,10 @@ class CudaMemoryUsageStats(pydantic.BaseModel):
 
     @classmethod
     def init(
-        cls, device: torch.device, target_allocation_size: float, target_allocation_size_threshold: float
+        cls,
+        device: torch.device,
+        target_allocation_size: float,
+        target_allocation_size_threshold: float,
     ) -> "CudaMemoryUsageStats":
         usage = CudaMemoryUsageAtStep.measure(device)
 
@@ -155,7 +158,7 @@ class DeepFilterNet3Denoise(Action):
         # Округляем с точностью до fft_window_size, чтобы избежать лишних падингов
         return (
             math.floor(
-                self.chunk_max_size_bytes / memory_per_sample * 4 / dtype_size / fft_window_size / meta.num_channels
+                self.chunk_max_size_bytes / memory_per_sample * 4 / dtype_size / fft_window_size / meta.num_channels,
             )
             * fft_window_size
         )
@@ -179,7 +182,9 @@ class DeepFilterNet3Denoise(Action):
         if is_cuda(self.device):
             torch.cuda.reset_peak_memory_stats()
             cuda_memory_usage_stats = CudaMemoryUsageStats.init(
-                self.device, self.chunk_max_size_bytes, self._cuda_memory_warning_threshold
+                self.device,
+                self.chunk_max_size_bytes,
+                self._cuda_memory_warning_threshold,
             )
 
         enhanced_audio = []

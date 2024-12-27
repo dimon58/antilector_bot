@@ -45,7 +45,10 @@ def detect_silence(  # noqa: C901
     logger.debug("Executing ffmpeg command: %s", shlex.join(command))
 
     console_output = subprocess.Popen(  # noqa: S603
-        command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
     ).stdout
 
     intervals = Intervals()

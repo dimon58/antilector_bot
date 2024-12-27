@@ -93,7 +93,7 @@ def detect_speech(  # noqa: PLR0913
                 start=interval["start"],
                 end=interval["end"],
                 is_silent=False,
-            )
+            ),
         )
 
         no_speech_interval = Interval(start=interval["end"], is_silent=True)
@@ -184,7 +184,7 @@ def intervals_or(intervals1: Intervals, intervals2: Intervals) -> Intervals:
                     start=max(interval1.start, interval2.start),
                     end=min(interval1.end, interval2.end),
                     is_silent=interval1.is_silent or interval2.is_silent,
-                )
+                ),
             )
 
             if interval2.end > interval1.end:

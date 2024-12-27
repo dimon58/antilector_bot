@@ -29,10 +29,16 @@ class LectureSummaryAdmin(ModelAdmin):
     }
     object_action_buttons = (
         DownloadStringAsFileActionButton(
-            "download_latex_source", "📥 Скачать latex", field_name="latex", filename="source.tex"
+            "download_latex_source",
+            "📥 Скачать latex",
+            field_name="latex",
+            filename="source.tex",
         ),
         DownloadFileActionButton("download_pdf", "📥 Скачать pdf", field_name="pdf"),
         DownloadJsonActionButton(
-            "download_stats", "📊 Скачать статистику обработки", field_name="stats", filename="stats.json"
+            "download_stats",
+            "📊 Скачать статистику обработки",
+            field_name="stats",
+            filename="stats.json",
         ),
     )

@@ -38,7 +38,8 @@ class RenderOptions(BaseModel):
     force_audio_codec: str | None = Field(None, description="Audio codec to use for rendering")
 
     additional_output_options: dict[str, FFmpegOption | None] | None = Field(
-        None, description="Дополнительные параметры кодирования"
+        None,
+        description="Дополнительные параметры кодирования",
     )
 
     # Можно ли копировать видеопоток при рендеринге.

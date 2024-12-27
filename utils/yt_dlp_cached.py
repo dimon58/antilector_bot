@@ -19,5 +19,5 @@ yt_dlp_cache = Cache()
 yt_dlp_cache.setup(f"redis://{REDIS_USER}:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_YT_DLP_CACHE_DB}")
 
 extract_info_async_cached = yt_dlp_cache(ttl=YT_DLP_EXTRACT_INFO_CACHE_TTL)(
-    run_async_wrapper(extract_info, thread_executor)
+    run_async_wrapper(extract_info, thread_executor),
 )
