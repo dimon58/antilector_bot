@@ -44,7 +44,7 @@ class ExtractAudioFromVideo(Action):
         if len(audio_streams) == 0:
             raise ValueError(f"No audio streams found in {input_file}")
 
-        # total_duration = sum(float(stream["duration"]) for stream in audio_streams)
+        # total_duration = sum(float(stream["duration"]) for stream in audio_streams)  # noqa: ERA001
         total_duration = float(meta["format"]["duration"]) * len(audio_streams)
         if total_duration > MAX_AUDIO_DURATION:
             raise ValueError("Too long audio")
@@ -93,7 +93,7 @@ class FFMpegNormalizeAction(Action):
     normalization_type: Literal["ebu", "rms", "peak"] = "ebu"
     target_level: float = -23.0
     print_stats: bool = False
-    # threshold=0.5
+    # threshold=0.5  # noqa: ERA001
     loudness_range_target: float = 7.0
     keep_loudness_range_target: bool = False
     keep_lra_above_loudness_range_target: bool = False
@@ -124,7 +124,7 @@ class FFMpegNormalizeAction(Action):
             normalization_type=self.normalization_type,
             target_level=self.target_level,
             print_stats=self.print_stats,
-            # threshold=self.threshold,
+            # threshold=self.threshold,  # noqa: ERA001
             loudness_range_target=self.loudness_range_target,
             keep_loudness_range_target=self.keep_loudness_range_target,
             keep_lra_above_loudness_range_target=self.keep_lra_above_loudness_range_target,

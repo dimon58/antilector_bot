@@ -91,7 +91,7 @@ class LoggingTQDM(tqdm):
 
     def update(self, n: float = 1) -> bool | None:
         updated = self._old_update(n)
-        # updated = super().update(n)
+        # updated = super().update(n)  # noqa: ERA001
         if updated:
             return None
 

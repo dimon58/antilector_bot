@@ -140,7 +140,7 @@ class DeepFilterNet3Denoise(Action):
 
     def get_chunk_size(self, audio: torch.Tensor, meta: AudioMetaData) -> int:
         # DeepFilterNet3 потребляет около 238.5 байт на 1 семпл
-        # memory_per_sample = 238.5
+        # memory_per_sample = 238.5  # noqa: ERA001
         # Так как нет способа (или он очень сложен) предварительно узнать
         # сколько нейросеть потребляет памяти, поэтому я просто померил
         memory_per_sample = 239

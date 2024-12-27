@@ -1,3 +1,4 @@
+# ruff: noqa: ERA001
 import logging
 import shlex
 from typing import TYPE_CHECKING

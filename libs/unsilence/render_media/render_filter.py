@@ -5,7 +5,6 @@ from libs.unsilence.render_media.options import RenderOptions
 
 # FFMpeg не позволяет делать скорость аудио меньше 0.5 или больше 100
 # https://ffmpeg.org/ffmpeg-filters.html#atempo
-# FFMPEG_MIN_TEMPO = 0.5
 FFMPEG_MIN_TEMPO = 1  # Нет смысла замедлять интервалы
 FFMPEG_MAX_TEMPO = 100
 

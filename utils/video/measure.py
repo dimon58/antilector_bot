@@ -209,7 +209,7 @@ def get_video_framerate(filename: str | Path) -> float:
         raise FFmpegError.create(f"ffmpeg return code {retcode}: {err}", [])
 
     fps = out.strip().split()[0]
-    # Example: fps = b'30/1'
+    # Example: fps = b'30/1' noqa: ERA001
     x, y = fps.split(b"/")
 
     return float(x) / float(y)

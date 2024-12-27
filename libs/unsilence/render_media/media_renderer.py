@@ -61,12 +61,12 @@ class MediaRenderer:
         # # Копируем видеопоток, если
         # # файлы должны иметь одинаковое расширение, не должно быть ускорения и видео должно быть
         # # Это частый случай, поэтому оптимизация даёт серьезный рост производительности
-        # can_copy_video = can_copy_media_stream(input_file, output_file, MediaStreamType.VIDEO)
+        # can_copy_video = can_copy_media_stream(input_file, output_file, MediaStreamType.VIDEO)  # noqa: ERA001
         # if can_copy_video:
-        #     original_codec = get_media_codecs(input_file, MediaStreamType.VIDEO)[0]
-        # else:
-        #     original_codec = None
-        # original_codec: str | None
+        #     original_codec = get_media_codecs(input_file, MediaStreamType.VIDEO)[0]  # noqa: ERA001
+        # else:  # noqa: ERA001
+        #     original_codec = None  # noqa: ERA001
+        # original_codec: str | None  # noqa: ERA001
 
         intervals = intervals.remove_short_intervals_from_start(
             render_options.audible_speed, render_options.silent_speed

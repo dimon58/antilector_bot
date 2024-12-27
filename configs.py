@@ -134,11 +134,11 @@ NVENC_ADDITIONAL_OPTIONS = {
     "tune": "hq",
     # "b:v": "5M", # Устанавливается равным битрейту входного видео
     "bufsize": "5M",
-    # "maxrate": "10M", # Устанавливается равным битрейту входного видео * 2
+    # "maxrate": "10M", # Устанавливается равным битрейту входного видео * 2  # noqa: ERA001
     "qmin": "0",
     "g": "250",
-    # "bf": "3", # Не поддерживается на Pascal
-    # "b_ref_mode": "middle", # Не поддерживается на Pascal
+    # "bf": "3", # Не поддерживается на Pascal  # noqa: ERA001
+    # "b_ref_mode": "middle", # Не поддерживается на Pascal  # noqa: ERA001
     # "temporal-aq": "1", # Не поддерживается на Pascal
     "rc-lookahead": "20",
     "i_qfactor": "0.75",
@@ -171,7 +171,7 @@ VIDEO_UPLOAD_TIMEOUT = 1200  # 100 mbit/sec -> 15 GB
 
 YT_DLP_EXTRACT_INFO_CACHE_TTL = timedelta(minutes=5)
 
-# YT_DLP_HTTP_CHUNK_SIZE = 10485760  # 10 MB
+# YT_DLP_HTTP_CHUNK_SIZE = 10485760  # 10 MB  # noqa: ERA001
 YT_DLP_HTTP_CHUNK_SIZE = None
 # Потенциальный способ ускорения загрузки
 # https://github.com/yt-dlp/yt-dlp/issues/7987
