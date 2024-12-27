@@ -120,6 +120,7 @@ def replace_audio_in_video(  # noqa: PLR0913
     video_file: Path,
     audio_file: Path,
     output_file: Path,
+    *,
     use_nvenc: bool = False,
     video_codec: str | None = None,
     audio_codec: str | None = None,

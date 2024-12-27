@@ -47,7 +47,7 @@ class AudiotoolsAction(Action):
 
     subactions: list[AudiotoolsSubAction] = Field(default_factory=list)
 
-    def normalize(self, peak_level: float = -1.0, remove_dc: bool = True, stereo_independent: bool = False) -> Self:
+    def normalize(self, *, peak_level: float = -1.0, remove_dc: bool = True, stereo_independent: bool = False) -> Self:
         self.subactions.append(
             AudiotoolsSubAction(
                 func=WavFile.normalize,

@@ -109,9 +109,9 @@ class RecalcIds(yt_dlp.postprocessor.PostProcessor):
     def __init__(  # noqa: D107
         self,
         sanitizer: Callable[[dict, bool], dict] | None = None,
-        remove_private_keys: bool = False,
+        remove_private_keys: bool = False,  # noqa: FBT002
         downloader: FileDownloader | None = None,
-        nested: bool = False,
+        nested: bool = False,  # noqa: FBT002
     ):
         super().__init__(downloader)
         self.__sanitizer = sanitizer
@@ -266,9 +266,9 @@ def download(url: str, output_dir: str, **additional_ydl_opts) -> DownloadData:
 
 def extract_info(
     url: str,
-    process: bool = True,
-    remove_private_keys: bool = False,
-    convert_entries_to_list: bool = True,
+    process: bool = True,  # noqa: FBT002
+    remove_private_keys: bool = False,  # noqa: FBT002
+    convert_entries_to_list: bool = True,  # noqa: FBT002
     **additional_ydl_opts,
 ) -> YtDlpInfoDict:
     """

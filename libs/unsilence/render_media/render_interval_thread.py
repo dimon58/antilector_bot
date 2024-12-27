@@ -98,6 +98,7 @@ class RenderIntervalThread(threading.Thread):
         total_tasks: int,
         interval_output_file: Path,
         interval: Interval,
+        *,
         apply_filter: bool = True,
     ) -> bool:
         """

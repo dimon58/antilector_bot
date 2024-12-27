@@ -8,7 +8,7 @@ class Interval:
     Represents a section in time where the media file is either silent or audible
     """
 
-    def __init__(self, start: float = 0, end: float = 0, is_silent: bool = False):
+    def __init__(self, start: float = 0, end: float = 0, *, is_silent: bool = False):
         """
         Initializes an Interval object
 
@@ -66,7 +66,11 @@ class Interval:
         return self._duration
 
     def enlarge_audible_interval(
-        self, stretch_time: float, is_start_interval: bool = False, is_end_interval: bool = False
+        self,
+        stretch_time: float,
+        *,
+        is_start_interval: bool = False,
+        is_end_interval: bool = False,
     ) -> None:
         """
         Enlarges/Shrinks the audio interval, based on if it is silent or not
