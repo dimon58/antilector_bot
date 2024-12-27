@@ -6,17 +6,18 @@ Create Date: 2024-10-13 22:17:12.738483
 
 """
 
+import aiogram.types.video
 import sqlalchemy as sa
+import sqlalchemy.sql.sqltypes
 from alembic import op
-from djgram.db.pydantic_field import ImmutablePydanticField
 from sqlalchemy.dialects import postgresql
 from sqlalchemy_file import FileField
-import aiogram.types.video
+
 import processing.models.common
-import sqlalchemy.sql.sqltypes
 import tools.audio_processing.pipeline
 import tools.video_processing.actions.unsilence_actions
 import tools.video_processing.pipeline
+from djgram.db.pydantic_field import ImmutablePydanticField
 
 # revision identifiers, used by Alembic.
 revision = "3b181e92c408"
@@ -32,7 +33,9 @@ def upgrade() -> None:
         sa.Column(
             "audio_pipeline",
             ImmutablePydanticField(
-                tools.audio_processing.pipeline.AudioPipeline, sqlalchemy.sql.sqltypes.JSON(), should_frozen=False
+                tools.audio_processing.pipeline.AudioPipeline,
+                sqlalchemy.sql.sqltypes.JSON(),
+                should_frozen=False,
             ),
             nullable=False,
         ),
@@ -84,8 +87,10 @@ def upgrade() -> None:
             "waiters",
             sa.ARRAY(
                 ImmutablePydanticField(
-                    processing.models.common.Waiter, sqlalchemy.sql.sqltypes.JSON(), should_frozen=True
-                )
+                    processing.models.common.Waiter,
+                    sqlalchemy.sql.sqltypes.JSON(),
+                    should_frozen=True,
+                ),
             ),
             server_default="{}",
             nullable=False,
@@ -123,7 +128,9 @@ def upgrade() -> None:
         sa.Column(
             "audio_pipeline_json",
             ImmutablePydanticField(
-                tools.audio_processing.pipeline.AudioPipeline, sqlalchemy.sql.sqltypes.JSON(), should_frozen=False
+                tools.audio_processing.pipeline.AudioPipeline,
+                sqlalchemy.sql.sqltypes.JSON(),
+                should_frozen=False,
             ),
             nullable=False,
         ),
@@ -157,8 +164,10 @@ def upgrade() -> None:
             "waiters",
             sa.ARRAY(
                 ImmutablePydanticField(
-                    processing.models.common.Waiter, sqlalchemy.sql.sqltypes.JSON(), should_frozen=True
-                )
+                    processing.models.common.Waiter,
+                    sqlalchemy.sql.sqltypes.JSON(),
+                    should_frozen=True,
+                ),
             ),
             server_default="{}",
             nullable=False,
@@ -180,7 +189,10 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint(
-            "original_video_id", "audio_processing_profile_id", "unsilence_profile_id", name="uniq_pipeline"
+            "original_video_id",
+            "audio_processing_profile_id",
+            "unsilence_profile_id",
+            name="uniq_pipeline",
         ),
     )
     op.create_index(
@@ -191,7 +203,10 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_processedvideo_original_video_id"), "processedvideo", ["original_video_id"], unique=False)
     op.create_index(
-        op.f("ix_processedvideo_unsilence_profile_id"), "processedvideo", ["unsilence_profile_id"], unique=False
+        op.f("ix_processedvideo_unsilence_profile_id"),
+        "processedvideo",
+        ["unsilence_profile_id"],
+        unique=False,
     )
     op.create_table(
         "videoprocessingresourceusage",

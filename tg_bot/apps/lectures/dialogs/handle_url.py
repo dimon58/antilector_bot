@@ -24,7 +24,10 @@ logger = logging.getLogger(__name__)
 
 
 async def send_preview(  # noqa: D103
-    message: Message, msg: str, thumbnail: InputFile, parse_mode: ParseMode | None = None,
+    message: Message,
+    msg: str,
+    thumbnail: InputFile,
+    parse_mode: ParseMode | None = None,
 ) -> None:
     if thumbnail is not None:
         try:

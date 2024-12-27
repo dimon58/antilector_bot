@@ -6,14 +6,15 @@ Create Date: 2024-10-20 00:32:06.732982
 
 """
 
-import sqlalchemy as sa
-from alembic import op
-from djgram.db.pydantic_field import ImmutablePydanticField
-from sqlalchemy_file import FileField
 import aiogram.types.document
+import sqlalchemy as sa
+import sqlalchemy.sql.sqltypes
+from alembic import op
+from sqlalchemy_file import FileField
+
 import processing.models.common
 import processing.models.lecture_summary
-import sqlalchemy.sql.sqltypes
+from djgram.db.pydantic_field import ImmutablePydanticField
 
 # revision identifiers, used by Alembic.
 revision = "d7dc6fc988ae"
@@ -48,8 +49,10 @@ def upgrade() -> None:
             "waiters",
             sa.ARRAY(
                 ImmutablePydanticField(
-                    processing.models.common.Waiter, sqlalchemy.sql.sqltypes.JSON(), should_frozen=True
-                )
+                    processing.models.common.Waiter,
+                    sqlalchemy.sql.sqltypes.JSON(),
+                    should_frozen=True,
+                ),
             ),
             server_default="{}",
             nullable=False,

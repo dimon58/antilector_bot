@@ -1,15 +1,11 @@
 """empty message
 
 Revision ID: 3d29382bcd16
-Revises: 
+Revises:
 Create Date: 2024-09-30 16:40:35.570875
 
 """
 
-import sqlalchemy as sa
-from alembic import op
-from djgram.db.pydantic_field import ImmutablePydanticField
-from djgram.db.pydantic_field import PydanticField
 import aiogram.types.birthdate
 import aiogram.types.business_intro
 import aiogram.types.business_location
@@ -20,6 +16,10 @@ import aiogram.types.chat_permissions
 import aiogram.types.chat_photo
 import aiogram.types.message
 import aiogram.types.reaction_type
+import sqlalchemy as sa
+from alembic import op
+
+from djgram.db.pydantic_field import ImmutablePydanticField, PydanticField
 
 # revision identifiers, used by Alembic.
 revision = "3d29382bcd16"
@@ -53,7 +53,9 @@ def upgrade() -> None:
         sa.Column("birthdate", ImmutablePydanticField(aiogram.types.birthdate.Birthdate), nullable=True),
         sa.Column("business_intro", ImmutablePydanticField(aiogram.types.business_intro.BusinessIntro), nullable=True),
         sa.Column(
-            "business_location", ImmutablePydanticField(aiogram.types.business_location.BusinessLocation), nullable=True
+            "business_location",
+            ImmutablePydanticField(aiogram.types.business_location.BusinessLocation),
+            nullable=True,
         ),
         sa.Column(
             "business_opening_hours",
