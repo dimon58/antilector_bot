@@ -86,7 +86,7 @@ class MediaRenderer:
         completed_tasks = []
         corrupted_intervals = []
 
-        def handle_thread_completed_task(completed_task: SimpleNamespace, corrupted: bool) -> None:
+        def handle_thread_completed_task(completed_task: SimpleNamespace, corrupted: bool) -> None:  # noqa: FBT001
             """
             Nested function that is called when a thread completes it current task
             :param completed_task: The completed task

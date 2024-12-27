@@ -143,7 +143,7 @@ class FastMediaRenderer(MediaRenderer):
 
         tasks_duration = sum(task.total_interval_duration for task in tasks)
 
-        def handle_thread_completed_task(completed_task: ThreadTask, corrupted: bool) -> None:
+        def handle_thread_completed_task(completed_task: ThreadTask, corrupted: bool) -> None:  # noqa: FBT001
             """
             Nested function that is called when a thread completes it current task
             :param completed_task: The completed task

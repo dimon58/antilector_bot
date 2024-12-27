@@ -109,7 +109,7 @@ class RenderIntervalThread(threading.Thread):
         :return: Whether it is corrupted or not
         """
 
-        ffmpeg = self.__generate_command(interval_output_file, interval, apply_filter)
+        ffmpeg = self.__generate_command(interval_output_file, interval, apply_filter=apply_filter)
 
         # Очень часто длина интервалов меньше нескольких секунд
         # Их логирование только засоряет поток
@@ -202,7 +202,7 @@ class RenderIntervalThread(threading.Thread):
 
         return additional_output_options
 
-    def __generate_command(self, interval_output_file: Path, interval: Interval, apply_filter: bool) -> FixedFFmpeg:
+    def __generate_command(self, interval_output_file: Path, interval: Interval, *, apply_filter: bool) -> FixedFFmpeg:
         """
         Generates the ffmpeg command to process the video
         :param interval_output_file: Where the media interval should be saved

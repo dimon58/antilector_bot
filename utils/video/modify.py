@@ -21,8 +21,9 @@ def resolve_media_codec(
     input_file: Path,
     output_file: Path,
     codec: str | None,
-    force_transcode: bool,
     media_stream_type: MediaStreamType,
+    *,
+    force_transcode: bool,
 ) -> str | None:
     original_codec = get_media_codecs(input_file, media_stream_type)[0]
 
@@ -169,7 +170,7 @@ def replace_audio_in_video(  # noqa: PLR0913
     if video_codec is not None:
         output_options["c:v"] = video_codec
 
-    def worker(_idx: int, _start: float, _end: float, single: bool, local_output_file: Path) -> None:
+    def worker(_idx: int, _start: float, _end: float, single: bool, local_output_file: Path) -> None:  # noqa: FBT001
         if single:
             local_audio_input_options = {}
             local_video_input_options = video_input_options

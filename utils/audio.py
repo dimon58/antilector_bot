@@ -62,6 +62,7 @@ def _read_audio_tensor(path: Path, sample_rate: int | None = None) -> tuple[torc
 def read_audio(
     path: PathType,
     sample_rate: int | None = None,
+    *,
     resample_on_cuda: bool = USE_CUDA,
 ) -> tuple[torch.Tensor, int]:
     """

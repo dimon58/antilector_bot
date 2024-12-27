@@ -4,7 +4,7 @@ NVENC_MAX_CONCURRENT_SESSIONS = 8
 NVENC_CODECS = ("hevc_nvenc", "h264_nvenc", "av1_nvenc")  # todo: calculate based on gpu
 
 
-def ensure_nvenc_correct(use_nvenc: bool, force_video_codec: str | None, threads: int) -> bool | None:
+def ensure_nvenc_correct(use_nvenc: bool, force_video_codec: str | None, threads: int) -> bool | None:  # noqa: FBT001
     """
     Проверяет, можно ли использовать nvenc в такой конфигурации
 
