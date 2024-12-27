@@ -2,7 +2,6 @@ import logging
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
 
 import soundfile as sf
 import torch
@@ -22,7 +21,7 @@ logger = logging.getLogger(__name__)
 class NisqaModel:
     def __init__(
         self,
-        device: Optional[DeviceLikeType] = None,
+        device: DeviceLikeType | None = None,
         config_path: Path = BASE_DIR / "config" / "nisqa_s.yaml",
         ckp_path: Path = BASE_DIR / "weights" / "nisqa_s.tar",
         warmup: bool = False,
@@ -62,7 +61,12 @@ class NisqaModel:
         logger.debug("Warming up nisqa model")
         _sr = 48000
         _, _, _ = process(
-            torch.zeros(self.frame * _sr, device=self.device), _sr, self.model, self.h0, self.c0, self.args
+            torch.zeros(self.frame * _sr, device=self.device),
+            _sr,
+            self.model,
+            self.h0,
+            self.c0,
+            self.args,
         )
 
     def measure_from_tensor(self, audio: torch.Tensor, sample_rate: int) -> NisqaMetrics:
@@ -165,7 +169,7 @@ class NisqaModel:
 
         return final_stats
 
-    def _need_cleanup_cuda(self):
+    def _need_cleanup_cuda(self) -> bool:
         return self.device is not None and self.device.type == "cuda"
 
     @contextmanager

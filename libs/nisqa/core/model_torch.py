@@ -16,8 +16,8 @@ class PoolAvg(torch.nn.Module):
 
     def forward(self, x, n_wins):
         # Original code
-        # mask = torch.arange(x.shape[1])[None, :] < n_wins[:, None].to("cpu").to(torch.long)
-        # mask = ~mask.unsqueeze(2).to(x.device)
+        # mask = torch.arange(x.shape[1])[None, :] < n_wins[:, None].to("cpu").to(torch.long)  # noqa: ERA001
+        # mask = ~mask.unsqueeze(2).to(x.device)  # noqa: ERA001
 
         mask = torch.arange(x.shape[1], device=x.device).unsqueeze(0) < n_wins.unsqueeze(1)
         mask = ~mask.unsqueeze(2)
@@ -220,7 +220,7 @@ class NISQA_DIM(nn.Module):
                     output_size=1,
                 )
                 for _ in range(5)
-            ]
+            ],
         )
 
     def forward(self, x, n_wins, h0, c0):

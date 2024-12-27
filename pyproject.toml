@@ -56,8 +56,6 @@ exclude = [
     "node_modules",
     "site-packages",
     "venv",
-    "libs/nisqa",
-    "processing",
 ]
 
 # Same as Black.
@@ -118,14 +116,21 @@ docstring-code-line-length = "dynamic"
 "tg_bot/apps/*/dialogs/getters.py" = ["ANN201", "ARG001", "D103", "TID252"]
 "tg_bot/apps/*/handlers.py" = ["ANN201", "ARG001"]
 "tg_bot/apps/*/models.py" = ["D101"]
+"libs/nisqa/*" = [
+    "ANN001", "ANN201", "ARG001", "B006", "B904",
+    "D101", "D102", "D103", "D107", "E722",
+    "FBT001", "FBT002", "N801", "N806", "N812",
+    "PLR0913", "PLW2901", "PTH123", "RET504",
+    "S506", "SIM108", "SLF001",
+]
+"libs/unsilence/*" = ["D101", "D102", "D103"]
+"libs/unsilence_fast/*" = ["D101", "D102"]
 "migrations/env.py" = ["D103"]
 "migrations/versions/*.py" = ["D103"]
 "tests/**/*.py" = ["ANN201", "D101", "D102"]
 "tools/audio_processing/*" = ["D101", "D102", "D103"]
 "tools/video_processing/*" = ["D101", "D102", "D103"]
 "tools/yt_dlp_downloader/*" = ["D101", "D102", "D103"]
-"libs/unsilence_fast/*" = ["D101", "D102"]
-"libs/unsilence/*" = ["D101", "D102", "D103"]
 "utils/*" = ["D101", "D102", "D103"]
 "djgram/*" = [
     "ANN002", "ANN003", "ANN204", "ANN401", "ARG001", "ARG002", "ARG003",

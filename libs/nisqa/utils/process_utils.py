@@ -68,7 +68,7 @@ def segment_specs(x, seg_length=15, seg_hop=3, max_length=None):
     if max_length is not None:
         if max_length < x.shape[0]:
             raise ValueError(
-                f"n_wins {x.shape[0]} > max_length {max_length}. Increase max window length ms_max_segments!"
+                f"n_wins {x.shape[0]} > max_length {max_length}. Increase max window length ms_max_segments!",
             )
         x_padded = torch.zeros((max_length, x.shape[1], x.shape[2], x.shape[3]))
         x_padded[:n_wins, :] = x
