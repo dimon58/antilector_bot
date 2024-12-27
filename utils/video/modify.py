@@ -117,7 +117,7 @@ def concat_media_files_with_progress(
     progress.close()
 
 
-def replace_audio_in_video(  # noqa: PLR0913
+def replace_audio_in_video(  # noqa: C901, PLR0913
     video_file: Path,
     audio_file: Path,
     output_file: Path,

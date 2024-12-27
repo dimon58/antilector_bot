@@ -10,7 +10,7 @@ from ..intervals.intervals import Interval, Intervals  # noqa: TID252
 logger = logging.getLogger(__name__)
 
 
-def detect_silence(
+def detect_silence(  # noqa: C901
     input_file: Path,
     silence_level: float = -35.0,
     silence_time_threshold: float = 0.5,

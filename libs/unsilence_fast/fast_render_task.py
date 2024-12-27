@@ -96,7 +96,7 @@ class IntervalGroupRenderTask:
         self.interval_render_tasks.append(interval_render_task)
         self._total_interval_duration += interval_render_task.interval.duration
 
-    def _generate_command_for_single_interval(  # noqa: PLR0912
+    def _generate_command_for_single_interval(  # noqa: C901, PLR0912
         self,
         render_options: RenderOptions,
         separated_audio: Path | None,
@@ -263,7 +263,7 @@ class IntervalGroupRenderTask:
 
         return ffmpeg.output(output_file, output_options)
 
-    def generate_command_notrim(
+    def generate_command_notrim(  # noqa: C901
         self,
         input_file: Path,
         output_file: Path,

@@ -122,7 +122,7 @@ class FastMediaRenderer(MediaRenderer):
 
         return tasks
 
-    def _run_tasks(  # noqa: PLR0913
+    def _run_tasks(  # noqa: C901, PLR0913
         self,
         tasks: list[IntervalGroupRenderTask],
         input_file: Path,

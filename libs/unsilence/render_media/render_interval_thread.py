@@ -148,7 +148,7 @@ class RenderIntervalThread(threading.Thread):
 
         return True
 
-    def _resolve_filter(self, fade: str, interval: Interval) -> dict[str, str]:  # noqa: PLR0912
+    def _resolve_filter(self, fade: str, interval: Interval) -> dict[str, str]:  # noqa: C901, PLR0912
 
         additional_output_options = {}
 
