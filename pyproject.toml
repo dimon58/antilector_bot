@@ -15,10 +15,13 @@ dependencies = []
 
 # ==== pytest ====
 [tool.pytest.ini_options]
-minversion = "7.4"
+minversion = "8.3"
 python_files = [
     "tests.py",
     "test_*.py",
+]
+testpaths = [
+    "tests",
 ]
 
 # ==== ruff ====
@@ -126,20 +129,6 @@ line-length = 120
 target-version = ['py311']
 force-exclude = ".venv|venv|requirements.txt|requirements-dev.txt|.whisper"
 
-
-# ==== isort ====
-[tool.isort]
-profile = "black"
-line_length = 88
-multi_line_output = 3
-default_section = "THIRDPARTY"
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-known_first_party = []
-skip = [".venv", "venv/"]
-skip_glob = []
-
 # ==== pyright ====
 [tool.pyright]
 exclude = [
@@ -156,17 +145,3 @@ exclude = [
 [tool.bandit]
 exclude_dirs = ["dev", ".venv", "venv"]
 skips = ["B703", "B308"]
-
-
-# ==== pylint ====
-[tool.pylint.main]
-jobs = 0
-ignore-paths = [
-    ".venv",
-    "venv",
-]
-# Разрешение f-string в логировании
-disable = ["logging-fstring-interpolation"]
-
-[tool.pylint.format]
-max-line-length = 120
