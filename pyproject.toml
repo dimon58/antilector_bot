@@ -5,10 +5,10 @@ version = "0.1.0"
 readme = "readme.md"
 package-mode = false
 authors = [
-  { name = "Dmitry Sharonov" },
+    { name = "Dmitry Sharonov" },
 ]
 classifiers = [
-  "Private :: Do not Upload",
+    "Private :: Do not Upload",
 ]
 requires-python = "~=3.11"
 dependencies = []
@@ -74,12 +74,15 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "ANN002", "ANN003", "ANN201", "ANN204", "ANN401", "ARG001", "ARG002", "ARG003",
-    "C901", "COM812",
-    "D100", "D101", "D102", "D103", "D105", "D200", "D202", "D205", "D212", "D415",
-    "EM101", "EM102", "ERA001", "FBT001", "FBT002", "FBT003", "INP001",
-    "PLR0913", "RUF001", "RUF002", "RUF003", "RUF012", "TRY003", "TID252",
-    "TD", "FIX"
+    "ANN002", "ANN003", "ANN204",
+    "D100", "D104", "D105", "D200", "D202", "D205", "D212", "D415",
+    "EM101", "EM102", "INP001", "TRY003",
+    "RUF001", "RUF002", "RUF003", "FIX", "TD",
+    # FIXME: Специфичное для проекта
+    "ANN201", "ANN401", "ARG001", "ARG002",
+    "C901", "COM812", "D101", "D102", "D103",
+    "ERA001", "FBT001", "FBT002", "FBT003",
+    "PLR0913", "RUF012", "TID252",
 ]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
@@ -107,7 +110,7 @@ line-ending = "auto"
 #
 # This is currently disabled by default, but it is planned for this
 # to be opt-out in the future.
-docstring-code-format = false
+docstring-code-format = true
 
 # Set the line length limit used when formatting code snippets in
 # docstrings.
@@ -116,12 +119,45 @@ docstring-code-format = false
 # enabled.
 docstring-code-line-length = "dynamic"
 
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tg_bot/apps/*/admin.py" = ["ARG002", "D101", "D102", "RUF012"]
+"tg_bot/apps/*/dialogs/callbacks.py" = ["ANN201", "ARG001", "D103", "TID252"]
+"tg_bot/apps/*/dialogs/dialogs.py" = ["TID252"]
+"tg_bot/apps/*/dialogs/getters.py" = ["ANN201", "ARG001", "D103", "TID252"]
+"tg_bot/apps/*/handlers.py" = ["ANN201", "ARG001"]
+"tg_bot/apps/*/models.py" = ["D101"]
+"migrations/env.py" = ["D103"]
+"migrations/versions/*.py" = ["D103"]
+"tests/**/*.py" = ["ANN201", "D101", "D102"]
+"djgram/*" = [
+    "ANN002", "ANN003", "ANN204", "ANN401", "ARG001", "ARG002", "ARG003",
+    "D100", "D102", "D103", "D104", "D105", "D200", "D202", "D205", "D212", "D415",
+    "EM101", "EM102", "INP001", "RUF001", "RUF002", "RUF003", "TRY003", "FIX", "TD",
+    "UP040", # Не делаем python 3.12 обязательным
+]
+"djgram/contrib/*/admin.py" = ["D101", "RUF012"]
+"djgram/contrib/*/dialogs/callbacks.py" = ["ANN201", "TID252"]
+"djgram/contrib/*/dialogs/dialogs.py" = ["TID252"]
+"djgram/contrib/*/dialogs/getters.py" = ["TID252"]
+"djgram/contrib/*/handlers.py" = ["ANN201"]
+"djgram/db/sqlalchemyv2_nested_mutable/mutable.py" = ["PYI063"]
+"djgram/db/sqlalchemyv2_nested_mutable/trackable.py" = ["PYI063"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.mccabe]
-# Unlike Flake8, default to a complexity level of 10.
-max-complexity = 10
+# Unlike Flake8, default to a complexity level of 8.
+max-complexity = 8
+
+[tool.ruff.lint.isort]
+default-section = "third-party"
+known-first-party = []
+split-on-trailing-comma = true
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
 
 # ==== black ====
 [tool.black]
@@ -139,7 +175,6 @@ exclude = [
     "venv",
     "migrations/env.py",
 ]
-
 
 # ==== bandit ====
 [tool.bandit]
