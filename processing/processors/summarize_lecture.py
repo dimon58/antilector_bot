@@ -3,10 +3,12 @@ import tempfile
 import time
 from pathlib import Path
 
+from aiogram.types import BufferedInputFile
 from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 from sqlalchemy_file import File
 
+from djgram.contrib.communication.broadcast import broadcast
 from djgram.db.base import get_autocommit_session
 from processing.models import LectureSummary, Video, Waiter
 from processing.schema import VideoOrPlaylistForProcessing
@@ -168,6 +170,31 @@ async def process_summarization(downloaded_video_id, lecture_summary, video):
                     .where(LectureSummary.id == lecture_summary.id)
                     .values(telegram_file=lecture_summary.telegram_file)
                 )
+        elif lecture_summary.latex is not None:
+            chat_ids = []
+            per_chat_kwargs = []
+
+            for waiter in lecture_summary.waiters:
+                chat_ids.append(waiter.telegram_chat_id)
+                per_chat_kwargs.append({"reply_to_message_id": waiter.reply_to_message_id})
+
+            async def send_method(chat_id: int | str, reply_to_message_id: int | None = None) -> None:
+                await bot.send_document(
+                    document=BufferedInputFile(
+                        file=latex.encode("utf-8"),
+                        filename="source.tex",
+                    ),
+                    caption="Не удалось сгенерировать pdf, поэтому отправил вам исходный код latex",
+                    chat_id=chat_id,
+                    reply_to_message_id=reply_to_message_id,
+                )
+
+            await broadcast(
+                send_method=send_method,
+                chat_ids=chat_ids,
+                count=len(chat_ids),
+                per_chat_kwargs=per_chat_kwargs,
+            )
         else:
             await lecture_summary.broadcast_text_for_waiters(
                 bot=bot,

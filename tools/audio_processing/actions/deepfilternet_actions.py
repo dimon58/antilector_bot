@@ -183,10 +183,12 @@ class DeepFilterNet3Denoise(Action):
             )
 
         enhanced_audio = []
-        for offset in LoggingTQDM(range(0, meta.num_frames, chunk_size), f"Denoising using {self.df_model_name}"):
+        pbar = LoggingTQDM(desc=f"Denoising using {self.df_model_name}", total=len(audio) / meta.sample_rate)
+        for offset in range(0, meta.num_frames, chunk_size):
             torch.cuda.reset_peak_memory_stats()
 
             audio_chunk = audio[:, offset : offset + chunk_size]
+            pbar.update((min(len(audio_chunk), offset + chunk_size) - offset) / meta.sample_rate)
             enhanced_audio_chunk = enhance(self.model, self.df_state, audio_chunk)
             enhanced_audio.append(enhanced_audio_chunk)
 

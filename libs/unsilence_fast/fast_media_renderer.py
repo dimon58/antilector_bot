@@ -141,6 +141,8 @@ class FastMediaRenderer(MediaRenderer):
         completed_tasks: list[ThreadTask] = []
         corrupted_intervals: list[ThreadTask] = []
 
+        tasks_duration = sum(task.total_interval_duration for task in tasks)
+
         def handle_thread_completed_task(completed_task: ThreadTask, corrupted: bool) -> None:
             """
             Nested function that is called when a thread completes it current task
@@ -154,7 +156,10 @@ class FastMediaRenderer(MediaRenderer):
             if not corrupted:
                 completed_tasks.append(completed_task)
                 if on_render_progress_update is not None:
-                    on_render_progress_update(len(completed_tasks), len(tasks))
+                    on_render_progress_update(
+                        sum(task.interval_group_render_task.total_interval_duration for task in completed_tasks),
+                        tasks_duration,
+                    )
             else:
                 corrupted_intervals.append(completed_task)
 
