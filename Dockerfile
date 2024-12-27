@@ -17,7 +17,7 @@ RUN apt-get update \
     && add-apt-repository ppa:deadsnakes/ppa \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-        wget build-essential libcudnn8 libcudnn8-dev \
+        wget build-essential libcudnn8 libcudnn9-cuda-12 libcudnn8-dev \
         python${PYTHON_VERSION}-full python${PYTHON_VERSION}-dev \
     && ln -sf python${PYTHON_VERSION} /usr/bin/python \
     && wget https://bootstrap.pypa.io/get-pip.py \
@@ -28,8 +28,8 @@ RUN apt-get update \
     && rm -rf /var/[log,tmp]/* /tmp/* /var/lib/apt/lists/*
 
 # texlive-full нужен для рендеринга latex
-# Можно уменьшить рамер образа, если ставить пакеты texlive отдельно. См. apt search texlive
-# В этой команде будут установлены, как минимум, лишние пакеты с документацией
+# TODO: Можно уменьшить рамер образа, если ставить пакеты texlive отдельно. См. apt search texlive
+#       этой команде будут установлены, как минимум, лишние пакеты с документацией
 # https://stackoverflow.com/questions/53343241/dependency-problems-leaving-unconfigured
 # https://github.com/jrottenberg/ffmpeg/issues/316
 RUN apt-get update \

@@ -29,6 +29,7 @@ exclude = [
     ".tox",
     ".venv",
     ".vscode",
+    ".whisper",
     "__pycache__",
     "__pypackages__",
     "_build",
@@ -108,7 +109,7 @@ max-complexity = 10
 [tool.black]
 line-length = 120
 target-version = ['py311']
-force-exclude = ".venv|venv|requirements.txt|requirements-dev.txt"
+force-exclude = ".venv|venv|requirements.txt|requirements-dev.txt|.whisper"
 
 
 # ==== isort ====
