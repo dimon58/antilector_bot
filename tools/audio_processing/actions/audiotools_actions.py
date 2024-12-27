@@ -4,6 +4,7 @@ from typing import Any, Literal, ParamSpec, Self, TypeAlias, TypeVar
 
 import pydantic
 from pyaudiotoolslib.wavfile import WavFile
+from pydantic import Field
 
 from .abstract import Action, ActionStatsType
 
@@ -44,7 +45,7 @@ class AudiotoolsSubAction(pydantic.BaseModel):
 class AudiotoolsAction(Action):
     name: Literal["AudiotoolsAction"] = "AudiotoolsAction"
 
-    subactions: list[AudiotoolsSubAction] = []
+    subactions: list[AudiotoolsSubAction] = Field(default_factory=list)
 
     def normalize(self, peak_level: float = -1.0, remove_dc: bool = True, stereo_independent: bool = False) -> Self:
         self.subactions.append(

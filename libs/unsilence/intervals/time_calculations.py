@@ -1,6 +1,6 @@
 from typing import TypeAlias
 
-from ..render_media.render_filter import clamp_speed
+from ..render_media.render_filter import clamp_speed  # noqa: TID252
 from .intervals import Intervals
 
 TimeData: TypeAlias = dict[str, dict[str, tuple[float, float]]]

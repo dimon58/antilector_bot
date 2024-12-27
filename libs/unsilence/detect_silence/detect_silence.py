@@ -4,8 +4,8 @@ import shlex
 import subprocess
 from pathlib import Path
 
-from .._typing import UpdateCallbackType
-from ..intervals.intervals import Interval, Intervals
+from .._typing import UpdateCallbackType  # noqa: TID252
+from ..intervals.intervals import Interval, Intervals  # noqa: TID252
 
 logger = logging.getLogger(__name__)
 

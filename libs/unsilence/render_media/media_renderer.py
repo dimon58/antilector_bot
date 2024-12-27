@@ -9,9 +9,9 @@ from types import SimpleNamespace
 
 from utils.video.modify import concat_media_files
 
-from .._typing import UpdateCallbackType
-from ..intervals.intervals import Intervals
-from ..render_media.render_interval_thread import RenderIntervalThread
+from .._typing import UpdateCallbackType  # noqa: TID252
+from ..intervals.intervals import Intervals  # noqa: TID252
+from ..render_media.render_interval_thread import RenderIntervalThread  # noqa: TID252
 from .options import RenderOptions
 
 logger = logging.getLogger(__name__)

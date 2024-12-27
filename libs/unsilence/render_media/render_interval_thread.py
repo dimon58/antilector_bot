@@ -12,7 +12,7 @@ from configs import UNSILENCE_MIN_INTERVAL_LENGTH_FOR_LOGGING
 from utils.fixed_ffmpeg import FixedFFmpeg
 from utils.progress_bar import setup_progress_for_ffmpeg
 
-from ..intervals.interval import Interval
+from ..intervals.interval import Interval  # noqa: TID252
 from .options import RenderOptions
 from .render_filter import get_audio_filter, get_fade_filter, get_speed_and_volume, get_video_filter
 

@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal, Self
 
 from ffmpeg_normalize import FFmpegNormalize
-from pydantic import model_validator
+from pydantic import Field, model_validator
 
 from configs import MAX_AUDIO_DURATION
 from utils.fixed_ffmpeg import FixedFFmpeg
@@ -20,7 +20,7 @@ class ExtractAudioFromVideo(Action):
     name: Literal["ExtractAudioFromVideo"] = "ExtractAudioFromVideo"
 
     to_mono: bool = False
-    output_config: dict[str, str | int] = {}
+    output_config: dict[str, str | int] = Field(default_factory=dict)
     codec: str | None = None
 
     @model_validator(mode="after")
@@ -68,8 +68,8 @@ class ExtractAudioFromVideo(Action):
 class SimpleFFMpegAction(Action):
     name: Literal["SimpleFFMpegAction"] = "SimpleFFMpegAction"
 
-    input_options: dict[str, int | float | str | list[int | float | str] | None] = {}
-    output_options: dict[str, int | float | str | list[int | float | str] | None] = {}
+    input_options: dict[str, int | float | str | list[int | float | str] | None] = Field(default_factory=dict)
+    output_options: dict[str, int | float | str | list[int | float | str] | None] = Field(default_factory=dict)
 
     def run(self, input_file: Path, output_file: Path) -> ActionStatsType | None:
         input_file = input_file.absolute().as_posix()

@@ -13,7 +13,7 @@ from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpContentType, YtD
 from utils.thumbnail import get_best_thumbnail
 from utils.yt_dlp_cached import extract_info_async_cached
 
-from ..formating import format_as_playlist_html, format_as_video_html
+from ..formating import format_as_playlist_html, format_as_video_html  # noqa: TID252
 
 if TYPE_CHECKING:
     from djgram.contrib.auth.models import User
