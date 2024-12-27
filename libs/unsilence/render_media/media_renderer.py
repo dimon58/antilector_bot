@@ -30,7 +30,7 @@ class MediaRenderer:
         """
         self._temp_path = Path(temp_path).absolute()
 
-    def render(
+    def render(  # noqa: PLR0913
         self,
         input_file: Path,
         output_file: Path,

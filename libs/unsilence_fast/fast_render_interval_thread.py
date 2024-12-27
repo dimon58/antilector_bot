@@ -29,7 +29,7 @@ class ThreadTask:
 
 
 class RenderIntervalThread(threading.Thread):
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         thread_id: int,
         input_file: Path,

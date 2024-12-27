@@ -10,7 +10,7 @@ from .fast_media_renderer import FastMediaRenderer
 
 
 class FastUnsilence(Unsilence):
-    def render_media(
+    def render_media(  # noqa: PLR0913
         self,
         output_file: Path,
         temp_dir: Path = Path(".tmp"),

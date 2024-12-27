@@ -20,7 +20,7 @@ def silent_detect_progress_update_proxy(callback: UpdateCallbackType, duration: 
     return inner
 
 
-def detect_speech(
+def detect_speech(  # noqa: PLR0913
     input_file: Path,
     model: silero_vad.utils_vad.OnnxWrapper | ScriptModule,
     *,
@@ -119,7 +119,7 @@ class Vad(FastUnsilence):
         super().__init__(input_file)
         self._model = model
 
-    def detect_silence(
+    def detect_silence(  # noqa: PLR0913
         self,
         *,
         silence_upper_threshold: float | None = None,
@@ -226,7 +226,7 @@ def intervals_collapse(intervals: Intervals) -> Intervals:
 
 
 class UnsilenceAndVad(Vad):
-    def detect_silence(
+    def detect_silence(  # noqa: PLR0913
         self,
         *,
         silence_level: float = -35.0,

@@ -83,7 +83,6 @@ ignore = [
     "ANN201", "ANN401", "ARG001", "ARG002",
     "C901", "COM812", "D101", "D102", "D103",
     "ERA001", "FBT001", "FBT002", "FBT003",
-    "PLR0913",
 ]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.

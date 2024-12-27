@@ -34,7 +34,7 @@ class Unsilence:
         if ffmpeg_status == FFMpegStatus.UNKNOWN_VERSION:
             logger.warning("Could not detect ffmpeg version, proceed at your own risk! (version >= 4.2.4 required)")
 
-    def detect_silence(
+    def detect_silence(  # noqa: PLR0913
         self,
         silence_level: float = -35.0,
         silence_time_threshold: float = 0.5,

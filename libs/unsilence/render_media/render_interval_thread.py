@@ -24,7 +24,7 @@ class RenderIntervalThread(threading.Thread):
     Worker thread that can render/process intervals based on defined options
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         thread_id: int,
         input_file: Path,
