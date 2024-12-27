@@ -125,7 +125,7 @@ class DeepFilterNet3Denoise(Action):
     df_state: DF | None = Field(None, exclude=True)
     df_model_name: str = DEFAULT_MODEL
     device: torch.device | None = Field(None, exclude=True)
-    cleanup: bool = Field(True, exclude=True)
+    cleanup: bool = Field(default=True, exclude=True)
 
     # 4 GiB
     chunk_max_size_bytes: float = Field(MAX_DEEPFILTERNET_CHUNK_SIZE_BYTES, exclude=True)

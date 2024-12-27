@@ -82,7 +82,7 @@ ignore = [
     # FIXME: Специфичное для проекта
     "ANN201", "ANN401", "ARG001", "ARG002",
     "C901", "COM812", "D101", "D102", "D103",
-    "FBT001", "FBT002", "FBT003",
+    "FBT001", "FBT002",
 ]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
