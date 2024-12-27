@@ -84,12 +84,12 @@ def setup_routers(dp: Dispatcher) -> None:
     logger.info("Routers setup")
 
 
-async def on_unknown_intent(event: ErrorEvent, dialog_manager: DialogManager) -> None:
+async def on_unknown_intent(event: ErrorEvent, dialog_manager: DialogManager) -> None:  # noqa: D103
     logging.error("Error in dialog: %s", event.exception)
     await dialog_manager.start(MenuStates.main_menu, mode=StartMode.RESET_STACK)
 
 
-async def on_unknown_state(event: ErrorEvent, dialog_manager: DialogManager) -> None:
+async def on_unknown_state(event: ErrorEvent, dialog_manager: DialogManager) -> None:  # noqa: D103
     # Example of handling UnknownState Error and starting new dialog.
     logging.error("Error in dialog: %s", event.exception)
     await dialog_manager.start(MenuStates.main_menu, mode=StartMode.RESET_STACK)

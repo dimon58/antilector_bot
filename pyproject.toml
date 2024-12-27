@@ -62,7 +62,6 @@ exclude = [
     "libs/nisqa",
     "libs/silero_vad_gpu",
     "processing",
-    "djgram",
 ]
 
 # Same as Black.
@@ -79,8 +78,6 @@ ignore = [
     "D100", "D104", "D105", "D200", "D202", "D205", "D212", "D415",
     "EM101", "EM102", "INP001", "TRY003",
     "RUF001", "RUF002", "RUF003", "FIX", "TD",
-    # Специфичное для проекта:
-    "D101", "D102", "D103",
 ]
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
@@ -128,6 +125,12 @@ docstring-code-line-length = "dynamic"
 "migrations/env.py" = ["D103"]
 "migrations/versions/*.py" = ["D103"]
 "tests/**/*.py" = ["ANN201", "D101", "D102"]
+"tools/audio_processing/*" = ["D101", "D102", "D103"]
+"tools/video_processing/*" = ["D101", "D102", "D103"]
+"tools/yt_dlp_downloader/*" = ["D101", "D102", "D103"]
+"libs/unsilence_fast/*" = ["D101", "D102"]
+"libs/unsilence/*" = ["D101", "D102", "D103"]
+"utils/*" = ["D101", "D102", "D103"]
 "djgram/*" = [
     "ANN002", "ANN003", "ANN204", "ANN401", "ARG001", "ARG002", "ARG003",
     "D100", "D102", "D103", "D104", "D105", "D200", "D202", "D205", "D212", "D415",

@@ -10,6 +10,10 @@ from .fast_media_renderer import FastMediaRenderer
 
 
 class FastUnsilence(Unsilence):
+    """
+    Сильно ускоренная версия Unsilence
+    """
+
     def render_media(  # noqa: PLR0913
         self,
         output_file: Path,

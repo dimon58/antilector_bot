@@ -23,7 +23,9 @@ URL_KEY = "url"
 logger = logging.getLogger(__name__)
 
 
-async def send_preview(message: Message, msg: str, thumbnail: InputFile, parse_mode: ParseMode | None = None) -> None:
+async def send_preview(  # noqa: D103
+    message: Message, msg: str, thumbnail: InputFile, parse_mode: ParseMode | None = None,
+) -> None:
     if thumbnail is not None:
         try:
             await message.reply_photo(thumbnail, msg, parse_mode=parse_mode)
@@ -35,12 +37,12 @@ async def send_preview(message: Message, msg: str, thumbnail: InputFile, parse_m
     await message.reply(msg, parse_mode=parse_mode, disable_web_page_preview=True)
 
 
-async def handle_unsupported_url(exc: YoutubeDLError, message: Message) -> None:
+async def handle_unsupported_url(exc: YoutubeDLError, message: Message) -> None:  # noqa: D103
     logger.warning(exc.msg)
     await message.reply("Эта ссылка не поддерживается")
 
 
-async def is_user_error(message: Message, exc: YoutubeDLError) -> bool:
+async def is_user_error(message: Message, exc: YoutubeDLError) -> bool:  # noqa: D103
     error_msg = exc.msg.lower()
     if "unsupported url" in error_msg:
         await handle_unsupported_url(exc, message)
@@ -63,7 +65,7 @@ async def is_user_error(message: Message, exc: YoutubeDLError) -> bool:
     return False
 
 
-async def try_get_info(url: str, message: Message) -> YtDlpInfoDict | None:
+async def try_get_info(url: str, message: Message) -> YtDlpInfoDict | None:  # noqa: D103
     try:
         # TODO: почему-то это блокирует event loop
         return await extract_info_async_cached(url, process=False, convert_entries_to_list=True)
@@ -79,7 +81,7 @@ async def try_get_info(url: str, message: Message) -> YtDlpInfoDict | None:
         return None
 
 
-async def handle_url(message: Message, manager: DialogManager) -> YtDlpContentType | None:
+async def handle_url(message: Message, manager: DialogManager) -> YtDlpContentType | None:  # noqa: D103
     user: User = manager.middleware_data["user"]
 
     await message.answer("Скачиваю информацию")

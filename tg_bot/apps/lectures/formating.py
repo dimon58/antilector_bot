@@ -3,11 +3,11 @@ from tools.yt_dlp_downloader.misc import get_playlist_duration, yt_dlp_get_html_
 from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpInfoDict
 
 
-def format_as_video_html(info: YtDlpInfoDict) -> str:
+def format_as_video_html(info: YtDlpInfoDict) -> str:  # noqa: D103
     return f"{yt_dlp_get_html_link(info)} - {seconds_to_human_readable(info["duration"])}"
 
 
-def format_as_playlist_html(info: YtDlpInfoDict) -> str:
+def format_as_playlist_html(info: YtDlpInfoDict) -> str:  # noqa: D103
     playlist_desc = (
         f"{yt_dlp_get_html_link(info)}\n"
         f"Общая продолжительность - {seconds_to_human_readable(get_playlist_duration(info))}"
