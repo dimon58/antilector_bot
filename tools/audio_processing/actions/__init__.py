@@ -1,3 +1,1 @@
-from . import audiotools_actions
-from . import deepfilternet_actions
-from . import ffmpeg_actions
+from . import audiotools_actions, deepfilternet_actions, ffmpeg_actions
