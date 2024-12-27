@@ -2,48 +2,48 @@
 -r libs/unsilence/requirements.txt
 
 # Обработка аудио
-ffmpeg-normalize==1.28.3
+ffmpeg-normalize==1.31.0
 python-ffmpeg==2.0.12
 pyaudiotoolslib==0.0.2
 soundfile==0.12.1
 deepfilternet==0.5.6
-silero-vad==5.1
-faster-whisper==1.0.3
+silero-vad==5.1.2
+faster-whisper==1.1.0
 
 --find-links https://download.pytorch.org/whl/torch/
 --find-links https://download.pytorch.org/whl/torchaudio/
 torch==2.4.1+cu124
 torchaudio==2.4.1+cu124
 
-onnxruntime==1.19.2
+onnxruntime==1.20.1
 #--extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
 #onnxruntime-gpu
 
 # Прочее
 coloredlogs~=15.0.1
-python-json-logger==2.0.7
-pydantic==2.9.2
-orjson==3.10.7
-yt-dlp==2024.10.7
-cashews==7.3.2
-pillow==10.4.0
-openai==1.52.0
+python-json-logger==3.2.1
+pydantic==2.10.4
+orjson==3.10.12
+yt-dlp==2024.12.23
+cashews==7.4.0
+pillow==11.0.0
+openai==1.58.1
 markdown-it-py==3.0.0
 lazy-object-proxy==1.10.0
-httpx==0.27.2
+httpx==0.28.1
 socksio==1.0.0
 
 # -------- Telegram bot -------- #
 -r djgram/requirements.txt
 
 # Работа с telegram
-aiogram==3.13.1
+aiogram==3.16.0
 
 # Работа с базой данных
-alembic==1.13.3
-asyncpg==0.29.0
-redis==5.1.1
-hiredis==3.0.0
+alembic==1.14.0
+asyncpg==0.30.0
+redis==5.2.1
+hiredis==3.1.0
 
 # Прочее
 python-dotenv==1.0.1
