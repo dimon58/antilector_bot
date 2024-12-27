@@ -1,3 +1,18 @@
+[project]
+name = "antilector_bot"
+description = "Позволяет улучшать звук в лекциях, удалять участки с тишиной из лекций и конспектировать лекции"
+version = "0.1.0"
+readme = "readme.md"
+package-mode = false
+authors = [
+  { name = "Dmitry Sharonov" },
+]
+classifiers = [
+  "Private :: Do not Upload",
+]
+requires-python = "~=3.11"
+dependencies = []
+
 # ==== pytest ====
 [tool.pytest.ini_options]
 minversion = "7.4"
