@@ -83,8 +83,6 @@ def render_latex(latex: str, pdflatex_executable: str = PDFLATEX_EXECUTABLE) -> 
         with temp_latex.open("wb") as f:
             f.write(latex.encode("utf-8"))
 
-        print(repr(latex))
-
         out_dir = temp_dir / "out"
         out_dir.mkdir(exist_ok=True)
         out_pdf = out_dir / f"{temp_name}.pdf"

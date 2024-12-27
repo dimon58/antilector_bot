@@ -1,14 +1,15 @@
 from typing import Any
 
-from sqlalchemy import ForeignKey, Table, Column
+from sqlalchemy import Column, ForeignKey, Table
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import sqltypes
-from sqlalchemy_file import FileField, File
+from sqlalchemy_file import File, FileField
 
 from configs import ORIGINAL_VIDEO_STORAGE, THUMBNAILS_STORAGE
 from djgram.db.models import BaseModel, TimeTrackableBaseModel
 from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpInfoDict
+
 from .common import Waitable
 
 
@@ -22,7 +23,7 @@ class YtDlpBase:
 
     yt_dlp_info: Mapped[YtDlpInfoDict] = mapped_column(JSONB(), nullable=False, doc="Информация из yt dlp")
 
-    def get_title_for_admin(self):
+    def get_title_for_admin(self) -> str:
         return f"{self.source}: {self.yt_dlp_info["title"]}"
 
 
@@ -43,7 +44,9 @@ class Playlist(YtDlpBase, TimeTrackableBaseModel):
     )
 
     videos: Mapped[set["Video"]] = relationship(
-        back_populates="playlists", secondary=playlist_video_table, cascade="all,delete"
+        back_populates="playlists",
+        secondary=playlist_video_table,
+        cascade="all,delete",
     )
 
 
@@ -56,7 +59,9 @@ class Video(Waitable, YtDlpBase, TimeTrackableBaseModel):
     )
 
     playlists: Mapped[set[Playlist]] = relationship(
-        back_populates="videos", secondary=playlist_video_table, cascade="all,delete"
+        back_populates="videos",
+        secondary=playlist_video_table,
+        cascade="all,delete",
     )
 
     file: Mapped[File | None] = mapped_column(

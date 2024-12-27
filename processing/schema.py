@@ -1,6 +1,9 @@
+from typing import Self
+
 import aiogram
 import pydantic
 from pydantic import model_validator
+from pydantic_core.core_schema import ValidationInfo
 
 FILE_TYPE = "file"
 
@@ -12,7 +15,7 @@ class DownloadData(pydantic.BaseModel):
     is_playlist: bool = False
 
     @model_validator(mode="after")
-    def validate_content(self, _info):
+    def validate_content(self, _info: ValidationInfo) -> Self:
         has_url = self.url is not None
         has_video = self.video is not None
         has_document = self.document is not None

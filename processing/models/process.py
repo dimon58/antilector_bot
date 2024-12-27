@@ -1,3 +1,4 @@
+# ruff: noqa: ERA001
 import enum
 import logging
 from pathlib import Path
@@ -6,13 +7,13 @@ from typing import Any
 import aiogram
 from aiogram import Bot
 from aiogram.enums import ChatAction, ParseMode
-from aiogram.types import Message, InputFile
+from aiogram.types import InputFile, Message
 from aiogram.utils.chat_action import ChatActionSender
 from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import sqltypes
-from sqlalchemy_file import FileField, File
+from sqlalchemy_file import File, FileField
 
 from configs import PROCESSED_VIDEO_STORAGE, VIDEO_UPLOAD_TIMEOUT
 from djgram.db.models import TimeTrackableBaseModel
@@ -23,10 +24,11 @@ from tools.audio_processing.pipeline import AudioPipeline
 from tools.video_processing.actions.unsilence_actions import TIME_SAVINGS_REAL_KEY, UnsilenceAction
 from tools.video_processing.pipeline import VideoPipelineStatistics
 from tools.yt_dlp_downloader.yt_dlp_download_videos import get_url
+
+from ..representation import silence_remove_done_report  # noqa: TID252
 from .common import HasTelegramFileAndOriginalVideo
 from .download import Video
 from .profiles import AudioProcessingProfile, UnsilenceProfile
-from ..representation import silence_remove_done_report
 
 logger = logging.getLogger(__name__)
 
@@ -41,14 +43,18 @@ class ProcessedVideoStatus(enum.Enum):
 class ProcessedVideo(HasTelegramFileAndOriginalVideo, TimeTrackableBaseModel):
     __table_args__ = (
         UniqueConstraint(
-            "original_video_id", "audio_processing_profile_id", "unsilence_profile_id", name="uniq_pipeline"
+            "original_video_id",
+            "audio_processing_profile_id",
+            "unsilence_profile_id",
+            name="uniq_pipeline",
         ),
         # CheckConstraint("(status = 'processed') = (file is not null)", name="check_status"),
         # CheckConstraint("(status = 'impossible') = (impossible_reason is not null)", name="check_impossible_status"),
     )
 
     status: Mapped[ProcessedVideoStatus] = mapped_column(
-        sqltypes.Enum(ProcessedVideoStatus), default=ProcessedVideoStatus.TASK_CREATED
+        sqltypes.Enum(ProcessedVideoStatus),
+        default=ProcessedVideoStatus.TASK_CREATED,
     )
     impossible_reason: Mapped[str | None]
 
@@ -70,7 +76,7 @@ class ProcessedVideo(HasTelegramFileAndOriginalVideo, TimeTrackableBaseModel):
     )
 
     processing_stats: Mapped[VideoPipelineStatistics | None] = mapped_column(
-        ImmutablePydanticField(VideoPipelineStatistics, should_frozen=False)
+        ImmutablePydanticField(VideoPipelineStatistics, should_frozen=False),
     )
 
     file: Mapped[File | None] = mapped_column(
@@ -83,33 +89,33 @@ class ProcessedVideo(HasTelegramFileAndOriginalVideo, TimeTrackableBaseModel):
         doc="Отправленный файл в телеграм",
     )
 
-    def get_caption(self):
+    def get_caption(self) -> str:
         yt_dlp_info = self.original_video.yt_dlp_info
 
         original_url = get_url(yt_dlp_info)
-        if original_url is not None:  # noqa: SIM108
+        if original_url is not None:
             original_ref = f'\n\n<a href="{original_url}">Ссылка на оригинальное видео</a>'
         else:  # если обрабатывался файл, загруженный пользователем
             original_ref = ""
 
         time_savings = self.processing_stats.unsilence_stats.action_stats[TIME_SAVINGS_REAL_KEY]
 
-        return f"{yt_dlp_info["title"]}\n\n{silence_remove_done_report(time_savings)}" f"{original_ref}"
+        return f"{yt_dlp_info["title"]}\n\n{silence_remove_done_report(time_savings)}{original_ref}"
 
     async def get_thumbnail_input_file(self) -> InputFile | None:
 
         thumbnail = self.original_video.thumbnail
         if thumbnail is None:
-            return
+            return None
 
         return LoggingInputFile(
             S3FileInput(
                 obj=thumbnail.file.object,
                 filename=thumbnail["filename"],
-            )
+            ),
         )
 
-    async def get_kwargs_for_first_send_to_telegram(self):
+    async def get_kwargs_for_first_send_to_telegram(self) -> dict[str, int | str | None]:
         if self.meta is not None:
             stream = next(stream for stream in self.meta["streams"] if stream["codec_type"] == "video")
             kwargs = {
@@ -124,7 +130,12 @@ class ProcessedVideo(HasTelegramFileAndOriginalVideo, TimeTrackableBaseModel):
         try:
             kwargs["thumbnail"] = await self.get_thumbnail_input_file()
         except Exception as exc:
-            logger.error("Failed to get thumbnail for processed video %s: %s", self.id, exc)
+            logger.exception(
+                "Failed to get thumbnail for processed video %s: %s",
+                self.id,
+                exc,  # noqa: TRY401
+                exc_info=exc,
+            )
 
         return kwargs
 
@@ -145,7 +156,7 @@ class ProcessedVideo(HasTelegramFileAndOriginalVideo, TimeTrackableBaseModel):
                     S3FileInput(
                         obj=self.file.file.object,
                         filename=f"processed{ext}",
-                    )
+                    ),
                 )
                 kwargs = await self.get_kwargs_for_first_send_to_telegram()
 

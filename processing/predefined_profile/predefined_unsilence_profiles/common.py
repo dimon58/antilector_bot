@@ -1,10 +1,10 @@
 from configs import (
+    CPU_ADDITIONAL_OPTIONS,
     FORCE_VIDEO_CODEC,
+    NVENC_ADDITIONAL_OPTIONS,
+    SILERO_VAD_SAMPLE_RATE,
     UNSILENCE_DEFAULT_CPU_COUNT,
     USE_NVENC,
-    SILERO_VAD_SAMPLE_RATE,
-    NVENC_ADDITIONAL_OPTIONS,
-    CPU_ADDITIONAL_OPTIONS,
 )
 from libs.unsilence.render_media.options import RenderOptions
 

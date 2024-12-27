@@ -5,7 +5,7 @@ from typing import Any
 import aiogram
 import pydantic
 from aiogram import Bot
-from aiogram.enums import ParseMode, ChatAction
+from aiogram.enums import ChatAction, ParseMode
 from aiogram.types import Message
 from aiogram.utils.chat_action import ChatActionSender
 from openai.types.chat import ChatCompletion
@@ -21,7 +21,8 @@ from djgram.db.pydantic_field import ImmutablePydanticField
 from djgram.utils.input_file_ext import S3FileInput
 from djgram.utils.upload import LoggingInputFile
 from tools.yt_dlp_downloader.misc import yt_dlp_get_html_link
-from .common import Waiter, HasTelegramFileAndOriginalVideo
+
+from .common import HasTelegramFileAndOriginalVideo, Waiter
 from .download import Video
 
 logger = logging.getLogger(__name__)
@@ -71,12 +72,12 @@ class LectureSummary(HasTelegramFileAndOriginalVideo, TimeTrackableBaseModel):
     )
 
     @hybrid_property
-    def is_corrupted(self):
+    def is_corrupted(self) -> bool:
         return self.transcription_text is not None and self.pdf is None
 
     @is_corrupted.inplace.expression
     @classmethod
-    def _is_corrupted_expression(cls):
+    def _is_corrupted_expression(cls):  # noqa: ANN206
         return and_(
             cls.transcription_text.is_not(None),
             or_(
@@ -100,7 +101,7 @@ class LectureSummary(HasTelegramFileAndOriginalVideo, TimeTrackableBaseModel):
                     S3FileInput(
                         obj=self.pdf.file.object,
                         filename="summary.pdf",
-                    )
+                    ),
                 )
 
             message = await bot.send_document(

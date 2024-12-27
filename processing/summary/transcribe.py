@@ -25,7 +25,7 @@ whisper_model = lazy_object_proxy.Proxy(
         device_index=TORCH_DEVICE.index,
         compute_type=WHISPER_COMPUTE_TYPE,
         download_root=WHISPER_DOWNLOAD_ROOT,
-    )
+    ),
 )
 
 

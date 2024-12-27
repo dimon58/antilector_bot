@@ -12,7 +12,7 @@ from processing.models import AudioProcessingProfile, UnsilenceProfile
 from processing.predefined_profile import predefined_audio_pipelines, predefined_unsilence_profiles
 
 
-async def load_audio_processing_profiles():
+async def load_audio_processing_profiles() -> None:
     excellent = AudioProcessingProfile(
         slug="excellent",
         name="Прекрасный",
@@ -49,7 +49,7 @@ async def load_audio_processing_profiles():
         for profile in (excellent, good, normal, terrible):
             # noinspection PyTypeChecker
             if await db_session.scalar(
-                select(AudioProcessingProfile).with_for_update().where(AudioProcessingProfile.slug == profile.slug)
+                select(AudioProcessingProfile).with_for_update().where(AudioProcessingProfile.slug == profile.slug),
             ):
                 # noinspection PyTypeChecker
                 await db_session.execute(
@@ -59,7 +59,7 @@ async def load_audio_processing_profiles():
                         description=profile.description,
                         audio_pipeline=profile.audio_pipeline,
                     )
-                    .where(AudioProcessingProfile.slug == profile.slug)
+                    .where(AudioProcessingProfile.slug == profile.slug),
                 )
                 logging.info("Updated %s", profile.slug)
                 continue
@@ -70,7 +70,7 @@ async def load_audio_processing_profiles():
         await db_session.commit()
 
 
-async def load_unsilence_profiles():
+async def load_unsilence_profiles() -> None:
     unsilence_profile = UnsilenceProfile(
         slug="unsilence_profile",
         name="Поиск тишины",
@@ -78,12 +78,12 @@ async def load_unsilence_profiles():
         " зато хорошо работает для видео, содержащих музыку.",
         unsilence_action=predefined_unsilence_profiles.unsilence_only_action,
     )
-    # vad_profile = UnsilenceProfile(
-    #     slug="vad_profile",
-    #     name="Детекция речи",
-    #     description="Подходит для лекций. Не стоит использовать для видео содержащих музыку.",
-    #     unsilence_action=predefined_unsilence_profiles.vad_only_action,
-    # )
+    # vad_profile = UnsilenceProfile( ERA001
+    #     slug="vad_profile",  # noqa: ERA001
+    #     name="Детекция речи",  # noqa: ERA001
+    #     description="Подходит для лекций. Не стоит использовать для видео содержащих музыку.",  # noqa: ERA001
+    #     unsilence_action=predefined_unsilence_profiles.vad_only_action,  # noqa: ERA001
+    # ) ERA001
     unsilence_and_vad_profile = UnsilenceProfile(
         slug="unsilence_and_vad_profile",
         name="Поиск речи",
@@ -97,7 +97,7 @@ async def load_unsilence_profiles():
         for profile in (unsilence_and_vad_profile, unsilence_profile):
             # noinspection PyTypeChecker
             if await db_session.scalar(
-                select(UnsilenceProfile).with_for_update().where(UnsilenceProfile.slug == profile.slug)
+                select(UnsilenceProfile).with_for_update().where(UnsilenceProfile.slug == profile.slug),
             ):
                 # noinspection PyTypeChecker
                 await db_session.execute(
@@ -107,7 +107,7 @@ async def load_unsilence_profiles():
                         description=profile.description,
                         unsilence_action=profile.unsilence_action,
                     )
-                    .where(UnsilenceProfile.slug == profile.slug)
+                    .where(UnsilenceProfile.slug == profile.slug),
                 )
                 logging.info("Updated %s", profile.slug)
                 continue
@@ -118,7 +118,7 @@ async def load_unsilence_profiles():
         await db_session.commit()
 
 
-async def main():
+async def main() -> None:
     await load_audio_processing_profiles()
     await load_unsilence_profiles()
 

@@ -18,19 +18,19 @@ terrible_audio_pipeline = (
         .remove_clicks(250, 30)
         .normalize(-0.1, remove_dc=True, stereo_independent=False)
         .remove_clicks(100, 20)
-        .normalize(-0.1, remove_dc=True, stereo_independent=False)
+        .normalize(-0.1, remove_dc=True, stereo_independent=False),
     )
     .add(
         ffmpeg_actions.SimpleFFMpegAction(
             output_options={"af": "speechnorm=p=0.99:e=3:c=3", "ar": 48000},
-        )
+        ),
     )
     .add(deepfilternet_actions.DeepFilterNet3Denoise(cleanup=True))
     .add(audiotools_actions.AudiotoolsAction().normalize(-0.1, remove_dc=True, stereo_independent=False))
     .add(
         ffmpeg_actions.SimpleFFMpegAction(
-            # output_options={"af": "speechnorm=p=0.99:e=3:c=3", "ar": 48000},
+            # output_options={"af": "speechnorm=p=0.99:e=3:c=3", "ar": 48000},  # noqa: ERA001
             output_options={"af": "speechnorm", "ar": 48000},
-        )
+        ),
     )
 )

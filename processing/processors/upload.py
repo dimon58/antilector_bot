@@ -16,7 +16,7 @@ async def upload_to_telegram(processed_video_id: int) -> None:
         processed_video: ProcessedVideo | None = await db_session.scalar(
             select(ProcessedVideo)
             .options(selectinload(ProcessedVideo.original_video))
-            .where(ProcessedVideo.id == processed_video_id)
+            .where(ProcessedVideo.id == processed_video_id),
         )
         if processed_video is None:
             logger.error("Processed video %s not found", processed_video_id)

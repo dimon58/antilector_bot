@@ -6,11 +6,12 @@ from sqlalchemy import update
 from sqlalchemy.orm import selectinload
 from sqlalchemy_file import File
 
-from configs import USE_NVENC, FORCE_VIDEO_CODEC, FORCE_AUDIO_CODEC, PROCESSED_EXT, USE_NISQA, TORCH_DEVICE
+from configs import FORCE_AUDIO_CODEC, FORCE_VIDEO_CODEC, PROCESSED_EXT, TORCH_DEVICE, USE_NISQA, USE_NVENC
 from libs.nisqa.model import NisqaModel
 from tools.video_processing.pipeline import VideoPipeline
 from utils.video.measure import ffprobe_extract_meta
-from .misc import execute_file_update_statement, download_file_from_s3
+
+from .misc import download_file_from_s3, execute_file_update_statement
 from .models import ProcessedVideo, ProcessedVideoStatus
 
 logger = logging.getLogger(__name__)
@@ -24,8 +25,8 @@ async def run_video_pipeline(processed_video: ProcessedVideo) -> ProcessedVideo:
         processed_video.unsilence_profile_id,
         processed_video.id,
     )
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_dir = Path(temp_dir)
+    with tempfile.TemporaryDirectory() as tempdir:
+        temp_dir = Path(tempdir)
 
         logger.info("Downloading video %s from storage to temporary directory", processed_video.original_video_id)
         file = processed_video.original_video.file

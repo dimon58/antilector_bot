@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from aiogram.enums import ParseMode
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -11,19 +11,20 @@ from tools.audio_processing.actions.abstract import ProcessingImpossibleError
 from tools.video_processing.actions.unsilence_actions import SilenceOnlyError
 from tools.yt_dlp_downloader.misc import yt_dlp_get_html_link
 from utils.get_bot import get_tg_bot
-from .download import VideoDownloadEvent, download_observer
-from .error_texts import get_silence_only_error_text, get_generic_error_text, get_unable_to_process_text
-from ..models import (
+
+from ..models import (  # noqa: TID252
+    AudioProcessingProfile,
     ProcessedVideo,
     ProcessedVideoStatus,
-    VideoProcessingResourceUsage,
-    Waiter,
-    AudioProcessingProfile,
     UnsilenceProfile,
     Video,
+    VideoProcessingResourceUsage,
+    Waiter,
 )
-from ..processing_file import run_video_pipeline
-from ..schema import VideoOrPlaylistForProcessing
+from ..processing_file import run_video_pipeline  # noqa: TID252
+from ..schema import VideoOrPlaylistForProcessing  # noqa: TID252
+from .download import VideoDownloadEvent, download_observer
+from .error_texts import get_generic_error_text, get_silence_only_error_text, get_unable_to_process_text
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ async def process_unsilence(video_download_event: VideoDownloadEvent) -> None:
                             user_id=video_or_playlist_for_processing.user_id,
                             processed_video_id=processed_video.id,
                             real_processed=False,
-                        )
+                        ),
                     )
 
                     # Отправляем обработанное видео
@@ -122,7 +123,7 @@ async def process_unsilence(video_download_event: VideoDownloadEvent) -> None:
                         )
                     return
 
-    from ..tasks import process_video_task
+    from ..tasks import process_video_task  # noqa: TID252
 
     # Реально скачивается в этой задаче -> создаём задачу для обработки здесь
     logger.info(
@@ -147,27 +148,25 @@ async def ensure_video_and_profiles_exist(
     db_session: AsyncSession,
     db_video_id: str,
     video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
-):
+) -> None:
     # noinspection PyTypeChecker
     stmt = select(AudioProcessingProfile).where(
-        AudioProcessingProfile.id == video_or_playlist_for_processing.unsilence_data.audio_processing_profile_id
+        AudioProcessingProfile.id == video_or_playlist_for_processing.unsilence_data.audio_processing_profile_id,
     )
     audio_processing_profile: AudioProcessingProfile | None = await db_session.scalar(stmt)
     if audio_processing_profile is None:
-        msg = (
-            "Audio processing profile %s not found"
-            % video_or_playlist_for_processing.unsilence_data.audio_processing_profile_id
-        )
+        audio_processing_profile_id = video_or_playlist_for_processing.unsilence_data.audio_processing_profile_id
+        msg = f"Audio processing profile {audio_processing_profile_id} not found"
         logger.error(msg)
         raise ValueError(msg)
 
     # noinspection PyTypeChecker
     stmt = select(UnsilenceProfile).where(
-        UnsilenceProfile.id == video_or_playlist_for_processing.unsilence_data.unsilence_profile_id
+        UnsilenceProfile.id == video_or_playlist_for_processing.unsilence_data.unsilence_profile_id,
     )
     unsilence_profile: UnsilenceProfile | None = await db_session.scalar(stmt)
     if unsilence_profile is None:
-        msg = "Unsilence profile %s not found" % video_or_playlist_for_processing.unsilence_data.unsilence_profile_id
+        msg = f"Unsilence profile {video_or_playlist_for_processing.unsilence_data.unsilence_profile_id} not found"
         logger.error(msg)
         raise ValueError(msg)
 
@@ -175,7 +174,7 @@ async def ensure_video_and_profiles_exist(
     stmt = select(Video).where(Video.id == db_video_id)
     db_video: Video | None = await db_session.scalar(stmt)
     if db_video is None:
-        msg = "Video %s not found in database" % db_video_id
+        msg = f"Video {db_video_id} not found in database"
         logger.error(msg)
         raise ValueError(msg)
 
@@ -233,7 +232,7 @@ async def get_video_for_processing(processed_video_id: int, waiter: Waiter) -> P
             .options(selectinload(ProcessedVideo.original_video))
             .options(selectinload(ProcessedVideo.audio_processing_profile))
             .options(selectinload(ProcessedVideo.unsilence_profile))
-            .where(ProcessedVideo.id == processed_video_id)
+            .where(ProcessedVideo.id == processed_video_id),
         )
         if processed_video is None:
             logger.error("Processed video %s not found", processed_video_id)
@@ -305,7 +304,7 @@ async def run_video_processing(processed_video: ProcessedVideo, waiter: Waiter) 
                 user_id=waiter.user_id,
                 processed_video_id=processed_video.id,
                 real_processed=True,
-            )
+            ),
         )
 
 
@@ -315,7 +314,7 @@ async def two_step_broadcast_text(processed_video: ProcessedVideo, text: str) ->
         async with get_autocommit_session() as db_session:
             # noinspection PyTypeChecker
             actual_processed_video: ProcessedVideo = await db_session.scalar(
-                select(ProcessedVideo).where(ProcessedVideo.id == processed_video.id)
+                select(ProcessedVideo).where(ProcessedVideo.id == processed_video.id),
             )
             if actual_processed_video is None:
                 return
@@ -340,7 +339,7 @@ async def mark_processing_impossible(processed_video: ProcessedVideo, exc: Proce
         await db_session.execute(
             update(ProcessedVideo)
             .where(ProcessedVideo.id == processed_video.id)
-            .values(status=ProcessedVideoStatus.IMPOSSIBLE, impossible_reason=exc.text)
+            .values(status=ProcessedVideoStatus.IMPOSSIBLE, impossible_reason=exc.text),
         )
 
     await two_step_broadcast_text(processed_video, get_generic_error_text(processed_video))
@@ -375,13 +374,13 @@ async def process_video(processed_video_id: int, waiter_dict: dict[str, Any]) ->
         await run_video_processing(processed_video, waiter)
 
     except ProcessingImpossibleError as exc:
-        logger.error("Impossible to process video %s", processed_video)
+        logger.error("Impossible to process video %s", processed_video)  # noqa: TRY400
         await mark_processing_impossible(processed_video, exc)
 
     except Exception as exc:
-        logger.exception("Failed to process video %s: %s", processed_video.id, exc, exc_info=exc)
+        logger.exception("Failed to process video %s: %s", processed_video.id, exc, exc_info=exc)  # noqa: TRY401
         await cleanup_failed_processing(processed_video)
 
-    from ..tasks import upload_video_task
+    from ..tasks import upload_video_task  # noqa: TID252
 
     upload_video_task.delay(processed_video.id)

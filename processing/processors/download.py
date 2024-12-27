@@ -1,12 +1,13 @@
 import logging
-from collections.abc import Callable, Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from configs import LOG_EACH_VIDEO_DOWNLOAD
 from processing.models import Video
 from processing.schema import VideoOrPlaylistForProcessing
 from utils.get_bot import get_tg_bot
-from ..download_file import get_downloaded_videos
+
+from ..download_file import get_downloaded_videos  # noqa: TID252
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +20,11 @@ class VideoDownloadEvent:
 
 
 class DownloadObserver:
-    def __init__(self):
+    def __init__(self):  # noqa: D107
         self.subscribers: list[tuple[Callable[[VideoDownloadEvent], Awaitable[None]], int]] = []
 
-    def subscribe(self, *, retries: int = 1):
-        def inner_appender(callback: Callable[[VideoDownloadEvent], Awaitable[None]]):
+    def subscribe(self, *, retries: int = 1):  # noqa: ANN201
+        def inner_appender(callback: Callable[[VideoDownloadEvent], Awaitable[None]]) -> None:
             self.subscribers.append((callback, retries))
 
         return inner_appender
@@ -49,7 +50,7 @@ class DownloadObserver:
 download_observer = DownloadObserver()
 
 
-async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPlaylistForProcessing):
+async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPlaylistForProcessing) -> None:
     """
     Обрабатывает видео или плейлист
 
@@ -89,5 +90,5 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
                     video_or_playlist_for_processing=video_or_playlist_for_processing,
                     downloaded_here=downloaded_here,
                     db_video=db_video,
-                )
+                ),
             )

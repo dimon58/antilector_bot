@@ -15,18 +15,19 @@ from processing.schema import VideoOrPlaylistForProcessing
 from tools.audio_processing.actions.ffmpeg_actions import ExtractAudioFromVideo
 from tools.yt_dlp_downloader.misc import yt_dlp_get_html_link
 from utils.get_bot import get_tg_bot
-from .download import download_observer, VideoDownloadEvent
-from ..misc import download_file_from_s3
-from ..models.lecture_summary import LlmStats, SummarizationStats
-from ..summary import transcription_to_summary, transcribe
-from ..summary.lecture_to_summary import extract_latex_from_llm_answer, markdown_parser, render_latex
+
+from ..misc import download_file_from_s3  # noqa: TID252
+from ..models.lecture_summary import LlmStats, SummarizationStats  # noqa: TID252
+from ..summary import transcribe, transcription_to_summary  # noqa: TID252
+from ..summary.lecture_to_summary import extract_latex_from_llm_answer, markdown_parser, render_latex  # noqa: TID252
+from .download import VideoDownloadEvent, download_observer
 
 logger = logging.getLogger(__name__)
 
 
 @download_observer.subscribe(retries=1)  # больше 1 раза дорого
 async def summarize_lecture_subscriber(video_download_event: VideoDownloadEvent) -> None:
-    from ..tasks import summarize_lecture_task
+    from ..tasks import summarize_lecture_task  # noqa: TID252
 
     if not video_download_event.video_or_playlist_for_processing.for_summary:
         logger.debug("Task not for this processor")
@@ -38,7 +39,10 @@ async def summarize_lecture_subscriber(video_download_event: VideoDownloadEvent)
     )
 
 
-async def summarize_lecture(downloaded_video_id: str, video_or_playlist_for_processing: VideoOrPlaylistForProcessing):
+async def summarize_lecture(
+    downloaded_video_id: str,
+    video_or_playlist_for_processing: VideoOrPlaylistForProcessing,
+) -> None:
     async with get_autocommit_session() as db_session:
         # noinspection PyTypeChecker
         lecture_summary: LectureSummary | None = await db_session.scalar(
@@ -46,7 +50,7 @@ async def summarize_lecture(downloaded_video_id: str, video_or_playlist_for_proc
             .options(selectinload(LectureSummary.original_video))
             .with_for_update()
             .where(LectureSummary.original_video_id == downloaded_video_id)
-            .where(~LectureSummary.is_corrupted)
+            .where(~LectureSummary.is_corrupted),
         )
 
         if lecture_summary is not None:
@@ -74,7 +78,7 @@ async def summarize_lecture(downloaded_video_id: str, video_or_playlist_for_proc
     try:
         await process_summarization(downloaded_video_id, lecture_summary, video)
     except Exception as exc:
-        logger.exception("Failed to process summarize %s: %s", downloaded_video_id, exc, exc_info=exc)
+        logger.exception("Failed to process summarize %s: %s", downloaded_video_id, exc, exc_info=exc)  # noqa: TRY401
 
         async with get_autocommit_session() as db_session:
             waiters = await lecture_summary.pop_waiters(db_session)
@@ -90,7 +94,11 @@ async def summarize_lecture(downloaded_video_id: str, video_or_playlist_for_proc
             )
 
 
-async def process_summarization(downloaded_video_id, lecture_summary, video):
+async def process_summarization(  # noqa: PLR0915
+    downloaded_video_id: str,
+    lecture_summary: LectureSummary,
+    video: Video,
+) -> None:
     global_start = time.perf_counter()
     with tempfile.TemporaryDirectory() as tmp_dir:
         temp_dir = Path(tmp_dir)
@@ -128,7 +136,7 @@ async def process_summarization(downloaded_video_id, lecture_summary, video):
         pdf = render_latex(latex)
     except Exception as exc:
         compile_end = time.perf_counter()
-        logger.error("Failed render pdf: %s", exc)
+        logger.exception("Failed render pdf: %s", exc, exc_info=exc)  # noqa: TRY401
         pdf_file = None
     else:
         compile_end = time.perf_counter()
@@ -168,7 +176,7 @@ async def process_summarization(downloaded_video_id, lecture_summary, video):
                 await db_session.execute(
                     update(LectureSummary)
                     .where(LectureSummary.id == lecture_summary.id)
-                    .values(telegram_file=lecture_summary.telegram_file)
+                    .values(telegram_file=lecture_summary.telegram_file),
                 )
         elif lecture_summary.latex is not None:
             chat_ids = []

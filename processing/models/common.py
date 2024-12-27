@@ -7,29 +7,30 @@ from aiogram import Bot
 from aiogram.enums import ParseMode
 from aiogram.types import Message
 from pydantic import ConfigDict
-from sqlalchemy import update, Select, select
+from sqlalchemy import Select, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, selectinload
 from sqlalchemy.sql import sqltypes
 from sqlalchemy_file.storage import StorageManager
 
 from configs import (
+    LECTURES_SUMMARY_STORAGE,
     ORIGINAL_VIDEO_STORAGE,
     PROCESSED_VIDEO_STORAGE,
-    THUMBNAILS_STORAGE,
     S3_DRIVER,
-    LECTURES_SUMMARY_STORAGE,
+    THUMBNAILS_STORAGE,
 )
 from djgram.contrib.communication.broadcast import broadcast
 from djgram.db.base import get_autocommit_session
 from djgram.db.pydantic_field import ImmutablePydanticField
 from utils.minio_utils import get_container_safe
-from ..schema import VideoOrPlaylistForProcessing
+
+from ..schema import VideoOrPlaylistForProcessing  # noqa: TID252
 
 logger = logging.getLogger(__name__)
 
 
-def setup_storage():
+def setup_storage() -> None:
     logger.info("Setting up storages")
 
     StorageManager.add_storage(ORIGINAL_VIDEO_STORAGE, get_container_safe(S3_DRIVER, ORIGINAL_VIDEO_STORAGE))
@@ -65,13 +66,9 @@ class Waitable:
         doc="Список чатов для рассылки состояния обработки",
     )
 
-    def has_waiter(self, telegram_chat_id: int | str):
+    def has_waiter(self, telegram_chat_id: int | str) -> bool:
 
-        for waiter in self.waiters:
-            if waiter.telegram_chat_id == telegram_chat_id:
-                return True
-
-        return False
+        return any(waiter.telegram_chat_id == telegram_chat_id for waiter in self.waiters)
 
     async def add_if_not_in_waiters(self, db_session: AsyncSession, waiter: Waiter) -> bool:
         """
@@ -88,7 +85,7 @@ class Waitable:
 
         # noinspection PyTypeChecker
         await db_session.execute(
-            update(self.__class__).where(self.__class__.id == self.id).values(waiters=self.waiters)
+            update(self.__class__).where(self.__class__.id == self.id).values(waiters=self.waiters),
         )
 
         return True
@@ -104,10 +101,11 @@ class Waitable:
         self,
         bot: Bot,
         text: str,
-        parse_mode=ParseMode.HTML,
+        *,
+        parse_mode: ParseMode = ParseMode.HTML,
         disable_web_page_preview: bool = True,
         **kwargs,
-    ):
+    ) -> int:
 
         chat_ids = []
         per_chat_kwargs = []
@@ -134,7 +132,7 @@ class Waitable:
         """
         raise NotImplementedError
 
-    async def broadcast_for_waiters(self, bot: Bot):
+    async def broadcast_for_waiters(self, bot: Bot) -> None:
         """
         Рассылает содержимое все ожидающим
         """
@@ -171,7 +169,7 @@ class Waitable:
             waiters = new_waitable.waiters
             # noinspection PyTypeChecker
             await db_session.execute(
-                update(self.__class__).where(self.__class__.id == new_waitable.id).values(waiters=[])
+                update(self.__class__).where(self.__class__.id == new_waitable.id).values(waiters=[]),
             )
 
         rest_waiters = [waiter for waiter in waiters if waiter not in old_waiters]
@@ -208,7 +206,7 @@ class HasTelegramFileAndOriginalVideo(Waitable):
             select(self.__class__)
             .options(selectinload(self.__class__.original_video))
             .with_for_update()
-            .where(self.__class__.id == self.id)
+            .where(self.__class__.id == self.id),
         )
         waiters = obj.waiters
         # noinspection PyTypeChecker

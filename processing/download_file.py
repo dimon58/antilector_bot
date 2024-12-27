@@ -2,33 +2,37 @@ import logging
 import tempfile
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import TypeVar, ParamSpec
+from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
 from aiogram import Bot
 from aiogram.enums import ParseMode
-from aiogram.types import Message
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import selectinload
 from sqlalchemy_file import File
 
-from configs import VIDEO_DOWNLOAD_TIMEOUT, LOG_EACH_VIDEO_DOWNLOAD
+from configs import LOG_EACH_VIDEO_DOWNLOAD, VIDEO_DOWNLOAD_TIMEOUT
 from djgram.db.base import get_autocommit_session
 from djgram.db.utils import get_or_create
 from djgram.utils.download import download_file
-from tools.yt_dlp_downloader.misc import convert_entries_generator, yt_dlp_jsonify, yt_dlp_get_html_link
+from tools.yt_dlp_downloader.misc import convert_entries_generator, yt_dlp_get_html_link, yt_dlp_jsonify
 from tools.yt_dlp_downloader.yt_dlp_download_videos import (
+    YtDlpContentType,
     YtDlpInfoDict,
     download,
     get_url,
-    YtDlpContentType,
 )
 from utils.get_bot import get_tg_bot
 from utils.thumbnail import get_best_thumbnail
 from utils.video.measure import ffprobe_extract_meta
 from utils.yt_dlp_cached import extract_info_async_cached
+
 from .misc import execute_file_update_statement
 from .models import Playlist, Video, Waiter
-from .schema import VideoOrPlaylistForProcessing, FILE_TYPE
+from .schema import FILE_TYPE, VideoOrPlaylistForProcessing
+
+if TYPE_CHECKING:
+    from aiogram.types import Message
+
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -38,7 +42,7 @@ DOWNLOAD_ATTEMPTS = 3
 logger = logging.getLogger(__name__)
 
 
-async def delete_downloaded_video(db_video: Video):
+async def delete_downloaded_video(db_video: Video) -> None:
     async with get_autocommit_session() as db_session:
         logger.debug("Deleting not downloaded video %s", db_video.id)
         # noinspection PyTypeChecker
@@ -51,14 +55,20 @@ async def delete_downloaded_video(db_video: Video):
         )
 
 
-async def _download_video(db_video, yt_dlp_info):
+async def _download_video(db_video: Video, yt_dlp_info: YtDlpInfoDict) -> Video | None:
     with tempfile.TemporaryDirectory() as temp_dir:
         url = get_url(yt_dlp_info)
         for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
             try:
                 download_data = download(url=url, output_dir=temp_dir)
             except Exception as exc:  # (DownloadError, FileNotFoundError)
-                logger.error("Download attempt %s/%s failed for %s: %s", attempt, DOWNLOAD_ATTEMPTS, url, exc)
+                logger.exception(
+                    "Download attempt %s/%s failed for %s: %s",
+                    attempt,
+                    DOWNLOAD_ATTEMPTS,
+                    url,
+                    exc,  # noqa: TRY401
+                )
             else:
                 break
 
@@ -134,7 +144,7 @@ async def _create_video(
     try:
         return True, await _download_video(db_video, yt_dlp_info)
     except Exception as exc:
-        logger.exception("Failed to download video %s: %s", db_video.id, exc, exc_info=exc)
+        logger.exception("Failed to download video %s: %s", db_video.id, exc, exc_info=exc)  # noqa: TRY401
         await delete_downloaded_video(db_video)
 
     return None
@@ -165,9 +175,9 @@ async def _create_playlist(
 
     logging_message: Message | None = None
     playlist_count = yt_dlp_info["playlist_count"]
-    for idx, video in enumerate(yt_dlp_info["entries"], start=1):
+    for idx, video_entry in enumerate(yt_dlp_info["entries"], start=1):
         if LOG_EACH_VIDEO_DOWNLOAD:
-            text = f"Скачиваю {idx}/{playlist_count} {yt_dlp_get_html_link(video)}"
+            text = f"Скачиваю {idx}/{playlist_count} {yt_dlp_get_html_link(video_entry)}"
             if logging_message is None:
                 logging_message = await bot.send_message(
                     text=text,
@@ -180,7 +190,7 @@ async def _create_playlist(
             else:
                 await logging_message.edit_text(text=text, disable_web_page_preview=True, parse_mode=ParseMode.HTML)
 
-        video = await extract_info_async_cached(url=get_url(video), process=False)
+        video = await extract_info_async_cached(url=get_url(video_entry), process=False)
         yield await _create_video(video, video_or_playlist_for_processing, playlist)
 
 
@@ -284,7 +294,7 @@ async def get_downloaded_videos(
         logger.exception(
             "Failed to download video %s from telegram: %s",
             video_or_playlist_for_processing.download_data.get_tg_video().file_id,
-            exc,
+            exc,  # noqa: TRY401
             exc_info=exc,
         )
         yield None
