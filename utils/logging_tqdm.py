@@ -54,7 +54,7 @@ class LoggingTQDM(tqdm):
                 self._ema_dt = lambda: None
                 self.display(pos=0)
 
-    def clear(self, *, nolock: bool = False) -> None:
+    def clear(self, *, nolock: bool = False) -> None:  # noqa: ARG002
         """Clear current bar display."""
         return
 

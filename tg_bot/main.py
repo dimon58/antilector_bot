@@ -46,7 +46,7 @@ main_router = Router()
 
 
 @main_router.message(CommandStart())
-async def start_handler(message: Message, dialog_manager: DialogManager):
+async def start_handler(message: Message, dialog_manager: DialogManager):  # noqa: ARG001
     """
     Обработчик команды /start
     """
@@ -64,7 +64,7 @@ async def help_handler(message: Message):
 
 
 @main_router.message()
-async def no_state_handler(message: Message, dialog_manager: DialogManager):
+async def no_state_handler(message: Message, dialog_manager: DialogManager):  # noqa: ARG001
     """
     Запуск главного меню
     """
