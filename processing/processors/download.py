@@ -78,7 +78,6 @@ async def process_video_or_playlist(video_or_playlist_for_processing: VideoOrPla
 
     async with get_tg_bot() as bot:
         async for db_video_repr in get_downloaded_videos(bot, video_or_playlist_for_processing):
-
             # Проблемы с загрузкой, логируется в get_downloaded_videos
             if db_video_repr is None:
                 continue

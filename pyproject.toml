@@ -162,12 +162,6 @@ split-on-trailing-comma = true
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
 
-# ==== black ====
-[tool.black]
-line-length = 120
-target-version = ['py311']
-force-exclude = ".venv|venv|requirements.txt|requirements-dev.txt|.whisper"
-
 # ==== pyright ====
 [tool.pyright]
 exclude = [

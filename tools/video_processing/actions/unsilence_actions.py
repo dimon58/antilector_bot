@@ -60,7 +60,6 @@ class UnsilenceAction(Action):
         unsilence_class: unsilence.Unsilence | str,
         _info: pydantic.SerializationInfo,
     ) -> type[unsilence.Unsilence]:
-
         if isinstance(unsilence_class, type):
             if issubclass(unsilence_class, unsilence.Unsilence):
                 return unsilence_class
@@ -84,7 +83,6 @@ class UnsilenceAction(Action):
         return self
 
     def run(self, input_file: Path, output_file: Path) -> ActionStatsType | None:
-
         init_additional_options = {}
         detect_additional_options = {}
 

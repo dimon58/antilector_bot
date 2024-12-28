@@ -63,7 +63,6 @@ class FastMediaRenderer(MediaRenderer):
         self.min_interval_length_for_logging = min_interval_length_for_logging
 
     def get_max_ram_size_from_config(self, render_options: RenderOptions) -> float:
-
         if self.max_memory_usage_bytes is not None:
             return self.max_memory_usage_bytes / render_options.threads
 
@@ -74,7 +73,6 @@ class FastMediaRenderer(MediaRenderer):
 
     @staticmethod
     def get_max_seconds_buffer(input_file: Path, ram_bytes: float) -> float:
-
         fps = get_video_framerate(input_file)
         width, height = get_video_resolution(input_file)
         try:
@@ -96,7 +94,6 @@ class FastMediaRenderer(MediaRenderer):
         intervals: Intervals,
         render_options: RenderOptions,
     ) -> list[IntervalGroupRenderTask]:
-
         max_seconds_buffer = self.get_max_seconds_buffer(
             input_file=input_file,
             ram_bytes=self.get_max_ram_size_from_config(render_options),
@@ -108,7 +105,6 @@ class FastMediaRenderer(MediaRenderer):
         current_render_group = IntervalGroupRenderTask()
 
         for interval in intervals.intervals_without_breaks:
-
             if current_render_group.has_tasks() and (
                 # Нельзя складывать длительности, так как интервалы идут не непрерывно
                 # current_render_group.total_interval_duration + interval.duration > max_seconds_buffer
@@ -134,7 +130,6 @@ class FastMediaRenderer(MediaRenderer):
         separated_audio: Path | None,
         on_render_progress_update: UpdateCallbackType | None = None,
     ) -> list[Path]:
-
         logger.debug("Starting tasks")
 
         thread_exceptions = queue.Queue()
@@ -240,7 +235,6 @@ class FastMediaRenderer(MediaRenderer):
         on_concat_progress_update: UpdateCallbackType | None,
         output_file: Path,
     ) -> Path:
-
         logger.info("Concatenating files")
 
         concat_file = self._temp_path / "concat_list.txt"

@@ -112,7 +112,6 @@ def detect_speech(  # noqa: PLR0913
 
 
 class Vad(FastUnsilence):
-
     def __init__(self, input_file: Path, model: silero_vad.utils_vad.OnnxWrapper | ScriptModule):
         """
         model: silero vad

@@ -82,7 +82,6 @@ class ProgressBar:
         self.update(new_value)
 
     def close(self) -> None:
-
         if self._closed:
             return
 

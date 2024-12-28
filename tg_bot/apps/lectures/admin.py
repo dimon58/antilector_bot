@@ -18,7 +18,6 @@ app = AppAdmin(verbose_name="Обработка лекций")
 
 
 class DownloadYtDlpInfoButton(AbstractObjectActionButton):
-
     async def click(self, obj: YtDlpBase, callback_query: CallbackQuery, middleware_data: dict[str, Any]) -> None:
         async with ChatActionSender(
             bot=callback_query.bot,

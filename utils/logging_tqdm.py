@@ -11,9 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class LoggingTQDM(tqdm):
-
     def __init__(self, *args, **kwargs):  # noqa: D107
-
         if "mininterval" not in kwargs:
             kwargs["mininterval"] = DEFAULT_TQDM_LOGGING_INTERVAL
 

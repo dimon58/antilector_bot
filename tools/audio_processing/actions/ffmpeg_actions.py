@@ -50,7 +50,6 @@ class ExtractAudioFromVideo(Action):
             raise ValueError("Too long audio")
 
     def run(self, input_file: Path, output_file: Path) -> ActionStatsType | None:
-
         self.ensure_compatibility(input_file, output_file)
 
         input_file = input_file.absolute().as_posix()

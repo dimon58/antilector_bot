@@ -164,7 +164,6 @@ class DeepFilterNet3Denoise(Action):
         )
 
     def run(self, input_file: Path, output_file: Path) -> ActionStatsType | None:
-
         if self.model is None:
             self.load_model()
         stats = {

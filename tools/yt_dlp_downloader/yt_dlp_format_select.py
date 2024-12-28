@@ -85,7 +85,8 @@ def select_best_video(formats: list[dict[str, Any]]) -> dict[str, Any]:
     video_formats = [
         format_
         for format_ in formats
-        if has_codec(format_, "vcodec") and has_bitrate(format_, "vbr")  # В файле содержится видео
+        if has_codec(format_, "vcodec")
+        and has_bitrate(format_, "vbr")  # В файле содержится видео
         # Высота видео не должна быть слишком большой
         # Если она не указана, что считаем, что не подходит
         # Так как в высоте может быть указан 0 или высота вообще может быть не указана,

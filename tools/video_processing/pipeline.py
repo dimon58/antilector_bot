@@ -51,7 +51,6 @@ class VideoPipeline(pydantic.BaseModel):
 
     @pydantic.model_validator(mode="after")
     def resolve_settings(self) -> Self:
-
         if self.use_nvenc is not None:
             logger.info("Using nvenc for unsilence")
             self.unsilence_action.render_options.use_nvenc = self.use_nvenc
@@ -83,7 +82,6 @@ class VideoPipeline(pydantic.BaseModel):
         tempdir: Path,
         nisqa_model: NisqaModel | None = None,
     ) -> VideoPipelineStatistics:
-
         pipeline_start = time.perf_counter()
 
         ###############################

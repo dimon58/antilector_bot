@@ -67,7 +67,6 @@ class Waitable:
     )
 
     def has_waiter(self, telegram_chat_id: int | str) -> bool:
-
         return any(waiter.telegram_chat_id == telegram_chat_id for waiter in self.waiters)
 
     async def add_if_not_in_waiters(self, db_session: AsyncSession, waiter: Waiter) -> bool:
@@ -106,7 +105,6 @@ class Waitable:
         disable_web_page_preview: bool = True,
         **kwargs,
     ) -> int:
-
         chat_ids = []
         per_chat_kwargs = []
 

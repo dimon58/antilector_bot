@@ -103,7 +103,6 @@ class ProcessedVideo(HasTelegramFileAndOriginalVideo, TimeTrackableBaseModel):
         return f"{yt_dlp_info["title"]}\n\n{silence_remove_done_report(time_savings)}{original_ref}"
 
     async def get_thumbnail_input_file(self) -> InputFile | None:
-
         thumbnail = self.original_video.thumbnail
         if thumbnail is None:
             return None

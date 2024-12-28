@@ -101,7 +101,6 @@ class IntervalGroupRenderTask:
         render_options: RenderOptions,
         separated_audio: Path | None,
     ) -> tuple[FFmpegOptionsType, FFmpegOptionsType]:
-
         # ----------------------- single task specific ----------------------- #
         task = self.interval_render_tasks[0]
         input_options = {"ss": task.interval.start, "to": task.interval.end}
@@ -163,7 +162,6 @@ class IntervalGroupRenderTask:
         render_options: RenderOptions,
         separated_audio: Path | None,
     ) -> tuple[FFmpegOptionsType, FFmpegOptionsType]:
-
         # todo: allow copy
 
         trim_filters = []

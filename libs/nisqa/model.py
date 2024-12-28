@@ -70,7 +70,6 @@ class NisqaModel:
         )
 
     def measure_from_tensor(self, audio: torch.Tensor, sample_rate: int) -> NisqaMetrics:
-
         audio = audio.to(self.device)
 
         if len(audio.size()) > 1:
@@ -115,7 +114,6 @@ class NisqaModel:
         return self.measure_from_tensor(audio, sample_rate)
 
     def measure_from_path_chunked(self, audio_file: Path, max_memory: int = 1 * 2**30) -> NisqaMetrics:
-
         dtype = "float32"
         block_size = max_memory // 4
 

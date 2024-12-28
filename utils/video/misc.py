@@ -13,7 +13,6 @@ def ensure_nvenc_correct(use_nvenc: bool, force_video_codec: str | None, threads
     :param threads: число параллельных сессий
     """
     if not use_nvenc:
-
         if force_video_codec in NVENC_CODECS:
             raise ValueError(f"You must enable nvenc to use {force_video_codec}")
 

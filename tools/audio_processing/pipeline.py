@@ -27,7 +27,6 @@ class StepStatistics(pydantic.BaseModel):
 
     @property
     def repr_for_logging(self) -> str:
-
         info = []
 
         if self.nisqa is not None:
@@ -77,7 +76,6 @@ class AudioPipeline(pydantic.BaseModel):
         tempdir: Path,
         nisqa_model: NisqaModel | None,
     ) -> list[StepStatistics]:
-
         if len(self.pipeline) == 0:
             raise ValueError("No actions defined")
 
@@ -145,7 +143,6 @@ class AudioPipeline(pydantic.BaseModel):
         tempdir: Path,
         nisqa_model: NisqaModel | None,
     ) -> AudioPipelineStatistics:
-
         start = time.perf_counter()
         step_statistics = self._run(input_file, output_file, tempdir, nisqa_model)
         end = time.perf_counter()
