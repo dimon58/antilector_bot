@@ -1,7 +1,7 @@
 """
 Точка входа для запуска бота
 """
-
+import asyncio
 import logging.config
 
 from aiogram import Dispatcher, Router
@@ -13,7 +13,7 @@ from aiogram.fsm.storage.redis import (
 )
 from aiogram.types import ErrorEvent, Message
 from aiogram_dialog import DialogManager, StartMode, ShowMode
-from aiogram_dialog.api.exceptions import UnknownIntent, UnknownState
+from aiogram_dialog.api.exceptions import UnknownIntent, UnknownState, DialogsError
 from redis.asyncio.client import Redis
 
 from configs import (
@@ -84,15 +84,10 @@ def setup_routers(dp: Dispatcher) -> None:
     logger.info("Routers setup")
 
 
-async def on_unknown_intent(event: ErrorEvent, dialog_manager: DialogManager) -> None:  # noqa: D103
-    logging.error("Error in dialog: %s", event.exception)
-    await dialog_manager.start(MenuStates.main_menu, mode=StartMode.RESET_STACK)
-
-
-async def on_unknown_state(event: ErrorEvent, dialog_manager: DialogManager) -> None:  # noqa: D103
-    # Example of handling UnknownState Error and starting new dialog.
-    logging.error("Error in dialog: %s", event.exception)
-    await dialog_manager.start(MenuStates.main_menu, mode=StartMode.RESET_STACK)
+async def on_dialog_error(event: ErrorEvent, dialog_manager: DialogManager) -> None:  # noqa: D103
+    # Handling dialog errors and starting new dialog.
+    logging.error("Restarting dialog: %s", event.exception)
+    await dialog_manager.start(MenuStates.main_menu, mode=StartMode.RESET_STACK, show_mode=ShowMode.SEND)
 
 
 async def main() -> None:
@@ -113,8 +108,7 @@ async def main() -> None:
     storage = RedisStorage(redis_for_storage, key_builder=DefaultKeyBuilder(with_destiny=True))
 
     dp = Dispatcher(storage=storage)
-    dp.errors.register(on_unknown_intent, ExceptionTypeFilter(UnknownIntent))
-    dp.errors.register(on_unknown_state, ExceptionTypeFilter(UnknownState))
+    dp.errors.register(on_dialog_error, ExceptionTypeFilter(DialogsError))
     bot = get_local_bot(
         telegram_bot_token=TELEGRAM_BOT_TOKEN,
         telegram_local=TELEGRAM_LOCAL,
@@ -122,7 +116,7 @@ async def main() -> None:
         telegram_local_server_files_url=TELEGRAM_LOCAL_SERVER_FILES_URL,
     )
 
-    setup_djgram(dp, analytics=True)
+    setup_djgram(dp, analytics=True, skip_exceptions=(DialogsError,))
     setup_routers(dp)
 
     await run_telegram_local_server_stats_collection_in_background()
