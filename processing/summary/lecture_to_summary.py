@@ -23,7 +23,7 @@ def _add_required_latex_packages(latex: str) -> str:
     part1 = latex[:new_line_idx]
     part2 = latex[new_line_idx + 1 :]
 
-    return f"{part1}\n{"\n".join(_for_add)}\n{part2}"
+    return f"{part1}\n{'\n'.join(_for_add)}\n{part2}"
 
 
 def extract_latex_from_llm_answer(parser: MarkdownIt, llm_answer: str) -> str | None:
@@ -72,7 +72,7 @@ def _run_pdflatex(out_dir: Path, temp_latex: Path, out_pdf: Path, executable: st
     process.communicate()
     retcode = process.poll()
     if retcode and not out_pdf.exists():
-        raise RuntimeError(f"Failed to render pdf: {"\n".join(buffer)}")
+        raise RuntimeError(f"Failed to render pdf: {'\n'.join(buffer)}")
 
 
 def render_latex(latex: str, pdflatex_executable: str = PDFLATEX_EXECUTABLE) -> bytes:

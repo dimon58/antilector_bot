@@ -7,11 +7,11 @@ logger = logging.getLogger(__name__)
 
 
 def get_video_format_repr(video_format: dict[str, Any]) -> str:
-    return f"{video_format.get("format")} - {video_format.get("vbr", 0) or 0:.0f} kb/s - {video_format["ext"]}"
+    return f"{video_format.get('format')} - {video_format.get('vbr', 0) or 0:.0f} kb/s - {video_format['ext']}"
 
 
 def get_audio_format_repr(audio_format: dict[str, Any]) -> str:
-    return f"{audio_format.get("format")} - {audio_format.get("abr", 0) or 0:.0f} kb/s - {audio_format["ext"]}"
+    return f"{audio_format.get('format')} - {audio_format.get('abr', 0) or 0:.0f} kb/s - {audio_format['ext']}"
 
 
 def has_codec(format_: dict, key: Literal["acodec", "vcodec"]) -> bool:

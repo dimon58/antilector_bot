@@ -4,7 +4,7 @@ from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpInfoDict
 
 
 def format_as_video_html(info: YtDlpInfoDict) -> str:  # noqa: D103
-    return f"{yt_dlp_get_html_link(info)} - {seconds_to_human_readable(info["duration"])}"
+    return f"{yt_dlp_get_html_link(info)} - {seconds_to_human_readable(info['duration'])}"
 
 
 def format_as_playlist_html(info: YtDlpInfoDict) -> str:  # noqa: D103
@@ -13,7 +13,7 @@ def format_as_playlist_html(info: YtDlpInfoDict) -> str:  # noqa: D103
         f"Общая продолжительность - {seconds_to_human_readable(get_playlist_duration(info))}"
     )
     videos_desc = "\n●".join(
-        f"{yt_dlp_get_html_link(video)} - {seconds_to_human_readable(video["duration"])}" for video in info["entries"]
+        f"{yt_dlp_get_html_link(video)} - {seconds_to_human_readable(video['duration'])}" for video in info["entries"]
     )
 
     return f"{playlist_desc}\n\nСписок видео:\n●{videos_desc}"

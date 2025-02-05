@@ -34,11 +34,11 @@ config.set_main_option(
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
-# my_important_option = config.get_main_option("my_important_option")  # noqa: ERA001
+# my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
 
-def render_item(type_: str, obj: Any, autogen_context: AutogenContext) -> str | bool:  # noqa: ANN401
+def render_item(type_: str, obj: Any, autogen_context: AutogenContext) -> str | bool:
     """Apply custom rendering for selected items."""
 
     if type_ == "type" and isinstance(obj, FileField):

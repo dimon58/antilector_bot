@@ -81,6 +81,6 @@ def get_audio_filter(fade: str, current_speed: float, current_volume: float) -> 
         audio_filter_components.append(f"volume={current_volume}")
 
     if len(audio_filter_components) > 0:
-        return f"{",".join(audio_filter_components)}"
+        return f"{','.join(audio_filter_components)}"
 
     return None
