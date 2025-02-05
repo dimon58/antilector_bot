@@ -5,7 +5,7 @@ ACL_FILE_PATH=/usr/local/etc/redis/aclfile.acl
 # Генерируем файл ACL на основе шаблона
 cat <<EOL > ${ACL_FILE_PATH}
 user default off
-user $REDIS_USER on >$REDIS_PASSWORD ~* +@all
+user $REDIS_USER on >$REDIS_PASSWORD ~* &* +@all
 EOL
 
 # Запускаем Redis
