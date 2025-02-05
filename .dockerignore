@@ -166,11 +166,14 @@ tg_bot
 **/*.mkv
 **/*.mp4
 
+*.env
+!example.env
 .git
 .idea
 .ruff_cache
 .tmp
 .venv
+.whisper
 dev
 dialog_diagrams
 logs
@@ -182,4 +185,3 @@ tests_audio
 tests_video
 tg_bot
 tmp
-.whisper

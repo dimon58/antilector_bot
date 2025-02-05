@@ -162,6 +162,8 @@ fabric.properties
 
 *.env
 !example.env
+.whisper
+djgram
 dev
 tmp
 temp
