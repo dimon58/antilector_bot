@@ -10,7 +10,7 @@ authors = [
 classifiers = [
     "Private :: Do not Upload",
 ]
-requires-python = "~=3.11"
+requires-python = "~=3.12"
 dependencies = []
 
 # ==== pytest ====
@@ -62,8 +62,8 @@ exclude = [
 line-length = 120
 indent-width = 4
 
-# Assume Python 3.11
-target-version = "py311"
+# Assume Python 3.12
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -74,7 +74,7 @@ ignore = [
     "RUF001", "RUF002", "RUF003", "FIX", "TD",
 ]
 
-# Allow autofix for all enabled rules (when `--fix`) is provided.
+# Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
 unfixable = []
 
@@ -128,7 +128,7 @@ docstring-code-line-length = "dynamic"
 "migrations/env.py" = ["D103"]
 "migrations/versions/*.py" = ["D103"]
 "processing/*" = ["D101", "D102", "D103"]
-"tests/**/*.py" = ["ANN201", "D101", "D102"]
+"tests/**/*.py" = ["D101", "D102"]
 "tools/audio_processing/*" = ["D101", "D102", "D103"]
 "tools/video_processing/*" = ["D101", "D102", "D103"]
 "tools/yt_dlp_downloader/*" = ["D101", "D102", "D103"]
@@ -144,8 +144,6 @@ docstring-code-line-length = "dynamic"
 "djgram/contrib/*/dialogs/dialogs.py" = ["TID252"]
 "djgram/contrib/*/dialogs/getters.py" = ["TID252"]
 "djgram/contrib/*/handlers.py" = ["ANN201"]
-"djgram/db/sqlalchemyv2_nested_mutable/mutable.py" = ["PYI063"]
-"djgram/db/sqlalchemyv2_nested_mutable/trackable.py" = ["PYI063"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -172,8 +170,3 @@ exclude = [
     "venv",
     "migrations/env.py",
 ]
-
-# ==== bandit ====
-[tool.bandit]
-exclude_dirs = ["dev", ".venv", "venv"]
-skips = ["B703", "B308"]
