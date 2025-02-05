@@ -1,6 +1,7 @@
 import unittest
 
 from libs.unsilence import Unsilence
+from libs.unsilence.render_media.options import RenderOptions
 from tools.video_processing.actions.unsilence_actions import UnsilenceAction
 from tools.video_processing.vad.vad_unsilence import UnsilenceAndVad, Vad
 
@@ -15,19 +16,19 @@ class TestSerializationUnsilenceAction(unittest.TestCase):
                 "short_interval_threshold": 0.3,
                 "stretch_time": 0.25,
             },
-            render_options={
-                "audio_only": False,
-                "audible_speed": 1,
-                "silent_speed": 6,
-                "audible_volume": 1,
-                "silent_volume": 0.5,
-                "drop_corrupted_intervals": False,
-                "check_intervals": False,
-                "minimum_interval_duration": 0.25,
-                "interval_in_fade_duration": 0.01,
-                "interval_out_fade_duration": 0.01,
-                "fade_curve": "tri",
-            },
+            render_options=RenderOptions(
+                audio_only=False,
+                audible_speed=1,
+                silent_speed=6,
+                audible_volume=1,
+                silent_volume=0.5,
+                drop_corrupted_intervals=False,
+                check_intervals=False,
+                minimum_interval_duration=0.25,
+                interval_in_fade_duration=0.01,
+                interval_out_fade_duration=0.01,
+                fade_curve="tri",
+            ),
         )
         dumped = action.model_dump_json()
         action.model_validate_json(dumped)
@@ -48,19 +49,19 @@ class TestSerializationUnsilenceAction(unittest.TestCase):
                 "visualize_probs": False,
                 "window_size_samples": 512,
             },
-            render_options={
-                "audio_only": False,
-                "audible_speed": 1,
-                "silent_speed": 6,
-                "audible_volume": 1,
-                "silent_volume": 0.5,
-                "drop_corrupted_intervals": False,
-                "check_intervals": False,
-                "minimum_interval_duration": 0.25,
-                "interval_in_fade_duration": 0.01,
-                "interval_out_fade_duration": 0.01,
-                "fade_curve": "tri",
-            },
+            render_options=RenderOptions(
+                audio_only=False,
+                audible_speed=1,
+                silent_speed=6,
+                audible_volume=1,
+                silent_volume=0.5,
+                drop_corrupted_intervals=False,
+                check_intervals=False,
+                minimum_interval_duration=0.25,
+                interval_in_fade_duration=0.01,
+                interval_out_fade_duration=0.01,
+                fade_curve="tri",
+            ),
         )
         dumped = action.model_dump_json()
         action.model_validate_json(dumped)
@@ -83,19 +84,19 @@ class TestSerializationUnsilenceAction(unittest.TestCase):
                 "visualize_probs": False,
                 "window_size_samples": 512,
             },
-            render_options={
-                "audio_only": False,
-                "audible_speed": 1,
-                "silent_speed": 6,
-                "audible_volume": 1,
-                "silent_volume": 0.5,
-                "drop_corrupted_intervals": False,
-                "check_intervals": False,
-                "minimum_interval_duration": 0.25,
-                "interval_in_fade_duration": 0.01,
-                "interval_out_fade_duration": 0.01,
-                "fade_curve": "tri",
-            },
+            render_options=RenderOptions(
+                audio_only=False,
+                audible_speed=1,
+                silent_speed=6,
+                audible_volume=1,
+                silent_volume=0.5,
+                drop_corrupted_intervals=False,
+                check_intervals=False,
+                minimum_interval_duration=0.25,
+                interval_in_fade_duration=0.01,
+                interval_out_fade_duration=0.01,
+                fade_curve="tri",
+            ),
         )
         dumped = action.model_dump_json()
         action.model_validate_json(dumped)

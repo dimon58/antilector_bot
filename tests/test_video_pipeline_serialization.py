@@ -1,5 +1,6 @@
 import unittest
 
+from libs.unsilence.render_media.options import RenderOptions
 from tools.audio_processing.actions import audiotools_actions, deepfilternet_actions, ffmpeg_actions
 from tools.audio_processing.pipeline import AudioPipeline
 from tools.video_processing.actions.unsilence_actions import UnsilenceAction
@@ -14,11 +15,11 @@ class TestVideoPipelineSerialization(unittest.TestCase):
             .add(
                 audiotools_actions.AudiotoolsAction()
                 .to_mono()
-                .normalize(-0.1, remove_dc=True)
+                .normalize(peak_level=-0.1, remove_dc=True)
                 .remove_clicks(250, 30)
-                .normalize(-0.1, remove_dc=True)
+                .normalize(peak_level=-0.1, remove_dc=True)
                 .remove_clicks(100, 20)
-                .normalize(-0.1, remove_dc=True),
+                .normalize(peak_level=-0.1, remove_dc=True),
             )
             .add(
                 ffmpeg_actions.SimpleFFMpegAction(
@@ -26,7 +27,7 @@ class TestVideoPipelineSerialization(unittest.TestCase):
                 ),
             )
             .add(deepfilternet_actions.DeepFilterNet3Denoise())
-            .add(audiotools_actions.AudiotoolsAction().normalize(-0.1, remove_dc=True))
+            .add(audiotools_actions.AudiotoolsAction().normalize(peak_level=-0.1, remove_dc=True))
             .add(
                 ffmpeg_actions.SimpleFFMpegAction(
                     output_options={"af": "speechnorm=p=0.99:e=3:c=3", "ar": 48000},
@@ -52,20 +53,19 @@ class TestVideoPipelineSerialization(unittest.TestCase):
                 "visualize_probs": False,  # Никакого рисования не нужно
                 "window_size_samples": 512,
             },
-            render_options={
-                "audio_only": False,
-                "audible_speed": 1,
-                "silent_speed": 6,
-                "audible_volume": 1,
-                "silent_volume": 0.5,
-                "drop_corrupted_intervals": False,
-                "check_intervals": False,
-                "minimum_interval_duration": 0.25,
-                "interval_in_fade_duration": 0.01,
-                "interval_out_fade_duration": 0.01,
-                "fade_curve": "tri",
-            },
-            threads=2,
+            render_options=RenderOptions(
+                audio_only=False,
+                audible_speed=1,
+                silent_speed=6,
+                audible_volume=1,
+                silent_volume=0.5,
+                drop_corrupted_intervals=False,
+                check_intervals=False,
+                minimum_interval_duration=0.25,
+                interval_in_fade_duration=0.01,
+                interval_out_fade_duration=0.01,
+                fade_curve="tri",
+            ),
         )
 
         video_pipeline = VideoPipeline(
