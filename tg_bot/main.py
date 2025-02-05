@@ -1,7 +1,6 @@
 """
 Точка входа для запуска бота
 """
-import asyncio
 import logging.config
 
 from aiogram import Dispatcher, Router
@@ -12,8 +11,8 @@ from aiogram.fsm.storage.redis import (
     RedisStorage,
 )
 from aiogram.types import ErrorEvent, Message
-from aiogram_dialog import DialogManager, StartMode, ShowMode
-from aiogram_dialog.api.exceptions import UnknownIntent, UnknownState, DialogsError
+from aiogram_dialog import DialogManager, ShowMode, StartMode
+from aiogram_dialog.api.exceptions import DialogsError
 from redis.asyncio.client import Redis
 
 from configs import (

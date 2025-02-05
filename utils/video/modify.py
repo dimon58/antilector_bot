@@ -29,7 +29,7 @@ def resolve_media_codec(
 
     if codec is not None:
         # Handle nvenc
-        new_codec_repr = codec[:-6] if codec.endswith("_nvenc") else codec
+        new_codec_repr = codec.removesuffix("_nvenc")
 
         if not force_transcode and original_codec == new_codec_repr:
             logger.info("Coping %s stream", media_stream_type.name.lower())
