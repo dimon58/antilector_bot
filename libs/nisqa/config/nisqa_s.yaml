@@ -25,5 +25,5 @@ cnn_pool_3: [6,3] # output dimensions of third adaptive pooling ('adaptive' CNN 
 # LSTM parameters
 td_lstm_h: 128 # number of LSTM hidden units
 td_lstm_num_layers: 1 # LSTM depth
-td_lstm_dropout: 0 
+td_lstm_dropout: 0
 td_lstm_bidirectional: true  # use bidirectional LSTM -> hidden units x 2

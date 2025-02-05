@@ -10,7 +10,7 @@ authors = [
 classifiers = [
     "Private :: Do not Upload",
 ]
-requires-python = "~=3.12"
+requires-python = "~=3.11"
 dependencies = []
 
 # ==== pytest ====
@@ -62,8 +62,8 @@ exclude = [
 line-length = 120
 indent-width = 4
 
-# Assume Python 3.12
-target-version = "py312"
+# Assume Python 3.11
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["ALL"]

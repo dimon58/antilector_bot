@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Self, Union
 
 import pydantic
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 
 from configs import NISQA_MAX_MEMORY
 from libs.nisqa.metrics import NisqaMetrics
@@ -55,7 +55,7 @@ class AudioPipelineStatistics(pydantic.BaseModel):
 class AudioPipeline(pydantic.BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    pipeline: list[Union[*get_all_subclasses(Action)]] = []
+    pipeline: list[Union[*get_all_subclasses(Action)]] = Field(default_factory=list)
 
     _in_working_ext: str = "wav"
 

@@ -1,6 +1,7 @@
 """
 Точка входа для запуска бота
 """
+
 import logging.config
 
 from aiogram import Dispatcher, Router

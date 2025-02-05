@@ -56,7 +56,7 @@
    REDIS_HOST=redis
    CLICKHOUSE_HOST=clickhouse
    ```
-   
+
    Хотя в `.env` можно не менять хосты,
    так как они в любом случае перезаписаны в `docker-compose.yaml`,
    но это будет хорошим тоном
