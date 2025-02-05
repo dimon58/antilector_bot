@@ -14,11 +14,11 @@ terrible_audio_pipeline = (
         # что в левом канале был только шум,
         # а в правом речь, но в общем случае так не будет
         # .remove_all_channels_except(1)
-        .normalize(-0.1, remove_dc=True, stereo_independent=False)
+        .normalize(peak_level=-0.1, remove_dc=True, stereo_independent=False)
         .remove_clicks(250, 30)
-        .normalize(-0.1, remove_dc=True, stereo_independent=False)
+        .normalize(peak_level=-0.1, remove_dc=True, stereo_independent=False)
         .remove_clicks(100, 20)
-        .normalize(-0.1, remove_dc=True, stereo_independent=False),
+        .normalize(peak_level=-0.1, remove_dc=True, stereo_independent=False),
     )
     .add(
         ffmpeg_actions.SimpleFFMpegAction(
@@ -26,7 +26,7 @@ terrible_audio_pipeline = (
         ),
     )
     .add(deepfilternet_actions.DeepFilterNet3Denoise(cleanup=True))
-    .add(audiotools_actions.AudiotoolsAction().normalize(-0.1, remove_dc=True, stereo_independent=False))
+    .add(audiotools_actions.AudiotoolsAction().normalize(peak_level=-0.1, remove_dc=True, stereo_independent=False))
     .add(
         ffmpeg_actions.SimpleFFMpegAction(
             # output_options={"af": "speechnorm=p=0.99:e=3:c=3", "ar": 48000},  # noqa: ERA001

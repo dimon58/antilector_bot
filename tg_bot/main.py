@@ -12,7 +12,7 @@ from aiogram.fsm.storage.redis import (
     RedisStorage,
 )
 from aiogram.types import ErrorEvent, Message
-from aiogram_dialog import DialogManager, StartMode
+from aiogram_dialog import DialogManager, StartMode, ShowMode
 from aiogram_dialog.api.exceptions import UnknownIntent, UnknownState
 from redis.asyncio.client import Redis
 
@@ -33,7 +33,7 @@ from djgram.contrib.local_server.local_bot import get_local_bot
 
 # noinspection PyUnresolvedReferences
 from djgram.db.models import BaseModel  # noqa: F401 нужно для корректной работы alembic
-from djgram.setup import setup_djgram
+from djgram.setup_djgram import setup_djgram
 from system_init import system_init
 from tg_bot.apps.lectures import router as lectures_router
 from tg_bot.apps.menu import router as menu_router
