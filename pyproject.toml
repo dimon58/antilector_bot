@@ -11,7 +11,67 @@ classifiers = [
     "Private :: Do not Upload",
 ]
 requires-python = "~=3.11"
-dependencies = []
+dependencies = [
+    "aiogram>=3.17.0",
+    "alembic>=1.14.1",
+    "apache-libcloud>=3.8.0",
+    "asyncpg>=0.30.0",
+    "cashews>=7.4.0",
+    "celery>=5.4.0",
+    "coloredlogs>=15.0.1",
+    "deepfilternet>=0.5.6",
+    "djgram",
+    "faster-whisper>=1.1.1",
+    "ffmpeg-normalize>=1.31.0",
+    "hiredis>=3.1.0",
+    "httpx>=0.28.1",
+    "lazy-object-proxy>=1.10.0",
+    "markdown-it-py>=3.0.0",
+    "onnxruntime>=1.20.1",
+    "openai>=1.61.1",
+    "orjson>=3.10.15",
+    "pandas>=2.2.3",
+    "pillow>=11.1.0",
+    "prettytable>=3.14.0",
+    "pyaudiotoolslib>=0.0.2",
+    "pydantic>=2.10.6",
+    "python-dotenv>=1.0.1",
+    "python-ffmpeg>=2.0.12",
+    "python-json-logger>=3.2.1",
+    "pyyaml>=6.0.2",
+    "redis>=5.2.1",
+    "silero-vad>=5.1.2",
+    "socksio>=1.0.0",
+    "soundfile>=0.13.1",
+    "torch>=2.6.0",
+    "torchaudio>=2.6.0",
+    "tqdm>=4.67.1",
+    "yt-dlp>=2025.1.26",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.1.0",
+    "pytest>=8.3.4",
+    "ruff>=0.9.4",
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cu124" },
+]
+torchvision = [
+    { index = "pytorch-cu124" },
+]
+djgram = { workspace = true }
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.uv.workspace]
+members = ["djgram"]
 
 # ==== pytest ====
 [tool.pytest.ini_options]
@@ -133,17 +193,6 @@ docstring-code-line-length = "dynamic"
 "tools/video_processing/*" = ["D101", "D102", "D103"]
 "tools/yt_dlp_downloader/*" = ["D101", "D102", "D103"]
 "utils/*" = ["D101", "D102", "D103"]
-"djgram/*" = [
-    "ANN002", "ANN003", "ANN204", "ANN401", "ARG001", "ARG002", "ARG003",
-    "D100", "D102", "D103", "D104", "D105", "D200", "D202", "D205", "D212", "D415",
-    "EM101", "EM102", "INP001", "RUF001", "RUF002", "RUF003", "TRY003", "FIX", "TD",
-    "UP040", # Не делаем python 3.12 обязательным
-]
-"djgram/contrib/*/admin.py" = ["D101", "RUF012"]
-"djgram/contrib/*/dialogs/callbacks.py" = ["ANN201", "TID252"]
-"djgram/contrib/*/dialogs/dialogs.py" = ["TID252"]
-"djgram/contrib/*/dialogs/getters.py" = ["TID252"]
-"djgram/contrib/*/handlers.py" = ["ANN201"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
