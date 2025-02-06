@@ -72,12 +72,15 @@ services:
 
   bot:
     build:
+      target: production_build
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./docker/bot/Dockerfile
+      args:
+        BOT_ENV: production
     entrypoint: [ "python", "run_tg_bot.py" ]
     restart: always
     volumes:
-      - ./:/app
+      - ./:/code
     env_file:
       - .env
     environment:
