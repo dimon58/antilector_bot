@@ -10,12 +10,15 @@ repos:
       - id: check-docstring-first
       - id: check-illegal-windows-names
       - id: check-json
+      - id: check-merge-conflict
       - id: check-toml
       - id: check-xml
       - id: check-yaml
         exclude: "libs/nisqa/config/nisqa_s.yaml"
+      - id: debug-statements
       - id: detect-private-key
       - id: end-of-file-fixer
+      - id: mixed-line-ending
       - id: trailing-whitespace
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
