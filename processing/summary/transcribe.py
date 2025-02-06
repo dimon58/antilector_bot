@@ -1,4 +1,5 @@
 import time
+from dataclasses import asdict
 from functools import partial
 from pathlib import Path
 
@@ -17,7 +18,7 @@ from configs import (
 from processing.models.lecture_summary import TranscriptionStats
 from utils.torch_utils import is_cuda
 
-whisper_model = lazy_object_proxy.Proxy(
+whisper_model: WhisperModel = lazy_object_proxy.Proxy(
     partial(
         WhisperModel,
         WHISPER_MODEL_SIZE,
@@ -61,7 +62,7 @@ def transcribe(audio_file: Path) -> tuple[str, TranscriptionStats]:
             # Convert NamedTuple to dict
             # https://stackoverflow.com/questions/26180528/convert-a-namedtuple-into-a-dictionary
             # https://stackforgeeks.com/blog/convert-a-namedtuple-into-a-dictionary
-            transcription_info=info._asdict(),
+            transcription_info=asdict(info),
         )
     finally:
         if is_cuda(TORCH_DEVICE):

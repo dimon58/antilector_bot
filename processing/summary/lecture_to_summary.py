@@ -61,7 +61,7 @@ def _run_pdflatex(out_dir: Path, temp_latex: Path, out_pdf: Path, executable: st
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        universal_newlines=True,
+        # universal_newlines=True,  # noqa: ERA001
     )
     buffer = []
     for out in process.stdout.readlines():
@@ -72,7 +72,7 @@ def _run_pdflatex(out_dir: Path, temp_latex: Path, out_pdf: Path, executable: st
     process.communicate()
     retcode = process.poll()
     if retcode and not out_pdf.exists():
-        raise RuntimeError(f"Failed to render pdf: {'\n'.join(buffer)}")
+        raise RuntimeError(f"Failed to render pdf: {'\n'.join(map(str, buffer))}")
 
 
 def render_latex(latex: str, pdflatex_executable: str = PDFLATEX_EXECUTABLE) -> bytes:
