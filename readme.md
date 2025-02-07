@@ -73,9 +73,8 @@
    celery -A run_celery worker -n "worker.video_process_queue" -Q video_process_queue --loglevel=INFO --pool=solo
    celery -A run_celery worker -n "worker.video_upload_queue" -Q video_upload_queue --loglevel=INFO --pool=solo
    ```
-
-  Если значения переменных окружения VIDEO_DOWNLOAD_QUEUE, VIDEO_PROCESS_QUEUE, VIDEO_UPLOAD_QUEUE отличаются,
-  то нужно использовать соответствующие названия
+   Если значения переменных окружения VIDEO_DOWNLOAD_QUEUE, VIDEO_PROCESS_QUEUE, VIDEO_UPLOAD_QUEUE отличаются,
+   то нужно использовать соответствующие названия
 
 ### В продакшн
 
