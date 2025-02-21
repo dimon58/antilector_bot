@@ -95,7 +95,7 @@ class Interval:
         Creates a deep copy of this Interval
         :return: Interval deepcopy
         """
-        return Interval(self.start, self.end, self.is_silent)
+        return Interval(self.start, self.end, is_silent=self.is_silent)
 
     def serialize(self) -> SerializedInterval:
         """
@@ -111,7 +111,7 @@ class Interval:
         :param serialized_obj: previously serializes Interval (type dict)
         :return: Interval
         """
-        return Interval(serialized_obj["start"], serialized_obj["end"], serialized_obj["is_silent"])
+        return Interval(serialized_obj["start"], serialized_obj["end"], is_silent=serialized_obj["is_silent"])
 
     def __repr__(self):
         """
