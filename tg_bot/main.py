@@ -34,11 +34,11 @@ from djgram.contrib.local_server.local_bot import get_local_bot
 # noinspection PyUnresolvedReferences
 from djgram.db.models import BaseModel  # noqa: F401 нужно для корректной работы alembic
 from djgram.setup_djgram import setup_djgram
-from system_init import system_init
 from tg_bot.apps.lectures import router as lectures_router
 from tg_bot.apps.menu import router as menu_router
 from tg_bot.apps.menu.dialogs import MenuStates
 from tg_bot.apps.summary import router as summary_router
+from utils.system_init import system_init
 
 logging.config.dictConfig(LOGGING_CONFIG)
 logger = logging.getLogger(__name__)

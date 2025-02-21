@@ -119,7 +119,7 @@ RUN groupadd -g "${GID}" -r web \
 
 # Install python
 COPY --chown=web:web ./.python-version /code/
-RUN uv python install
+RUN --mount=type=cache,target="/root/.local/share/uv/python" uv python install
 
 # Copy only requirements, to cache them in docker layer:
 
@@ -151,8 +151,8 @@ RUN chmod +x '/docker-entrypoint.sh' \
   # Replacing line separator CRLF with LF for Windows users:
   && sed -i 's/\r$//g' '/docker-entrypoint.sh'
 
-# Running as non-root user:
-USER web
+# TODO: Running as non-root user:
+#USER web
 
 # Place executables in the environment at the front of the path
 ENV PATH="$UV_PROJECT_ENVIRONMENT/bin:$PATH"

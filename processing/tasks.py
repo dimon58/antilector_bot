@@ -2,9 +2,9 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from celery_app import app
 from configs import VIDEO_DOWNLOAD_QUEUE, VIDEO_PROCESS_QUEUE, VIDEO_UPLOAD_QUEUE
 from djgram.utils.async_tools import run_async_in_sync
+from processing.celery_app import app
 
 from .schema import VideoOrPlaylistForProcessing
 
