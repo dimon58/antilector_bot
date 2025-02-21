@@ -70,6 +70,8 @@ def concat_media_files(
         "0",
         "-i",
         f"{concat_file.as_posix()}",
+        "-movflags",
+        "+faststart",
         "-c",
         "copy",
         "-y",
