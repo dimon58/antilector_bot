@@ -9,7 +9,7 @@ LABEL maintainer="Dmitry Sharonov"
 LABEL name="antilector-telegram-bot"
 LABEL version="0.1.0"
 
-ARG RUST_VERSION=1.84.1
+ARG RUST_VERSION=1.85.0
 ARG PHANTOMJS_VERSION="phantomjs-2.1.1"
 
 # Needed for fixing permissions of files created by Docker:
@@ -25,7 +25,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
   # tini:
   TINI_VERSION=v0.19.0 \
   # uv:
-  UV_VERSION=0.5.29 \
+  UV_VERSION=0.6.2 \
   UV_CACHE_DIR='/root/.cache/uv' \
   UV_PROJECT_ENVIRONMENT='/venv' \
   UV_COMPILE_BYTECODE=1 \
