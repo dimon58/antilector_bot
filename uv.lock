@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.11, <4"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -22,7 +23,7 @@ wheels = [
 
 [[package]]
 name = "aiogram"
-version = "3.17.0"
+version = "3.18.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiofiles" },
@@ -32,9 +33,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/85/5e/a849ec3d64522e937906aa36b4b8f81bb7085928f9c0adea1b8f6ec02fad/aiogram-3.17.0.tar.gz", hash = "sha256:01bffbf43d6fb4a31e3c668a601bc7e71c2cf3919bd831ba6c179ef86034c2f4", size = 1371207 }
+sdist = { url = "https://files.pythonhosted.org/packages/d9/18/a019fab03dca70d93e46ce5380254690415c2cbf3e084be003dc8c8b69ae/aiogram-3.18.0.tar.gz", hash = "sha256:429883a419751bfebeeafdc74804807d0abd5c9879ab0f06c045130de4752605", size = 1375474 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c3/1c/77268a6d9c6bb2e6b7ee66a15bd029fde317277a9a6b7a6cef17e7519546/aiogram-3.17.0-py3-none-any.whl", hash = "sha256:251738331107ce2a679a901354b1409b7544d9f030d8092dcc68f2bb3bb0c467", size = 610049 },
+    { url = "https://files.pythonhosted.org/packages/4e/17/cf1461c422815ad982daccbf636ec579f3bb178d4bdcb456f392478af70d/aiogram-3.18.0-py3-none-any.whl", hash = "sha256:ea2a2fbd11e4fffbba14a2081eb6322482ae569c6348618de5f7b6b41b52384d", size = 612779 },
 ]
 
 [[package]]
@@ -229,7 +230,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiogram", specifier = ">=3.17.0" },
+    { name = "aiogram", specifier = ">=3.18.0" },
     { name = "alembic", specifier = ">=1.14.1" },
     { name = "apache-libcloud", specifier = ">=3.8.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
@@ -239,13 +240,13 @@ requires-dist = [
     { name = "deepfilternet", specifier = ">=0.5.6" },
     { name = "djgram", editable = "djgram" },
     { name = "faster-whisper", specifier = ">=1.1.1" },
-    { name = "ffmpeg-normalize", specifier = ">=1.31.0" },
+    { name = "ffmpeg-normalize", specifier = ">=1.31.1" },
     { name = "hiredis", specifier = ">=3.1.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "lazy-object-proxy", specifier = ">=1.10.0" },
     { name = "markdown-it-py", specifier = ">=3.0.0" },
     { name = "onnxruntime", specifier = ">=1.20.1" },
-    { name = "openai", specifier = ">=1.61.1" },
+    { name = "openai", specifier = ">=1.63.2" },
     { name = "orjson", specifier = ">=3.10.15" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "pillow", specifier = ">=11.1.0" },
@@ -263,14 +264,14 @@ requires-dist = [
     { name = "torch", specifier = ">=2.6.0", index = "https://download.pytorch.org/whl/cu124" },
     { name = "torchaudio", specifier = ">=2.6.0" },
     { name = "tqdm", specifier = ">=4.67.1" },
-    { name = "yt-dlp", specifier = ">=2025.1.26" },
+    { name = "yt-dlp", specifier = ">=2025.2.19" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "pre-commit", specifier = ">=4.1.0" },
     { name = "pytest", specifier = ">=8.3.4" },
-    { name = "ruff", specifier = ">=0.9.4" },
+    { name = "ruff", specifier = ">=0.9.7" },
 ]
 
 [[package]]
@@ -826,7 +827,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiogram", specifier = "==3.17.0" },
+    { name = "aiogram", specifier = "~=3.18.0" },
     { name = "aiogram-dialog", extras = ["tools"], specifier = ">=2.0.0,<3.0.0" },
     { name = "aiohttp", specifier = "~=3.11.11" },
     { name = "asynch", extras = ["compression"], specifier = "~=0.2.5" },
@@ -1171,11 +1172,11 @@ wheels = [
 
 [[package]]
 name = "identify"
-version = "2.6.7"
+version = "2.6.8"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/83/d1/524aa3350f78bcd714d148ade6133d67d6b7de2cdbae7d99039c024c9a25/identify-2.6.7.tar.gz", hash = "sha256:3fa266b42eba321ee0b2bb0936a6a6b9e36a1351cbb69055b3082f4193035684", size = 99260 }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/fa/5eb460539e6f5252a7c5a931b53426e49258cde17e3d50685031c300a8fd/identify-2.6.8.tar.gz", hash = "sha256:61491417ea2c0c5c670484fd8abbb34de34cdae1e5f39a73ee65e48e4bb663fc", size = 99249 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/03/00/1fd4a117c6c93f2dcc5b7edaeaf53ea45332ef966429be566ca16c2beb94/identify-2.6.7-py2.py3-none-any.whl", hash = "sha256:155931cb617a401807b09ecec6635d6c692d180090a1cedca8ef7d58ba5b6aa0", size = 99097 },
+    { url = "https://files.pythonhosted.org/packages/78/8c/4bfcab2d8286473b8d83ea742716f4b79290172e75f91142bc1534b05b9a/identify-2.6.8-py2.py3-none-any.whl", hash = "sha256:83657f0f766a3c8d0eaea16d4ef42494b39b34629a4b3192a9d020d349b3e255", size = 99109 },
 ]
 
 [[package]]
@@ -1699,7 +1700,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "1.63.2"
+version = "1.64.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1711,9 +1712,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e6/1c/11b520deb71f9ea54ced3c52cd6a5f7131215deba63ad07f23982e328141/openai-1.63.2.tar.gz", hash = "sha256:aeabeec984a7d2957b4928ceaa339e2ead19c61cfcf35ae62b7c363368d26360", size = 356902 }
+sdist = { url = "https://files.pythonhosted.org/packages/7b/1d/aae78d8ecc571d672c4a27794a8f248bc46437a22ddcb9c4eb6fd6616c03/openai-1.64.0.tar.gz", hash = "sha256:2861053538704d61340da56e2f176853d19f1dc5704bc306b7597155f850d57a", size = 357058 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/15/64/db3462b358072387b8e93e6e6a38d3c741a17b4a84171ef01d6c85c63f25/openai-1.63.2-py3-none-any.whl", hash = "sha256:1f38b27b5a40814c2b7d8759ec78110df58c4a614c25f182809ca52b080ff4d4", size = 472282 },
+    { url = "https://files.pythonhosted.org/packages/9a/1a/e62718f311daa26d208800976d7944e5ee6d503e1ea474522b2a15a904bb/openai-1.64.0-py3-none-any.whl", hash = "sha256:20f85cde9e95e9fbb416e3cb5a6d3119c0b28308afd6e3cc47bf100623dac623", size = 472289 },
 ]
 
 [[package]]
@@ -2722,12 +2723,13 @@ wheels = [
 
 [[package]]
 name = "zstd"
-version = "1.5.6.3"
+version = "1.5.6.4"
 source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/26/d5/f0b6356cbd06e5594c9fb0a53074c5e6f0f6ef8949d7c07c44ddd41f393a/zstd-1.5.6.4.tar.gz", hash = "sha256:f8adbf9813bf24b4faa6a15854137addec14c7166bc15491e3827ec88f3048bb", size = 648805 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5a/32/71bf6210fbe562777f8f5f91b2721f1c3958c54e9e57cc4599c846467d8a/zstd-1.5.6.3-cp311-cp311-manylinux_2_34_x86_64.whl", hash = "sha256:0c8ce5fcb40c46ea4292038f9972d0575490772fb2ed32e2becfa8fafeb016d7", size = 1739774 },
-    { url = "https://files.pythonhosted.org/packages/40/8e/fac445b95f946cd7de92f55f8c89d097e4e9f3a8fb9ddf4361f92f8549a6/zstd-1.5.6.3-cp311-cp311-manylinux_2_4_i686.whl", hash = "sha256:39a0cc36ff2c5015e1125bc528ac8644c7eccfd03f9377acd0ba8c0e5466fc57", size = 259073 },
-    { url = "https://files.pythonhosted.org/packages/1e/30/47054008891f9b4ad8f3a98a05d6a377bab1e2418e6ca87981020873cf5b/zstd-1.5.6.3-cp312-cp312-manylinux_2_4_i686.whl", hash = "sha256:615e46d8d94fc2df0e7d5c00c0f7b250bd1ff9c48addb540c99c9b8d85176936", size = 259411 },
-    { url = "https://files.pythonhosted.org/packages/be/52/789246c0be5dfd44886f1515b9af664c7207ba80038889712122f98b94d9/zstd-1.5.6.3-cp313-cp313-manylinux_2_34_x86_64.whl", hash = "sha256:d065a7130b1d300074929ad5923e9e3d2b07840d3a82f0ac9fad6f116b1adcb0", size = 1739970 },
-    { url = "https://files.pythonhosted.org/packages/5a/9b/5cbe28025d8cc527a9df89360dc7aec06f92824303829d3ec6be623cb4d7/zstd-1.5.6.3-cp314-cp314-manylinux_2_34_x86_64.whl", hash = "sha256:2c3ae7b64cd60c1333617c7943e55c1e0e81ca64f932229f84af7bb2073548ef", size = 1739935 },
+    { url = "https://files.pythonhosted.org/packages/36/7e/1e3db0383a6e7d9e5c354ddb0946d6e6027e3720616c2c84b387a0c8ae20/zstd-1.5.6.4-cp311-cp311-manylinux_2_34_x86_64.whl", hash = "sha256:7e31e3d86f03819e5c128199124d2e3847cad13b227a02981f061ae219a33464", size = 1739993 },
+    { url = "https://files.pythonhosted.org/packages/f0/c4/d3a72f468f7c20345365b286bb6efeee0eef07ef686c0c77410b9aa960f4/zstd-1.5.6.4-cp311-cp311-manylinux_2_4_i686.whl", hash = "sha256:9c82a19fea4fe3db28990f7b9c2038c0d937e29a59b4dc6d529f80910f8200a6", size = 259134 },
+    { url = "https://files.pythonhosted.org/packages/ae/97/40e357b2b1957bfe6c4a38956c1bda314698d9a675727fc6d7a7a8a45b56/zstd-1.5.6.4-cp312-cp312-manylinux_2_4_i686.whl", hash = "sha256:75c56e39c99afa4a58305a42ab5c712003872711ec1cf45c9652e76d0fbb835c", size = 259506 },
+    { url = "https://files.pythonhosted.org/packages/a2/55/0705b6e7a35d5cef37aa4d2f136515b36080563e199002c879e1711a79d5/zstd-1.5.6.4-cp313-cp313-manylinux_2_34_x86_64.whl", hash = "sha256:3ca09c66c4928a7ab5fd2630049e1fcf981e2e22b8921befed4e50ff5e030663", size = 1740350 },
+    { url = "https://files.pythonhosted.org/packages/c5/de/fbf0ee1c0ed7eedec7632a987fb5d1f2dd4df7cf41efb3832cd90ab11851/zstd-1.5.6.4-cp314-cp314-manylinux_2_34_x86_64.whl", hash = "sha256:a6d1cd2332784a7df0ec9ad6c831005e6448c88a26a0d3faf20c95d1243b7ce7", size = 1740261 },
 ]
