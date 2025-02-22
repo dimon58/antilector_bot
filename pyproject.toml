@@ -12,7 +12,7 @@ classifiers = [
 ]
 requires-python = "~=3.11"
 dependencies = [
-    "aiogram>=3.17.0",
+    "aiogram>=3.18.0",
     "alembic>=1.14.1",
     "apache-libcloud>=3.8.0",
     "asyncpg>=0.30.0",
@@ -22,13 +22,13 @@ dependencies = [
     "deepfilternet>=0.5.6",
     "djgram",
     "faster-whisper>=1.1.1",
-    "ffmpeg-normalize>=1.31.0",
+    "ffmpeg-normalize>=1.31.1",
     "hiredis>=3.1.0",
     "httpx>=0.28.1",
     "lazy-object-proxy>=1.10.0",
     "markdown-it-py>=3.0.0",
     "onnxruntime>=1.20.1",
-    "openai>=1.61.1",
+    "openai>=1.63.2",
     "orjson>=3.10.15",
     "pandas>=2.2.3",
     "pillow>=11.1.0",
@@ -46,14 +46,14 @@ dependencies = [
     "torch>=2.6.0",
     "torchaudio>=2.6.0",
     "tqdm>=4.67.1",
-    "yt-dlp>=2025.1.26",
+    "yt-dlp>=2025.2.19",
 ]
 
 [dependency-groups]
 dev = [
     "pre-commit>=4.1.0",
     "pytest>=8.3.4",
-    "ruff>=0.9.4",
+    "ruff>=0.9.7",
 ]
 
 [tool.uv.sources]

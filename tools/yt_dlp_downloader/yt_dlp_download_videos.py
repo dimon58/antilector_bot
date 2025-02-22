@@ -12,6 +12,7 @@ from yt_dlp.downloader import FileDownloader
 from yt_dlp.extractor.common import InfoExtractor
 
 from configs import YT_DLP_HTTP_CHUNK_SIZE, YT_DLP_LOGGING_DEBOUNCE_TIME, YT_DLP_YOUTUBE_FORMATS_DASHY
+
 from .yt_dlp_extractors import CUSTOM_EXTRACTORS
 from .yt_dlp_format_select import select_format
 
@@ -78,7 +79,7 @@ class DebouncedLogger:
         # For compatibility with youtube-dl, both debug and info are passed into debug
         # You can distinguish them by the prefix '[debug] '
         if msg.startswith(self.debug_prefix):
-            logger.debug(msg[len(self.debug_prefix):])
+            logger.debug(msg[len(self.debug_prefix) :])
         elif re.match(self.download_state_regex, msg):
             self.download_debounce(msg)
         else:

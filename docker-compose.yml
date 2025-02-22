@@ -16,7 +16,7 @@ services:
       - production
 
   postgres:
-    image: postgres:17.3-alpine3.21
+    image: postgres:17.4-alpine3.21
     hostname: postgres
     restart: always
     volumes:
