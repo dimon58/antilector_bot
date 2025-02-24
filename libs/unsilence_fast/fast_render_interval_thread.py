@@ -137,14 +137,16 @@ class RenderIntervalThread(threading.Thread):
             ffmpeg.execute()
         except FFmpegError as exc:
             if "Conversion failed!" in exc.message.splitlines()[-1]:
-                if self._render_options.drop_corrupted_intervals:
-                    return False
-
-                raise OSError(
+                msg = (
                     f"Input file is corrupted between "
                     f"{task.interval_group_render_task.start_timestamp} and "
-                    f"{task.interval_group_render_task.end_timestamp} (in seconds)",
-                ) from exc
+                    f"{task.interval_group_render_task.end_timestamp} (in seconds)"
+                )
+                if self._render_options.drop_corrupted_intervals:
+                    logger.warning(msg)
+                    return False
+
+                raise OSError(msg) from exc
 
             if "Error initializing complex filter" in exc.message:
                 raise ValueError("Invalid render options") from exc
