@@ -3,6 +3,7 @@ from typing import TypeAlias
 
 from yt_dlp.utils import LazyList
 
+from processing.schema import FILE_TYPE
 from tools.yt_dlp_downloader.yt_dlp_download_videos import YtDlpInfoDict, get_url
 
 Json: TypeAlias = dict | list | str | float | int | bool | None
@@ -14,6 +15,10 @@ def get_playlist_duration(info: YtDlpInfoDict) -> float:
 
 def yt_dlp_get_html_link(info: YtDlpInfoDict) -> str:
     title = info["title"]
+
+    if info["extractor"] == FILE_TYPE:
+        return f"загруженный видеофайл {title}"
+
     url = get_url(info)
 
     return f'<a href="{url}">{html.escape(title)}</a>'
