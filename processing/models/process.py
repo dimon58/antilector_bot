@@ -29,6 +29,7 @@ from ..representation import silence_remove_done_report  # noqa: TID252
 from .common import HasTelegramFileAndOriginalVideo
 from .download import Video
 from .profiles import AudioProcessingProfile, UnsilenceProfile
+from ..schema import FILE_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +93,11 @@ class ProcessedVideo(HasTelegramFileAndOriginalVideo, TimeTrackableBaseModel):
     def get_caption(self) -> str:
         yt_dlp_info = self.original_video.yt_dlp_info
 
-        original_url = get_url(yt_dlp_info)
+        if yt_dlp_info["extractor"] == FILE_TYPE:
+            original_url = get_url(yt_dlp_info)
+        else:
+            original_url = None
+
         if original_url is not None:
             original_ref = f'\n\n<a href="{original_url}">Ссылка на оригинальное видео</a>'
         else:  # если обрабатывался файл, загруженный пользователем
