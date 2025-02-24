@@ -56,7 +56,7 @@
    ```
 4. Запускаем требуемые внешние сервисы
    ```shell
-   docker compose up redis postgres clickhouse rabbitmq minio telegram-bot-api nginx
+   docker compose up redis postgres clickhouse rabbitmq minio minio-init telegram-bot-api nginx
    ```
 5. Применяем миграции и инициализируем базу данных
    ```shell
