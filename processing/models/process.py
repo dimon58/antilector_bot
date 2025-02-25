@@ -93,7 +93,7 @@ class ProcessedVideo(HasTelegramFileAndOriginalVideo, TimeTrackableBaseModel):
     def get_caption(self) -> str:
         yt_dlp_info = self.original_video.yt_dlp_info
 
-        if yt_dlp_info["extractor"] == FILE_TYPE:
+        if yt_dlp_info["extractor"] != FILE_TYPE:
             original_url = get_url(yt_dlp_info)
         else:
             original_url = None
